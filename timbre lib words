@@ -1,0 +1,16 @@
+Need to define: - all of type: void (void)
+
+getInput - must fill kq
+sendeq - must empty eq
+
+can be dummied:
+setup_io - take care of any io initialization
+
+led on and offs:
+greenOff - power
+greenOn
+yellowOff - input
+yellowOn
+
+initApp - if app needs inits
+initTimeStamp - for time stamp initialization

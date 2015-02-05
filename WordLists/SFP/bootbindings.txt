@@ -1,0 +1,29 @@
+// Names and function binding for words, constants and immediates
+
+Include ../corebindings.txt
+
+Words
+//	help help // print list of one liners about words in dictionary
+
+	ls listStats			// display link statistics
+	cs clearStats			// set link statistics to zero
+	dl linkStatus			// display link state
+	df dumpFrames			// dump link frame buffers
+	load sfpLoadTest		// ( link n - ) load the sfp link with n frames
+	ping sfpPingTest		// ( i n - ) get response time to n pings to link i
+	lm listm				// list machines
+	stats	machineStats // show time statistics on machine loop
+	0stats	resetMachineMonitor // reset machine stats
+//	+int intEnable			// enable interrupts
+//	-int intDisable			// disable interrupts
+
+#ifdef DISPLAY_TIME // commands to display time
+	start startTime			// note start of an interval
+	end endTime				// end and report interval length
+	time showTime			// display timestamp
+#endif
+End
+
+// missing sping; slot selection on sping, ping, load
+// remote command execution slota, slotb, main, display?
+// use dest send: commands

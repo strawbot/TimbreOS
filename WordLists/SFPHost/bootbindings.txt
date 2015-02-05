@@ -1,0 +1,46 @@
+// Names and function binding for words, constants and immediates
+
+Include ../corebindings.txt
+
+Words
+	help help // print list of one liners about words in dictionary
+
+	ls listStats			// display link statistics
+	cs clearStats			// set link statistics to zero
+	las listAllStats		// list all stats
+	cas clearAllStats		// clear all stats
+	dl linkStatus			// display link state
+	df dumpFrames			// dump link frame buffers
+	load sfpLoadTest		// ( link n - ) load the sfp link with n frames
+	ping sfpPingTest		// ( i n - ) get response time to n pings to link i
+	lm listm				// list machines
+	n1 n1					// switch to node n1
+	n2 n2					// switch to node n2
+	n3 n3					// switch to node n3
+	n4 n4					// switch to node n4
+	n5 n5					// switch to node n5
+	n6 n6					// switch to node n6
+	n7 n7					// switch to node n7
+	n8 n8					// switch to node n8
+
+	start startTime			// note start of an interval
+	end endTime				// end and report interval length
+	time showTime			// display timestamp
+	t showTicker				// show ticks
+	
+	ton traceOn				// trace packet flow
+	toff traceOff			// disable trace packet flow
+	
+	paths runAllPathsTest	// test all possible paths
+	blitz blitzOn			// start up a blitz of packets
+	boff  blitzOff			// shutdown blitz
+	glitch glitch			// ( l ) generate a glitch on link l
+	spson enableSps			// ( l ) enable SPS on link l
+	spsoff disableSps		// ( l ) disable SPS on link l
+	allsps	allSps			// turn on sps for all links
+	nosps	noSps			// turn off sps for all links
+	nodeup setNodeUp		// ( n ) enable a node for sfp traffic
+	nodedown setNodeDown	// ( n ) disable a node for sfp traffic
+	noise	addNoise		// ( n ) add n amount of noise; 0 turns it off
+	spsfails showSpsFails	// show all the sps failures
+End
