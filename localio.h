@@ -4,14 +4,12 @@
 extern Cell dp_;
 extern Byte eq[], kq[];
 
-void initializeTalk(void);
 void keyin(Byte c);
 void reconstitute(void);
 void safe_emit(Byte c);
 void sendeq(void);
-void txUartString(Byte *s);
 void set_prompt(Cell address);
-void talkStateMachine(void);
+void timbreTalk(void);
 void greenOn(void);
 void greenOff(void);
 void yellowOn(void);

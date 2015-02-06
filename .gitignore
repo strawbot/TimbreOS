@@ -1,3 +1,4 @@
 wordlist.c
 wordlist.txt
 help.c
+*.bak
