@@ -3,5 +3,5 @@
 Include ../corebindings.txt
 
 Words
-	help help // print list of one liners about words in dictionary
+//	help help // print list of one liners about words in dictionary
 End
