@@ -16,7 +16,6 @@ Headless(BRANCH)
 Headless(ZERO_BRANCH)
 Headless(MINUS_BRANCH)
 Headless(TO_I)
-Headless(COLLECTOR)
 Headless(LITERAL)
 Headless(QUOTE)
 Headless(COUNT)
@@ -605,52 +604,6 @@ void search_context(void)  /* s -- a \ f */
 }
 
 /* Environment */
-/* ==== Baron ==== */
-QUEUE(8,_peasantq);   /* maximum of hex 8 peasants */
-
-void peasantq(void)
-{
-	lit(_peasantq);
-}
-
-void ZERO_BARON(void)  /* -- */
-{
-	peasantq();
-	ZERO_Q();
-}
-
-void TO_BARON(void)  /* tick -- */
-{
- 	peasantq();
-	PUSH();
-}
-
-void BARON_FROM(void)  /* -- tick */
-{
-	peasantq();
-	PULL();
-}
-
-void BARON(void)  /* -- */
-{
-	Byte i;
-
-	peasantq();
-	Q_QUERY();
-	i = (Byte)*_DROP_;
-	while(i--)
-	{
-		peasantq();
-		PULL();
-		EXECUTE();
-		// if((tick=(void (**)())(*_DROP_)) != 0) // should use 
-		//tick = (thread)*_DROP_
-		//(**tick)();	  /* EXECUTE */
-		//else
-		//	RESET();
-	}
-}
-
 /* ==== Output stream ==== */
 BQUEUE(160,eq);
 
@@ -1388,8 +1341,6 @@ void COLLECTOR(void)  /* -- */
 {
 	if(qbq(kq))   /* IF */
 		COLLECT();
-	lit(&_COLLECTOR.tick);   /* ' */
-	TO_BARON();
 }
 
 void INIT(void)  /* -- */
@@ -1416,9 +1367,6 @@ void QUIT(void)  /* -- */
 	LEFT_SQUARE_BRACKET();
 	_CR();
 	DOT_PROMPT();
-	ZERO_BARON();
-	lit(&_COLLECTOR.tick);   /* ' */
-	TO_BARON();
 }
 
 /* ==== Compilers ==== */
