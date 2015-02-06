@@ -260,7 +260,7 @@ void dotline(Byte *bytes) // print out one line of memory
 }
 
 // messages in flash to keep ram slimmer
-Byte debug = DEBUG;
+Byte debug = TIMBRE_DEBUG;
 
 void pmsg(PGM_P m) // message in program space
 {

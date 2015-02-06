@@ -175,7 +175,7 @@ void pmsg(PGM_P);
 #endif
 
 extern Byte debug;
-#define DEBUG 0 // set to zero or nothing for release
+#define TIMBRE_DEBUG 0 // set to zero or nothing for release
 void revcpy(Byte *dest, Byte *src, Byte length);
 void txUartString(Byte *s);
 
