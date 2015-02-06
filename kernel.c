@@ -1352,11 +1352,9 @@ void INIT(void)  /* -- */
 	_TOP_+=sizeof(Cell);    /* CELL + */
 	SWAP();
 	STORE();
-//	*sp++ = (Cell)&names;
-//	*sp = (Cell)pgm_read_word_near(&functions[1]);
 }
 
-/* ==== Control loop ==== */
+/* ==== Control ==== */
 
 void QUIT(void)  /* -- */
 {
