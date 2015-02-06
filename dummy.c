@@ -18,26 +18,74 @@ yellowOn
 initApp - if app needs inits
 initTimeStamp - for time stamp initialization
 */
-#include <stdio.h>
-#include "bktypes.h"
+#include "botkernl.h"
 #include "byteq.h"
+#include "localio.h"
 
-// IO setup and in/out
-Byte lastkey = 0;
-extern Byte eq[];
-void keyin(Byte c);
+// Environment
+static char space[MSIZE];
+Cell *sp, *rp;  /* Stack pointers */
+thread *ip, tick; /* Indirect-threaded code pointers */
 
-// prototypes
-void setup_io(void);
-void restore_io(void);
-void getInput(void);
-void sendeq(void);
-void txUartString(Byte *s);
-void greenOff(void);
-void greenOn(void);
-void yellowOff(void);
-void yellowOn(void);
-void initApp(void);
+// Text output using queue and blocking if full
+Cell recursed; // incremented if we recursed when we should never do
+static enum {WAITING, RUNNING } talkState;
+
+void initializeTalk(void)
+{
+    rp0_ = rp = (Cell *)(&space[MSIZE]);
+	sp0_ = sp = rp0_ - RCELLS;
+	dp_ = (Cell)&space[0];
+	setup_io();
+	RESET();
+	talkState = RUNNING;
+}
+
+void safe_emit(Byte c) // c -  check queue for overflow
+{
+	static Byte alreadyHere = 0; // prevent overwrites
+
+	if ((sizebq(eq) - qbq(eq)) < 1)
+	{
+		if (alreadyHere) // support blocking on first writer
+			return;
+		alreadyHere = 1;
+		sendeq(); // sit here until sent
+		alreadyHere = 0;
+	}
+	pushbq(c, eq);
+}
+
+void talkStateMachine(void)
+{
+	if (qbq(eq) != 0) // check output from kernel
+		sendeq();
+	else
+	{
+		getInput();
+		if (qbq(kq)) // check input to kernel
+		{
+			yellowOn(); // blink yellow LED when processing text
+			switch(talkState)
+			{
+				case RUNNING:	talkState = WAITING; // avoid recursion
+								COLLECTOR();
+								talkState = RUNNING;
+								break;
+				case WAITING:	recursed++;
+								talkState = RUNNING;
+								break;
+			}
+		}
+		else
+			yellowOff();
+	}
+}
+
+void keyin(Byte c) // called from interrupt
+{
+	pushbq(c, kq);
+}
 
 void setup_io(void)  // take care of any io initialization
 { }
@@ -46,8 +94,8 @@ void restore_io(void) {}
 
 void getInput(void)  // must fill kq
 {
-    int c = getchar();
-
+    int c = timbreGetChar();
+ 
 	if (c != -1)
 	{
 		if (c == 0xA)
@@ -63,13 +111,13 @@ while (qbq(eq))
     {
        c = pullbq(eq);
        if (c != 0xD)
-		putchar(c);
+        timbrePutChar(c);
     }
 }
 
 void txUartString(Byte *s)
 {
-    puts((char *)s);
+    timbrePutString(s);
 }
 
 // Leds
@@ -84,11 +132,3 @@ void yellowOff(void)  // input
 
 void yellowOn(void)
 { }
-
-// App inits
-void autoEchoOn(void);
-
-void initApp(void)  // for time stamp initialization
-{
-  autoEchoOn();
-}
