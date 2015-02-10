@@ -1,0 +1,10 @@
+// Names and function binding for words, constants and immediates
+
+Include ../clibindings.txt
+
+Words
+	lm listm				// list machines
+	stats	machineStats // show time statistics on machine loop
+	0stats	resetMachineMonitor // reset machine stats
+	help help // print list of one liners about words in dictionary
+End

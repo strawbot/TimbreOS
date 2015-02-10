@@ -11,8 +11,6 @@
 #  entry consists of: name function and optionally comment
 #  c code is: either # or //
 
-# core is in vanilla directory
-# common is in root directory
 # specific is in other direcotries
 
 #parse file
@@ -304,8 +302,7 @@ else:
 ctarget = 'wordlist.c'
 txttarget = 'wordlist.txt'
 helptarget = 'help.c'
-txtcore = 'corebindings.txt'
-txtcommon = 'commonbindings.txt'
+txtcore = 'clibindings.txt'
 thisfile = 'parsewords.py'
 vanilla = 'Vanilla'
 
@@ -321,7 +318,6 @@ if __name__ == '__main__':
 			open(dir+SEPARATOR+ctarget).close()
 			open(dir+SEPARATOR+ctarget).close()
 			if	fileModTime(txtcore) < fileModTime(dir+SEPARATOR+ctarget) \
-			and fileModTime(txtcommon) < fileModTime(dir+SEPARATOR+ctarget)\
 			and fileModTime(thisfile) < fileModTime(dir+SEPARATOR+ctarget):
 				if fileModTime(bindings) < fileModTime(dir+SEPARATOR+ctarget):
 					continue # don't update this subdirectory

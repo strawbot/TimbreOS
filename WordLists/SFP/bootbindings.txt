@@ -1,6 +1,6 @@
 // Names and function binding for words, constants and immediates
 
-Include ../corebindings.txt
+Include ../clibindings.txt
 
 Words
 //	help help // print list of one liners about words in dictionary
