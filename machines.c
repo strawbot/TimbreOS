@@ -147,7 +147,7 @@ void initMachines(void)
 
 #define N 100
 
-static Long minLoop, maxLoop, sumLoop;
+static Long minLoop, maxLoop, sumLoop, countLoop;
 static Long lastTime;
 static QUEUE(N, sumq);
 
@@ -172,6 +172,7 @@ static void machineMonitor(void)
 		sumLoop += span;
 	}
 	lastTime = thisTime;
+	countLoop++;
 	activate(machineMonitor);
 }
 
@@ -181,15 +182,17 @@ static void machineMonitor(void)
 void machineStats(void);
 void machineStats(void)
 {
-	print("\nLoop times (ms). Min:");
+	print("\nLoop times (ms). Min: ");
 	printDec(minLoop);
-	print("  Max:");
+	print("  Max: ");
 	printDec(maxLoop);
-	print("  Average:");
+	print("  Average: ");
 	if (queryq(sumq))
 		printDec(sumLoop/queryq(sumq));
 	else
-		print(" no sum");
+		print("no sum ");
+	print("  #loops: ");
+	printDec(countLoop);
 }
 
 void resetMachineMonitor(void)
@@ -197,6 +200,7 @@ void resetMachineMonitor(void)
 	minLoop = 1000000000;
 	maxLoop = 0;
 	sumLoop = 0;
+	countLoop = 0;
 	zeroq(sumq);
 	lastTime = 0;
 	activateOnce(machineMonitor);
