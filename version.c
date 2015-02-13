@@ -1,13 +1,14 @@
 // Version
 
+#include <string.h>
+#include <stdlib.h>
+
 #include "build_version.h"
 #include "version.h"
-#include <stdlib.h>
-#include <string.h>
 #include "valueTransfer.h"
+#include "printers.h"
 
-#define BUILD_DATE __DATE__##" "##__TIME__
-version_t version = {VERSION_ID, BUILD_NAME, BUILD_DATE};
+version_t version = {VERSION_ID, BUILD_NAME, __DATE__" "__TIME__};
 
 char * getBuildDate(void)
 {
@@ -46,7 +47,7 @@ unsigned long extractMajorVersion(version_t *version)
 unsigned long extractMinorVersion(version_t *version)
 {
 	if (0 == memcmp(&version->buildDate[0], "Jan", 3)) return 1;
-	if (0 == memcmp(&version->buildDate[0], "Mar", 3)) return 2;
+	if (0 == memcmp(&version->buildDate[0], "Feb", 3)) return 2;
 	if (0 == memcmp(&version->buildDate[0], "Mar", 3)) return 3;
 	if (0 == memcmp(&version->buildDate[0], "Apr", 3)) return 4;
 	if (0 == memcmp(&version->buildDate[0], "May", 3)) return 5;
@@ -90,13 +91,23 @@ unsigned long extractVersion(unsigned long address) // address might not be long
 	return mmb;
 }
 
+void showVersion(void)
+{
+	Short build = (Short)buildVersion();
+
+	print("\n");
+	print(BUILD_NAME), print(" ");
+	printDec0(majorVersion()), print("."), printDec0(minorVersion());
+	print("."), printnHex(0, build);
+	print(" "), print(getBuildDate());
+}
+
 // Setting prompt using Build name
 #define MAX_PROMPT 20
 #define PROMPT_COLON ": "
 
 void setPrompt(char * );
 
-void setBuildPrompt(void);
 void setBuildPrompt(void)
 {
 	char prompt[MAX_PROMPT+1] = {0};
