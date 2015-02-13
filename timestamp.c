@@ -8,7 +8,7 @@
 #include "timestamp.h"
 #include "timeout.h"
 
-Long localtime; // local time is time since startup
+static Long localtime; // local time is time since startup
 
 void oneMillisecondTick(void)
 {
@@ -27,40 +27,35 @@ Long getTime(void)
 	return localtime;
 }
 
-#ifdef DISPLAY_TIME // commands to display time
-#include "botkernl.h"
-#include "kernel.h"
-#include "library.h"
+// CLI for timing
+#include "printers.h"
+Long startingTime;
 
 void showTime(void)
 {
-	lit(getTime()), DOT();
-}
-
-// for timing
-Long startingTime;
-
-void startTime(void)
-{
-	startingTime = getTime();
+	printDec(getTime());
 }
 
 void sdotms(Long time)
 {
 	Long ms = time%(1 SEC);
 
-	lit(time/(1 SEC)), lit(0), DOT_R();
-	msg(".");
-	lit(ms/100), lit(0), DOT_R();
-	lit((ms%100)/10), lit(0), DOT_R();
-	lit(ms%10), lit(0), DOT_R();
+	printDec0(time/(1 SEC));
+	print(".");
+	printDec0(ms/100);
+	printDec0((ms%100)/10);
+	printDec0(ms%10);
+}
+
+void startTime(void)
+{
+	startingTime = getTime();
 }
 
 void endTime(void)
 {
 	Long t = getTime() - startingTime;
 	
-	msg(" Elapsed time (S.ms): ");
+	print(" Elapsed time (S.ms): ");
 	sdotms(t);
 }
-#endif
