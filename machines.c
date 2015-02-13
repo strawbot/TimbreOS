@@ -85,20 +85,18 @@ void showMachineName(Cell x)
 {
 	Cell m,n,i;
 
+	print("\n"), printHex(x), print(": ");
 	i = queryq(machinenameq)/2;
-	while(i--)
-	{
+	while(i--) {
 		m = pullq(machinenameq);
 		n = pullq(machinenameq);
 		pushq(m, machinenameq);
 		pushq(n, machinenameq);
-		if (m == x)
-		{
-			print("\n"), printHex(x), print(":"), print((char *)n);
+		if (m == x) {
+			print((char *)n);
 			return;
 		}
 	}
-	printHex(x);
 }
 
 void listq(void *q) // list q items
