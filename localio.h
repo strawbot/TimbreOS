@@ -22,4 +22,4 @@ void RESET(void);
 
 void timbrePutChar(Byte c);
 int timbreGetChar(void);
-void timbrePutString(Byte *s);
+void timbrePutString(const char *s);

@@ -64,7 +64,7 @@ void runMachines(void) // run all machines
 #include "printers.h"
 QUEUE(MACHINES * 2, machinenameq);
 
-void activateOnceNamed(vector machine, char *name)
+void activateOnceNamed(vector machine, const char * name)
 {
 	Cell m,n,i;
 
