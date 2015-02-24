@@ -8,7 +8,7 @@
 #ifndef __MQX__
 //#include <stdio.h>      /* everyone needs standard io */
 #endif
-#include <setjmp.h> /* for nested error handling */
+//#include <setjmp.h> /* for nested error handling */
 #include <string.h> /* for memory operations in kernel */
 //#include <types.h>
 #include "queue.h"
@@ -51,7 +51,7 @@ void setPrompt(char *);
 void dotnb(Byte field, Byte digits, Cell n, Byte r);
 
 /* ==== Nested shells for error protection ==== */
-extern jmp_buf *ep;   /* for saving C context */
+//extern jmp_buf *ep;   /* for saving C context */
 
 /* ==== Debuggers ==== */
 #define BadTick  end_program("bad tick.")

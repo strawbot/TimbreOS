@@ -1221,7 +1221,7 @@ void LITERAL(void)  /* n -- [n] */
 	}
 }
 
-jmp_buf env;
+//jmp_buf env;
 
 void INTERPRET(void)  /* -- */
 {
