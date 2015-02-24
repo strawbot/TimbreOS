@@ -99,7 +99,7 @@ void showMachineName(Cell x)
 	}
 }
 
-void listq(void *q) // list q items
+void listq(Qtype *q) // list q items
 {
 	Byte n,i;
 
