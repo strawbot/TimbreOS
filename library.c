@@ -54,18 +54,18 @@ void BACK_TICK(void)  /* -- n */
 
 void POP(void) /* q -- n */  /* q<|ueued items|  q is transferred to the data stack */
 {
-	_TOP_ = popq((Queue_t)_TOP_);
+	_TOP_ = popq((Qtype *)_TOP_);
 }
 
 void STUFF(void) /* n \ q -- */  /* |queued item|<s s is transferred from the data stack */
 {
-	stuffq(_NEXT_,(Queue_t)_TOP_);
+	stuffq(_NEXT_,(Qtype *)_TOP_);
 	_2DROP_;
 }
 
 void P(void)  /* q -- n */
 {
-	_TOP_ = p((Queue_t)_TOP_);
+	_TOP_ = p((Qtype *)_TOP_);
 }
 
 // interpret a C string; no output other than generated output
@@ -260,7 +260,7 @@ void dotline(Byte *bytes) // print out one line of memory
 }
 
 // messages in flash to keep ram slimmer
-Byte debug = DEBUG;
+Byte debug = TIMBRE_DEBUG;
 
 void pmsg(PGM_P m) // message in program space
 {

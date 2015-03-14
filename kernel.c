@@ -16,7 +16,6 @@ Headless(BRANCH)
 Headless(ZERO_BRANCH)
 Headless(MINUS_BRANCH)
 Headless(TO_I)
-Headless(COLLECTOR)
 Headless(LITERAL)
 Headless(QUOTE)
 Headless(COUNT)
@@ -381,27 +380,27 @@ void shortStore(void) // n \ a -
 /* ==== Queues == | insert | remove | end |  data space for circular queue | */
 void ZERO_Q(void) /* q -- */  /* initialize a queue */
 {
-	zeroq((Queue_t)*_DROP_);
+	zeroq((Qtype *)*_DROP_);
 }
 
 void Q(void)  /* q -- n */
 {
-	_TOP_ = q((Queue_t)_TOP_);
+	_TOP_ = q((Qtype *)_TOP_);
 }
 
 void Q_QUERY(void) /* q -- n */  /* return the size of a queue */
 {
-	_TOP_ = queryq((Queue_t)_TOP_);
+	_TOP_ = queryq((Qtype *)_TOP_);
 }
 
 void PULL(void) /* q -- n */  /* |queued item|>s  s is transferred to the data stack */
 {
-	_TOP_ = pullq((Queue_t)_TOP_);
+	_TOP_ = pullq((Qtype *)_TOP_);
 }
 
 void PUSH(void) /* n \ q -- */  /* q>|ueued items|  q is transferred from the data stack */
 {
-	pushq(_NEXT_,(Queue_t)_TOP_);
+	pushq(_NEXT_,(Qtype *)_TOP_);
 	_2DROP_;
 }
 
@@ -605,52 +604,6 @@ void search_context(void)  /* s -- a \ f */
 }
 
 /* Environment */
-/* ==== Baron ==== */
-QUEUE(8,_peasantq);   /* maximum of hex 8 peasants */
-
-void peasantq(void)
-{
-	lit(_peasantq);
-}
-
-void ZERO_BARON(void)  /* -- */
-{
-	peasantq();
-	ZERO_Q();
-}
-
-void TO_BARON(void)  /* tick -- */
-{
- 	peasantq();
-	PUSH();
-}
-
-void BARON_FROM(void)  /* -- tick */
-{
-	peasantq();
-	PULL();
-}
-
-void BARON(void)  /* -- */
-{
-	Byte i;
-
-	peasantq();
-	Q_QUERY();
-	i = (Byte)*_DROP_;
-	while(i--)
-	{
-		peasantq();
-		PULL();
-		EXECUTE();
-		// if((tick=(void (**)())(*_DROP_)) != 0) // should use 
-		//tick = (thread)*_DROP_
-		//(**tick)();	  /* EXECUTE */
-		//else
-		//	RESET();
-	}
-}
-
 /* ==== Output stream ==== */
 BQUEUE(160,eq);
 
@@ -1268,7 +1221,7 @@ void LITERAL(void)  /* n -- [n] */
 	}
 }
 
-jmp_buf env;
+//jmp_buf env;
 
 void INTERPRET(void)  /* -- */
 {
@@ -1388,8 +1341,6 @@ void COLLECTOR(void)  /* -- */
 {
 	if(qbq(kq))   /* IF */
 		COLLECT();
-	lit(&_COLLECTOR.tick);   /* ' */
-	TO_BARON();
 }
 
 void INIT(void)  /* -- */
@@ -1401,11 +1352,9 @@ void INIT(void)  /* -- */
 	_TOP_+=sizeof(Cell);    /* CELL + */
 	SWAP();
 	STORE();
-//	*sp++ = (Cell)&names;
-//	*sp = (Cell)pgm_read_word_near(&functions[1]);
 }
 
-/* ==== Control loop ==== */
+/* ==== Control ==== */
 
 void QUIT(void)  /* -- */
 {
@@ -1416,9 +1365,6 @@ void QUIT(void)  /* -- */
 	LEFT_SQUARE_BRACKET();
 	_CR();
 	DOT_PROMPT();
-	ZERO_BARON();
-	lit(&_COLLECTOR.tick);   /* ' */
-	TO_BARON();
 }
 
 /* ==== Compilers ==== */

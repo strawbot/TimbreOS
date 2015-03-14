@@ -1,11 +1,11 @@
-/*			     Queue_ts
+/*			     Qtypes
   This queue structure is used to refer to the elements.  The size of
   storage is irrevelant but ANSI C must have a size greater than 0.
   The element, end, points to the last storage item.
 */
 #ifndef QUEUE_H
 #define QUEUE_H
-/* Queue_t definitions:   QUEUE(128,dataq)  */
+/* Qtype definitions:   QUEUE(128,dataq)  */
 #include "bktypes.h"
 
 // generic structure
@@ -47,23 +47,20 @@ volatile	Cell storage[(size)+1];\
  // Actually, by initializing the pointers the queue is moved from bss to data. But
  // declaring it as const would move it to flash.
 
-// kludge to get around specific structures
-#define  Queue_t void *	/* atom of q */
-
 #endif
 
-void zeroq(Queue_t);
-Cell q(Queue_t);
-Cell p(Queue_t);
-Cell queryq(Queue_t);
-Cell qsize(Queue_t);
-Cell qleft(Queue_t);
-Cell pullq(Queue_t);
-void pushq(Cell , Queue_t);
-void pushqSafe(Cell , Queue_t);
-Cell popq(Queue_t);
-Cell rpop(Queue_t);
-void stuffq(Cell , Queue_t);
-void rotateq(Queue_t, Cell );
-void transferq(Queue_t, Queue_t, Cell );
+void zeroq(Qtype *);
+Cell q(Qtype *);
+Cell p(Qtype *);
+Cell queryq(Qtype *);
+Cell qsize(Qtype *);
+Cell qleft(Qtype *);
+Cell pullq(Qtype *);
+void pushq(Cell , Qtype *);
+void pushqSafe(Cell , Qtype *);
+Cell popq(Qtype *);
+Cell rpop(Qtype *);
+void stuffq(Cell , Qtype *);
+void rotateq(Qtype *, Cell );
+void transferq(Qtype *, Qtype *, Cell );
 

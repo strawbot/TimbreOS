@@ -31,4 +31,7 @@ unsigned long extractMinorVersion(version_t *version);
 unsigned long extractBuildVersion(version_t *version);
 unsigned long extractVersion(unsigned long address);
 
+void setBuildPrompt(void);
+void showVersion(void);
+
 #endif

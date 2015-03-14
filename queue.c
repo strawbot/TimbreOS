@@ -1,4 +1,4 @@
-/* Queue_t declaration and access  Rob Chapman  Dec 3, 1996 */
+/* Qtype declaration and access  Rob Chapman  Dec 3, 1996 */
 
 #include "bktypes.h"
 #include "queue.h"
@@ -34,75 +34,59 @@
     Note: pointers may not be the same size as a data cell.
 */
 
-void zeroq(Queue_t queue) /* initialize a queue */
-{
-	Qtype *q = (Qtype *)queue;
-	
+void zeroq(Qtype *q) /* initialize a queue */
+{	
 	q->remove = q->insert = &q->storage[0];
 }
 
-Cell q(Queue_t queue)   /* return most oldest value pushed to queue */
+Cell q(Qtype *q)   /* return most oldest value pushed to queue */
 {
-	Qtype *q = (Qtype *)queue;
-	
 	return(*q->remove);
 }
 
-Cell p(Queue_t queue) /* return most recent value pushed to queue */
+Cell p(Qtype *q) /* return most recent value pushed to queue */
 {
-	Qtype *q = (Qtype *)queue;
-
 	if ( q->insert == q->end )
 		return(q->storage[0]);
 	else
 	   return(*(q->insert + 1));
 }
 
-Cell queryq(Queue_t queue)  /* return the size of a queue */
+Cell queryq(Qtype *q)  /* return the size of a queue */
 {
-	Qtype *q = (Qtype *)queue;
-
 	if (q->remove < q->insert )
 		return (Cell)( (q->end - q->insert) + (q->remove - &q->storage[0]) + 1);
 	else
 		return (Cell)(q->remove - q->insert );
 }
 
-Cell qsize(Queue_t queue)  /* return the size of an empty queue */
+Cell qsize(Qtype *q)  /* return the size of an empty queue */
 {
-	Qtype *q = (Qtype *)queue;
-
 	return (Cell)(q->end - &q->storage[0]);
 }
 
-Cell qleft(Queue_t queue)  /* return what's left of a queue */
+Cell qleft(Qtype *q)  /* return what's left of a queue */
 {
-	return(qsize(queue) - queryq(queue));
+	return(qsize(q) - queryq(q));
 }
 
-Cell pullq(Queue_t queue)  /* |queued item|>value  value is dequeued */
+Cell pullq(Qtype *q)  /* |queued item|>value  value is dequeued */
 {
-	Qtype *q = (Qtype *)queue;
-
 	Cell value = *q->remove--;
 	if ( q->remove < &q->storage[0] )
 		q->remove = q->end;
 	return(value);
 }
 
-void pushq(Cell value, Queue_t queue) /* value>|queued items|  value is queued */
+void pushq(Cell value, Qtype *q) /* value>|queued items|  value is queued */
 {
-	Qtype *q = (Qtype *)queue;
-
 	*q->insert-- = value;
 	if ( q->insert < &q->storage[0] )
 		q->insert = q->end;
 }
 
-Cell popq(Queue_t queue) /* value<|ueued items|  value is dequeued */
+Cell popq(Qtype *q) /* value<|ueued items|  value is dequeued */
 {
-	Qtype *q = (Qtype *)queue;
-
 	if ( q->insert == q->end )
 	{
 		q->insert = &q->storage[0];
@@ -111,10 +95,8 @@ Cell popq(Queue_t queue) /* value<|ueued items|  value is dequeued */
 	return(*++q->insert);
 }
 
-void stuffq(Cell value, Queue_t queue) /* |queued item|<value value is queued */
+void stuffq(Cell value, Qtype *q) /* |queued item|<value value is queued */
 {
-	Qtype *q = (Qtype *)queue;
-
 	if ( q->remove == q->end )
 	{
 		q->remove = &q->storage[0];
@@ -123,13 +105,13 @@ void stuffq(Cell value, Queue_t queue) /* |queued item|<value value is queued */
 	*++q->remove = value;
 }
 
-void rotateq(Queue_t queue, Cell n) /* rotate n values in the queue */
+void rotateq(Qtype *q, Cell n) /* rotate n values in the queue */
 {
 	for(;n;n--)
-		pushq(pullq(queue),queue);
+		pushq(pullq(q),q);
 }
 
-void transferq(Queue_t srcq, Queue_t dstq, Cell n)
+void transferq(Qtype *srcq, Qtype *dstq, Cell n)
 {  /* transfer values from srcq to dstq */
 	for(;n;n--)
 		pushq(pullq(srcq),dstq);

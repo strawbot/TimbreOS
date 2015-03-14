@@ -1,0 +1,5 @@
+wordlist.c
+wordlist.txt
+help.c
+*.bak
+kernel.s

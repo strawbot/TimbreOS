@@ -1,6 +1,7 @@
 // for machines  Rob Chapman  Jan 22, 2010
 
 #include "bktypes.h"
+#include "queue.h"
 
 void activate(vector machine);
 void activateMachineOnce(vector machine);
@@ -8,8 +9,8 @@ void deactivate(vector machine);
 void runMachines(void);
 void initMachines(void);
 void listm(void);
-void listq(void *q);
-void activateOnceNamed(vector machine, char *name);
+void listq(Qtype * q);
+void activateOnceNamed(vector machine, const char *name);
 void showMachineName(Cell x);
 
 #define activateOnce(m)	activateOnceNamed(m, #m)

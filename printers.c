@@ -7,9 +7,9 @@
 extern Byte base_;
 void sendeq(void);
 
-void print(char *message)
+void print(const char *message)
 {
-	msg(message);
+	msg((char *)message);
 }
 
 void printHex(unsigned int hex)

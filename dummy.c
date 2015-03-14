@@ -1,53 +1,113 @@
-/* Dummy definitions for Timbre library  Rob Chapman  Jun 8, 2011
-  modify as needed.
-  
-Need to define: - all of type: void (void)
+// Dummy definitions for Timbre library  Rob Chapman  Jun 8, 2011
 
-getInput - must fill kq
-sendeq - must empty eq
+/*
+	For command line interface - need a main loop plus this file and:
+	byteq.c
+	ii.c
+	kernel.c
+	library.c
+	wordlist.c
 
-can be dummied:
-setup_io - take care of any io initialization
+	Example main loop using debugger for IO:	
+		void timbrePutChar(Byte c)
+		{
+			debug_fputc(c, DEBUG_STDOUT);
+		}
 
-led on and offs:
-greenOff - power
-greenOn
-yellowOff - input
-yellowOn
+		int timbreGetChar(void)
+		{
+			return debug_fgetc(DEBUG_STDIN);
+		}
 
-initApp - if app needs inits
-initTimeStamp - for time stamp initialization
+		int main(void)
+		{
+			debug_printf("Timbre Command Line\n");
+			while(true)
+				timbreTalk();
+			debug_exit(0);
+			return 0;
+		}
+
 */
-#include <stdio.h>
-#include "bktypes.h"
+
+#include "botkernl.h"
 #include "byteq.h"
+#include "localio.h"
 
-// IO setup and in/out
-Byte lastkey = 0;
-extern Byte eq[];
-void keyin(Byte c);
+// Environment
+static char space[MSIZE];
+Cell *sp, *rp;  /* Stack pointers */
+thread *ip, tick; /* Indirect-threaded code pointers */
 
-// prototypes
-void setup_io(void);
-void restore_io(void);
-void getInput(void);
-void sendeq(void);
-void txUartString(Byte *s);
-void greenOff(void);
-void greenOn(void);
-void yellowOff(void);
-void yellowOn(void);
-void initApp(void);
+// Text output using queue and blocking if full
+Cell recursed; // incremented if we recursed when we should never do
+static enum {INITIALIZING, WAITING, RUNNING } talkState = INITIALIZING;
+
+void timbreTalk(void)
+{
+	switch(talkState)
+	{
+	case INITIALIZING:
+		rp0_ = rp = (Cell *)(&space[MSIZE]);
+		sp0_ = sp = rp0_ - RCELLS;
+		dp_ = (Cell)&space[0];
+		setup_io();
+		RESET();
+		talkState = RUNNING;
+		break;
+	case RUNNING:
+		talkState = WAITING; // avoid recursion via outputs
+		COLLECTOR();
+		talkState = RUNNING;
+		break;
+	case WAITING:
+		recursed++;
+		talkState = RUNNING;
+		break;
+	}
+
+	if (qbq(eq) != 0) // check output from kernel
+		sendeq();
+	else
+	{
+		getInput();
+		if (qbq(kq)) // check input to kernel
+			yellowOn(); // blink yellow LED when processing text
+		else
+			yellowOff();
+	}
+}
+
+void safe_emit(Byte c) // c -  check queue for overflow
+{
+	static Byte alreadyHere = 0; // prevent overwrites
+
+	if ((sizebq(eq) - qbq(eq)) < 1)
+	{
+		if (alreadyHere) // support blocking on first writer
+			return;
+		alreadyHere = 1;
+		sendeq(); // sit here until sent
+		alreadyHere = 0;
+	}
+	pushbq(c, eq);
+}
+
+void keyin(Byte c) // called from interrupt
+{
+	pushbq(c, kq);
+}
 
 void setup_io(void)  // take care of any io initialization
 { }
 
-void restore_io(void) {}
+void restore_io(void)
+{ }
 
 void getInput(void)  // must fill kq
 {
-    int c = getchar();
-
+    int c = timbreGetChar();
+ 
 	if (c != -1)
 	{
 		if (c == 0xA)
@@ -58,18 +118,13 @@ void getInput(void)  // must fill kq
 
 void sendeq(void)  // must empty eq
 {
-Byte c;
-while (qbq(eq))
+	Byte c;
+	while (qbq(eq))
     {
        c = pullbq(eq);
        if (c != 0xD)
-		putchar(c);
+        timbrePutChar(c);
     }
-}
-
-void txUartString(Byte *s)
-{
-    puts((char *)s);
 }
 
 // Leds
@@ -84,11 +139,3 @@ void yellowOff(void)  // input
 
 void yellowOn(void)
 { }
-
-// App inits
-void autoEchoOn(void);
-
-void initApp(void)  // for time stamp initialization
-{
-  autoEchoOn();
-}

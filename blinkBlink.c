@@ -63,6 +63,18 @@ void blinkBlonk(void)
 	}
 }
 
+void blinkMachine(void)
+{
+	blink();
+	activate(blinkMachine);
+}
+
+void blinkBlinkMachine(void)
+{
+	blinkBlink();
+	activate(blinkBlinkMachine);
+}
+
 void blinkBlonkMachine(void)
 {
 	blinkBlonk();

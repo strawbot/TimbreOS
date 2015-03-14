@@ -1,6 +1,6 @@
 // Printers header file for printer functions in a library  Robert Chapman III
 
-void print(char *message);
+void print(const char *message);
 void printHex(unsigned int hex);
 void printnHex(unsigned int n, unsigned int hex);
 void printDec(unsigned int dec);

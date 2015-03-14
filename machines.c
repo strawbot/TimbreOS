@@ -64,7 +64,7 @@ void runMachines(void) // run all machines
 #include "printers.h"
 QUEUE(MACHINES * 2, machinenameq);
 
-void activateOnceNamed(vector machine, char *name)
+void activateOnceNamed(vector machine, const char * name)
 {
 	Cell m,n,i;
 
@@ -85,23 +85,21 @@ void showMachineName(Cell x)
 {
 	Cell m,n,i;
 
+	print("\n"), printHex(x), print(": ");
 	i = queryq(machinenameq)/2;
-	while(i--)
-	{
+	while(i--) {
 		m = pullq(machinenameq);
 		n = pullq(machinenameq);
 		pushq(m, machinenameq);
 		pushq(n, machinenameq);
-		if (m == x)
-		{
-			print("\n"), printHex(x), print(":"), print((char *)n);
+		if (m == x) {
+			print((char *)n);
 			return;
 		}
 	}
-	printHex(x);
 }
 
-void listq(void *q) // list q items
+void listq(Qtype *q) // list q items
 {
 	Byte n,i;
 
@@ -147,7 +145,7 @@ void initMachines(void)
 
 #define N 100
 
-static Long minLoop, maxLoop, sumLoop;
+static Long minLoop, maxLoop, sumLoop, countLoop;
 static Long lastTime;
 static QUEUE(N, sumq);
 
@@ -172,6 +170,7 @@ static void machineMonitor(void)
 		sumLoop += span;
 	}
 	lastTime = thisTime;
+	countLoop++;
 	activate(machineMonitor);
 }
 
@@ -181,15 +180,17 @@ static void machineMonitor(void)
 void machineStats(void);
 void machineStats(void)
 {
-	print("\nLoop times (ms). Min:");
+	print("\nLoop times (ms). Min: ");
 	printDec(minLoop);
-	print("  Max:");
+	print("  Max: ");
 	printDec(maxLoop);
-	print("  Average:");
+	print("  Average: ");
 	if (queryq(sumq))
 		printDec(sumLoop/queryq(sumq));
 	else
-		print(" no sum");
+		print("no sum ");
+	print("  #loops: ");
+	printDec(countLoop);
 }
 
 void resetMachineMonitor(void)
@@ -197,6 +198,7 @@ void resetMachineMonitor(void)
 	minLoop = 1000000000;
 	maxLoop = 0;
 	sumLoop = 0;
+	countLoop = 0;
 	zeroq(sumq);
 	lastTime = 0;
 	activateOnce(machineMonitor);

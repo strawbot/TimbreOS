@@ -67,7 +67,6 @@ Words
 	.	DOT // ( n - ) print n in current number base
 	]	RIGHT_SQUARE_BRACKET // enter macro mode
 	word	WORD // ( c - ) parse characters up to c from input to here
-	>b	TO_BARON // ( a - ) put machine into execution queue
 	:	COLON // start a macro definition
 	constant	CONSTANT // ( n - ) give n a name
 	variable	VARIABLE // ( n - ) give n a place to be stored at a name
