@@ -380,27 +380,27 @@ void shortStore(void) // n \ a -
 /* ==== Queues == | insert | remove | end |  data space for circular queue | */
 void ZERO_Q(void) /* q -- */  /* initialize a queue */
 {
-	zeroq((Queue_t)*_DROP_);
+	zeroq((Qtype *)*_DROP_);
 }
 
 void Q(void)  /* q -- n */
 {
-	_TOP_ = q((Queue_t)_TOP_);
+	_TOP_ = q((Qtype *)_TOP_);
 }
 
 void Q_QUERY(void) /* q -- n */  /* return the size of a queue */
 {
-	_TOP_ = queryq((Queue_t)_TOP_);
+	_TOP_ = queryq((Qtype *)_TOP_);
 }
 
 void PULL(void) /* q -- n */  /* |queued item|>s  s is transferred to the data stack */
 {
-	_TOP_ = pullq((Queue_t)_TOP_);
+	_TOP_ = pullq((Qtype *)_TOP_);
 }
 
 void PUSH(void) /* n \ q -- */  /* q>|ueued items|  q is transferred from the data stack */
 {
-	pushq(_NEXT_,(Queue_t)_TOP_);
+	pushq(_NEXT_,(Qtype *)_TOP_);
 	_2DROP_;
 }
 
