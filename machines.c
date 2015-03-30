@@ -3,6 +3,10 @@
 // use compiler flags to select atomic protection or not
 // and for tracking under/overflows
 
+// add depth detector for runMachines. Each time it is entered, depth increases by 1
+// each time it is finished, depth decreases by 1
+// add protection to runMachines so it can tell if it is recursive
+
 #include "machines.h"
 #include "queue.h"
 #include "kernel.h"
