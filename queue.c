@@ -1,117 +1,83 @@
-/* Qtype declaration and access  Rob Chapman  Dec 3, 1996 */
+/* Cell sized queue facility  Robert Chapman  Mar 30, 2015 */
 
 #include "bktypes.h"
 #include "queue.h"
 
-/*
-                 Queues for supporting data and control flows
-    Queue structure: | insert | remove | end |  data space for circular queue |
-
-	The first cell is the insert pointer; the second cell is the removal 
-	pointer and the third cell is the end pointer.  Both pointers are moved 
-	down in memory by pushq() and pullq().  popq() and stuffq() move them 
-	up in memory.  When either pointer gets to the pointer for end or the 
-	end pointer if going the other way, they are set to the end pointer or 
-	just after the pointer to the end pointer.  When the queue is zeroed, 
-	both pointers are set to the same location.  Since it contains nothing, 
-	the insert pointer always points to a location where values can be 
-	written.  Once a value has been written with pushq(), then it is to 
-	point to another empty location.  The removal pointer points to the 
-	value to be pulled and when pullq() is called, it is decremented.  
-	popq() uses the insert pointer and stuffq() uses the removal pointer 
-	and they go the other way.  The structure of the queue is most 
-	efficient for the use of pushq(), pullq() and q().  Also if you ask for 
-	n cells in the queue, you actually get n+1.  This serves as an overflow 
-	for the case when you say 0 QUEUE and it also allows the queue to 
-	contain n items before it is full as opposed to n-1 items.
-
-      +-----------------------------+
-      |         +--------------+    |
-      |         |              V    V
-  | insert | remove | end |  data cells... | last data cell |
-                       |                   ^
-                       +-------------------+
-    Note: pointers may not be the same size as a data cell.
-*/
-
-void zeroq(Qtype *q) /* initialize a queue */
-{	
-	q->remove = q->insert = &q->storage[0];
+void zeroq(Cell *q)  // empty the queue
+{
+	q[QINSERT] = q[QREMOVE] = q[QEND];
 }
 
-Cell q(Qtype *q)   /* return most oldest value pushed to queue */
+Cell q(Cell *q) // return copy of oldest element
 {
-	return(*q->remove);
+	return (q[q[QREMOVE]]);
 }
 
-Cell p(Qtype *q) /* return most recent value pushed to queue */
+void pushq(Cell c, Cell *q) // push an element into the q
 {
-	if ( q->insert == q->end )
-		return(q->storage[0]);
+	q[q[QINSERT]] = c;
+	if (q[QINSERT] == QDATA)
+		q[QINSERT] = q[QEND];
 	else
-	   return(*(q->insert + 1));
+		q[QINSERT]--;
 }
 
-Cell queryq(Qtype *q)  /* return the size of a queue */
+Cell pullq(Cell *q) // pull oldest element from the q
 {
-	if (q->remove < q->insert )
-		return (Cell)( (q->end - q->insert) + (q->remove - &q->storage[0]) + 1);
+	Cell c = q[q[QREMOVE]];
+	
+	if (q[QREMOVE] == QDATA)
+		q[QREMOVE] = q[QEND];
 	else
-		return (Cell)(q->remove - q->insert );
+		q[QREMOVE]--;
+	return c;
 }
 
-Cell qsize(Qtype *q)  /* return the size of an empty queue */
+Cell sizeq(Cell *q) // return size of q
 {
-	return (Cell)(q->end - &q->storage[0]);
+	return (Cell)(q[QEND] - (Cell)QDATA);
 }
 
-Cell qleft(Qtype *q)  /* return what's left of a queue */
+Cell queryq(Cell *q) // query #elements in q
 {
-	return(qsize(q) - queryq(q));
+	if (q[QINSERT] <= q[QREMOVE])
+		return (Cell)(q[QREMOVE] - q[QINSERT]);
+	return (Cell)(q[QREMOVE] + sizeq(q) + 1 - q[QINSERT]);
 }
 
-Cell pullq(Qtype *q)  /* |queued item|>value  value is dequeued */
+Cell fullq(Cell *q) // true if q is full
 {
-	Cell value = *q->remove--;
-	if ( q->remove < &q->storage[0] )
-		q->remove = q->end;
-	return(value);
+	return (Cell)(queryq(q) == sizeq(q));
 }
 
-void pushq(Cell value, Qtype *q) /* value>|queued items|  value is queued */
+Cell p(Cell * q) // copy of last item at end of queue
 {
-	*q->insert-- = value;
-	if ( q->insert < &q->storage[0] )
-		q->insert = q->end;
+	return (q[q[QINSERT+1]]);
 }
 
-Cell popq(Qtype *q) /* value<|ueued items|  value is dequeued */
+Cell popq(Cell * q) // pop item from queue
 {
-	if ( q->insert == q->end )
-	{
-		q->insert = &q->storage[0];
-		return q->storage[0];
-	}
-	return(*++q->insert);
+	q[QINSERT]++;
+	if ( q[QINSERT] > q[QEND] )
+		q[QINSERT] = QDATA;
+	return q[q[QINSERT]];
 }
 
-void stuffq(Cell value, Qtype *q) /* |queued item|<value value is queued */
+void stuffq(Cell c, Cell * q) // stuff item into queue
 {
-	if ( q->remove == q->end )
-	{
-		q->remove = &q->storage[0];
-		q->storage[0] = value;
-	}
-	*++q->remove = value;
+	q[QREMOVE]++;
+	if ( q[QREMOVE] > q[QEND] )
+		q[QREMOVE] = QDATA;
+	q[q[QREMOVE]] = c;
 }
 
-void rotateq(Qtype *q, Cell n) /* rotate n values in the queue */
+void rotateq(Cell * q, Cell n) // rotate n queue items
 {
 	for(;n;n--)
 		pushq(pullq(q),q);
 }
 
-void transferq(Qtype *srcq, Qtype *dstq, Cell n)
+void transferq(Cell * srcq, Cell * dstq, Cell n) // transfer n items between queues
 {  /* transfer values from srcq to dstq */
 	for(;n;n--)
 		pushq(pullq(srcq),dstq);

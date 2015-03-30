@@ -1,66 +1,70 @@
-/*			     Qtypes
-  This queue structure is used to refer to the elements.  The size of
-  storage is irrevelant but ANSI C must have a size greater than 0.
-  The element, end, points to the last storage item.
-*/
-#ifndef QUEUE_H
-#define QUEUE_H
-/* Qtype definitions:   QUEUE(128,dataq)  */
-#include "bktypes.h"
-
-// generic structure
-typedef struct {\
-volatile	Cell *insert;\
-volatile	Cell *remove;\
-			Cell *end;\
-volatile	Cell storage[1];\
-}Qtype;
-
-// queue specific structure
-#define CQUEUE(size,name) struct {\
-volatile	Cell *insert;\
-volatile	Cell *remove;\
-volatile	Cell *end;\
-volatile	Cell storage[(size)+1];\
-}name = {&name.storage[size], &name.storage[size], &name.storage[size],{0}}
+// Cell q  Rob Chapman  Dec 4, 2009
 
 /*
-  To be consistant with BQUEUE the name should be passed to the service functions.
-  The byte q uses an array of bytes so just passing the name works. The CQUEUE
-  is a structure so passing the name pushes the whole structure onto the stack
-  which is cumbersome so it must be preceded by an & to just pass by reference.
-  An array name is this type of pointer - a constant pointer (to non-constant data).
-  To make it passable by name without the & the name should be used to create
-  a constant pointer to the queue structure:
+ Efficient structure for holding cells. Can be used to interface to asynchronous
+ processes since pointers are independant.  I R and E are indexes.
+             +-------------------v
+   | i | r | e |       ...       |-|
+     |   +--------^          ^
+     |      pull<-|->pop     |
+     |            |          |
+     |            V          |
+     |            q          |
+     |                       |
+     +-----------------------+
+                       push<-|->stuff
+                             |
+                             V
+                             p
+  insert, remove and end are all offsets and not pointers. end is the length of
+  the queue plus 1. insert and remove are incremented and modded by end or
+  decremented and made into end-1 when decrementing past 0.
+  | i | r | e | d | - length 0 actually 1
+    0   1   2   3
+  QOVERHEAD = 4
 */
-// generic pointer to specific structure
-#define QUEUE(size, name) CQUEUE(size, name##_struct); \
-	Qtype * const name = (Qtype *)&name##_struct
-// TODO: in all the routines for queue, change argument to pointer to Qtype
-// this cleans up the inside of the function
 
-//typedef CQUEUE(0,Qtype);
+#include "bktypes.h"
 
- // With the addition of INITQ and EMPTYQ, a queue can be defined in bss and then initialized
- // later at run time.  Static data arrays only, not dynamic ones.
- // To put a queue into the data area instead of bss, use: const QUEUE(n,q);
- // Actually, by initializing the pointers the queue is moved from bss to data. But
- // declaring it as const would move it to flash.
+#ifndef _CELLQ_H_
+#define _CELLQ_H_
+
+#define QINSERT		0
+#define QREMOVE		(QINSERT + 1)
+#define QEND		(QREMOVE + 1)
+#define QDATA		(QEND + 1)
+#define QOVERHEAD	(QDATA + 1)
+
+// for use in structures and enabled in init code later
+#define NEW_Q(size, name)	Cell name[(size)+QOVERHEAD]
+#define INIT_Q(q)	{ \
+						(q)[QEND] = (Cell)(sizeof(q)/sizeof(q[0])) - 1; \
+						(q)[QINSERT] = (q)[QREMOVE] = QDATA; \
+					}
+
+typedef Cell Qtype;
+
+/*
+	struct {
+		...
+		NEW_Q(10, newq);
+	} s;
+	
+	INIT_Q(s.newq);
+*/
+#define QUEUE(size, name)	 NEW_Q(size, name) = {QDATA,QDATA,QDATA+(size)}
+#define leftq(q)	 (sizeq(q) - queryq(q)) // how much is left
 
 #endif
 
-void zeroq(Qtype *);
-Cell q(Qtype *);
-Cell p(Qtype *);
-Cell queryq(Qtype *);
-Cell qsize(Qtype *);
-Cell qleft(Qtype *);
-Cell pullq(Qtype *);
-void pushq(Cell , Qtype *);
-void pushqSafe(Cell , Qtype *);
-Cell popq(Qtype *);
-Cell rpop(Qtype *);
-void stuffq(Cell , Qtype *);
-void rotateq(Qtype *, Cell );
-void transferq(Qtype *, Qtype *, Cell );
-
+void zeroq(Cell *); // empty the queue
+Cell q(Cell *); // copy of first item at head of queue
+Cell p(Cell *); // copy of last item at end of queue
+Cell queryq(Cell *); // get number of items in queue
+Cell sizeq(Cell *); // get maximum number of items queue can hold
+Cell pullq(Cell *); // pull item from queue
+void pushq(Cell , Cell *); // push item into queue
+Cell popq(Cell *); // pop item from queue
+void stuffq(Cell , Cell *); // stuff item into queue
+void rotateq(Cell *, Cell n); // rotate n queue items
+void transferq(Cell *, Cell *, Cell n); // transfer n items between queues
