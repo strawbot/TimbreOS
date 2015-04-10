@@ -38,7 +38,7 @@ void repeatTimeout(Timeout *timer) // set the timeout time for an interval after
 	timer->off = false;
 }
 
-void timeoutWait(Cell time)
+void timeoutWait(Cell time) // timed delay loop
 {
 	Timeout timer;
 

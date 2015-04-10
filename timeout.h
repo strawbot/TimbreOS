@@ -6,33 +6,28 @@
 #ifndef timeout_h
 #define timeout_h
 
-#define MSEC	/LOCALTIME_TICK
-#define MSECS	MSEC
-#define SEC * (1000UL MSECS)
-#define SECS SEC
+// Note: 16 bits max 1 minute; 32 bits max 49 days; 48 bits max 8900 years; 64 bits max forever
+// based in uS, 64 bits would give 584 million years; 48 bits would give 8.9 years
+// 32 bits for us and 32 bits for seconds goes up to 49000 years
+#define TO_MILLISECOND / LOCALTIME_TICK
+#define TO_SECOND * (1000UL TO_MILLISECONDS)
+#define TO_MINUTE * (60UL TO_SECONDS)
+#define TO_HOUR * (60UL TO_MINUTES)
+#define TO_DAY * (24UL TO_HOURS)
 
-#define MINUTE *(60UL SECS) // need more than 16 bits for more than 1
-#define MINUTES MINUTE
-#define HOUR *(60UL MINUTES)
-#define HOURS HOUR
-#define TO_DAY *(24UL HOURS)
-#define TO_DAYS TO_DAY // need more than 32 bits for more than 49 days
+// and plurals for sytactic sugar
+#define TO_MILLISECONDS TO_MILLISECOND
+#define TO_SECONDS TO_SECOND
+#define TO_MINUTES TO_MINUTE
+#define TO_HOURS TO_HOUR
+#define TO_DAYS TO_DAY
 
-// alternates
-#ifndef SECONDS
-#define MILLISECOND MSEC
-#define MILLISECONDS MSEC
-#define SECOND SEC
-#define SECONDS SEC
-#endif
-
-/*
-#define MSEC(n) (n MSECS)
-#define SEC(n) (n SECS)
-#define MIN(n) (n MINUTES)
-#define HOUR(n) (n HOURS)
-#define DAY(n) (n DAYS)
-*/
+// and shorts
+#define TO_MSECS TO_MILLISECOND
+#define TO_SECS TO_SECOND
+#define TO_MINS TO_MINUTE
+#define TO_HOURS TO_HOUR
+#define TO_DAYS TO_DAY
 
 /* evolves:
  o switch for 16 bit, 32 bit, 64 bit support for different time length support
@@ -41,12 +36,6 @@
    - multiplications in macros needs to use proper length number U, UL, ULL or casts
  o offer MSEC(n), SEC(n), MIN(n), HOUR(n), DAY(n) macros
 */
-
-// alternate for brevity and compatibility
-#define TO_MSEC MILLISECOND
-#define TO_MSECS MILLISECOND
-#define TO_SEC SECOND
-#define TO_SECS SECOND
 
 typedef struct {
 	Long timeout;	// length of timeout
@@ -65,7 +54,6 @@ typedef struct {
 //#define checkTimeout(timer) (timer <= getTime()) // this will fail after 49 days
 //#define setTimeout(time, timer) timer = getTime() + time
 //#define sinceTimeout(timer) (timer - getTime())
-
 
 #endif
 

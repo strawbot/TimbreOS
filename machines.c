@@ -46,11 +46,14 @@ void activateMachineOnce(vector machine) // only have one occurrance of a machin
 	activate(machine);
 }
 
+static Long runDepth = 0;
+
 void runMachines(void) // run all machines
 {
 	Byte n = (Byte)queryq(machineq);
 	vector machine;
 
+	runDepth++;
 	while(n--)
 	{
 		if (queryq(machineq) == 0)
@@ -61,6 +64,7 @@ void runMachines(void) // run all machines
 		safe(machine = (vector)pullq(machineq));
 		machine();
 	}
+	runDepth--;
 }
 
 // viewers
@@ -126,6 +130,7 @@ void listq(Qtype *q) // list q items
 
 void listm(void) // list machine statuses
 {
+	print("\nDepth:"), printDec(runDepth);
 	listq(machineq);
 	if (mmunderflow)
 		print("\nmunderflows"), printDec(mmunderflow);
