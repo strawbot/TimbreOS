@@ -18,8 +18,11 @@ void getInput(void);
 void setup_io(void);
 void restore_io(void);
 void COLLECTOR(void);
-void RESET(void);
+void RESET_KERNEL(void);
 
 void timbrePutChar(Byte c);
 int timbreGetChar(void);
 void timbrePutString(const char *s);
+void setTalkOut(vector talkOutPtr);
+void sfpTalk(void);
+void serialTalk(void);

@@ -1600,7 +1600,7 @@ void VARIABLE(void)  /* n -- */
 
 Cell _listhead = 0;
 
-void RESET(void)  /* -- */
+void RESET_KERNEL(void)  /* -- */
 {
 	rp = rp0_;	/* RP! */
 	sp = sp0_;	/* SP! */

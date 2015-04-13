@@ -48,7 +48,7 @@ void reconstitute(void)
     rp0_ = (Cell *)(&space[MSIZE]);
 	sp0_ = rp0_ - RCELLS;
 	dp_ = (Cell)&space[0];
-	RESET();
+	RESET_KERNEL();
 }
 
 void keyin(Byte c) // called from interrupt
@@ -66,7 +66,7 @@ void initializeTalk(void)  /* -- */
 	sp0_ = sp = rp0_ - RCELLS;
 	dp_ = (Cell)&space[0];
 	setup_io();
-	RESET();
+	RESET_KERNEL();
 	talkState = RUNNING;
 }
 

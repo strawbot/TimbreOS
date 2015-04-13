@@ -139,7 +139,7 @@ void R_FROM(void);
 void R(void);
 void RECURSIVE(void);
 void REPEAT(void);
-void RESET(void);
+void RESET_KERNEL(void);
 void RIGHT_SQUARE_BRACKET(void);
 void rp_0(void);
 void RP_STORE(void);
