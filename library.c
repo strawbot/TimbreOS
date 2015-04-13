@@ -71,8 +71,12 @@ void P(void)  /* q -- n */
 // interpret a C string; no output other than generated output
 extern Byte keyEcho;
 Cell droppedInput;
-Byte kqleft(void);
 void ZERO_TIB(void);
+
+Byte kqleft(void)  // how much room left
+{
+	return (Byte)(sizebq(kq) - qbq(kq));
+}
 
 void evaluate(Byte *string)
 {
