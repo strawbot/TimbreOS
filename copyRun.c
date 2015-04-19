@@ -7,7 +7,7 @@
  */
 
 #include "bktypes.h"
-#include "fletcher.h"
+#include "checksum.h"
 #include "copyRun.h"
 #include "flash_errors.h"
 #include "printers.h"
@@ -22,7 +22,7 @@ Long checkHeader(Long image) // check image header
 {
 	imageHead_t *ih = (imageHead_t *)image;
 
-	if (rangeCheck((Byte *)ih, (Byte *)(ih) + HEADER_SIZE) != FLASH_OK)
+	if (rangeCheck((Long)ih, (Long)(ih + HEADER_SIZE)) != FLASH_OK)
 		return ERR_OUTOFRANGE;
 
 	if (fletcher32((Byte *)ih, HEADER_SIZE - sizeof(ih->headerChecksum))
@@ -35,21 +35,19 @@ Long checkHeader(Long image) // check image header
 Long checkImage(Long image) // check image and header
 {
 	imageHead_t *ih = (imageHead_t *)image;
-	Byte *src, *dst;
-	Long size;
+	Long src, size;
 	Long result = checkHeader(image);
 	
 	if (result != CHECK_OK)
 		return result;
 	
-	src = (Byte *)ih->start;
-	dst = (Byte *)ih->dest;
+	src = ih->start;
 	size = ih->size;
 	
 	if (rangeCheck(src, src+size) != FLASH_OK)
 		return ERR_OUTOFRANGE;
 
-	if (fletcher32(src, size) != ih->checksum)
+	if (fletcher32((Byte *)src, size) != ih->checksum)
 		return ERR_CHECKSUM;
 	
 	return CHECK_OK;
@@ -129,33 +127,34 @@ void dumpHeader_cmd(void);
 
 void copyRun_cmd(void)
 {
-	copyRun(*sp++);
+	copyRun(ret);
 }
 
 void copyApp_cmd(void)
 {
-	sp[0] = copyApp(sp[0]);
+	lit(copyApp(ret));
 }
 
 void runApp_cmd(void)
 {
-	sp[0] = runApp(sp[0]);
+	lit(runApp(ret));
 }
 
 void checkHeader_cmd(void)
 {
-	printDec(checkHeader(*sp++));
+	printDec(checkHeader(ret));
 }
 
 void checkImage_cmd(void)
 {
-	printDec(checkImage(*sp++));
+	printDec(checkImage(ret));
 }
 
 void dumpHeader_cmd(void)
 {
-	imageHead_t *ih = (imageHead_t *)*sp++;
-	print("\nversion: "), printDec0(ih->mmb.mmb.major), print("."), printDec0(ih->mmb.mmb.minor), print("."), printDec0(ih->mmb.mmb.build);
+	imageHead_t *ih = (imageHead_t *)ret;
+	
+	print("\nversion: "), printDec0(ih->mmb>>24), print("."), printDec0((ih->mmb>>16)&0xFF), print("."), printnHex(4,ih->mmb&0xFFFF);
 	print("\nstart: "), printHex(ih->start);
 	print("\ndest: "), printHex(ih->dest);
 	print("\nsize: "), printDec(ih->size);
@@ -170,14 +169,14 @@ void dumpHeader_cmd(void)
 void fletcher32_cmd(void);
 void fletcher32_cmd(void)
 {
-	Long len = *sp++;
-	Byte *address = (Byte *)*sp;
+	Long len = ret;
+	Byte *address = (Byte *)ret;
 	
-	*sp = fletcher32(address, len);
+	lit(fletcher32(address, len));
 }
 
-void fwdb_cmd(void);
-void fwdb_cmd(void)
-{
-	lit(&fwdb);
-}
+//void fwdb_cmd(void);
+//void fwdb_cmd(void)
+//{
+//	lit(&fwdb);
+//}
