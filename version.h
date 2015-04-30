@@ -4,7 +4,6 @@
 #define _VERSION_H_
 
 #define VERSION_ID 0xB11DDA7E // BILDDATE
-#define VERSION_OFFSET 0x600	// common offset for all versions withing images
 
 typedef struct {
 	unsigned long headerTag;
