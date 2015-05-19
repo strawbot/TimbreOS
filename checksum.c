@@ -44,7 +44,7 @@ Short fletcher16Standard( Byte const *data, Long bytes )
         Short sum1 = 0xff, sum2 = 0xff;
  
         while (bytes) {
-                size_t tlen = bytes > 20 ? 20 : bytes;
+                Long tlen = bytes > 20 ? 20 : bytes;
                 bytes -= tlen;
                 do {
                         sum2 += sum1 += *data++;
@@ -63,7 +63,7 @@ Long fletcher32Standard( Short const *data, Long words )
         Long sum1 = 0xffff, sum2 = 0xffff;
  
         while (words) {
-                unsigned tlen = words > 359 ? 359 : words;
+                Long tlen = words > 359 ? 359 : words;
                 words -= tlen;
                 do {
                         sum2 += sum1 += *data++;

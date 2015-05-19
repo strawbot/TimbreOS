@@ -1,0 +1,20 @@
+Log for SFP
+ This log is kept with the source code and is refined as the source code changes
+ providing a human readable summary of the past, present and future of the code
+ base. As issues are encountered, they are entered under the Issues: section. As
+ they are resolved or things are changed, they are entered under the Updates:
+ section. Once they are no longer relavent, they are removed. The repository will
+ contain tags or major milestones which delineate these removals so as to serve
+ as a signpost in the source code development preventing the accumulation of clutter.
+
+Issues:
+ 1. should add structure to machines to allow for loop times to be stored. This would
+ enable tracking hot machines or ones that might need attention. Generalize the name
+ machine structure to include extra structures for such things like on the fly stats
+ but it must be efficient to minimize overhead when collecting stats on the fly. Maybe
+ this is a move towards structures for machines declared at compile time and then used
+ at run time. Right now a machine cycle is monitored not individual machines. If machine
+ queue had pointers to machine structurs, then it would be easy to add extra features.
+ If they were executable structures then they could be intermixed with unnamed machines.
+
+Updates:
