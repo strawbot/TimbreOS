@@ -16,5 +16,41 @@ Issues:
  at run time. Right now a machine cycle is monitored not individual machines. If machine
  queue had pointers to machine structurs, then it would be easy to add extra features.
  If they were executable structures then they could be intermixed with unnamed machines.
+ Not all calculations should be done each run. Only gather min stats and leave
+ calculations for when asked.
+ The question is how to connect the function address with a data structure that keeps
+ stats about it. Could put all the stats into a queue which is processed by a machine
+ whose task is to process the queue stats.
 
+  Long time = getTime();
+  		machine();
+  time = getTime() - time;
+  pushq(machine, mstatsq), pushq(time, mstatsq);
+  
+	void mstatsMachine(void)
+	{
+		while (queryq(mstatsq)) {
+			m = pullq(mstatsq);
+			t = pullq(mstatsq);
+			ms = findMachineStruct(m);
+			if (ms) {
+				ms->maxtime = max(t, ms->maxtime);
+				ms->mintime = min(t, ms->mintime);
+				ms->sumtime += t;
+				ms->times++
+			}
+		}
+		activate(mstatsMachine);
+	}
+	
+	void machineProfile(void)
+	{
+		for all machine structs...
+	}
+	
+	What if activate cycled a queue around which kept the stats. Then when reporting
+	the name lookup would occur. problem: assumes recurrent machine. Need to support
+	transient machines. Need a way of declaring machines at run time on startup so
+	their name can be associated with an address. Kind of like ActivateOnce but 
+	separate from activation; just declaration.
 Updates:

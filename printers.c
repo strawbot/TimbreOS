@@ -40,6 +40,17 @@ void printDec0(unsigned int dec)
 	lit(dec), lit(0), DOT_R();
 }
 
+void printFloat(float f, int n)
+{
+	printDec0((int)f);
+	print(".");
+	while (n--) {
+		f *= 10;
+		printDec0(((unsigned int)f)%10);
+	}
+	print(" ");
+}
+			
 void printBin(unsigned int bin)
 {
 	lit(bin), DOT_B();

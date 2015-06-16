@@ -5,6 +5,7 @@ void printHex(unsigned int hex);
 void printnHex(unsigned int n, unsigned int hex);
 void printDec(unsigned int dec);
 void printDec0(unsigned int dec);
+void printFloat(float dec, int n);
 void printBin(unsigned int bin);
 void printChar(unsigned char ch);
 void printHex2(unsigned int hex);
