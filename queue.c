@@ -52,7 +52,10 @@ Cell fullq(Cell *q) // true if q is full
 
 Cell p(Cell * q) // copy of last item at end of queue
 {
-	return (q[q[QINSERT+1]]);
+	if (q[QINSERT] == q[QEND])
+		return q[QDATA];
+	else
+		return (q[q[QINSERT]+1]);
 }
 
 Cell popq(Cell * q) // pop item from queue
