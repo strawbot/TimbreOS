@@ -55,5 +55,10 @@ Issues:
 	separate from activation; just declaration.
  2. timeouts should be like queues and not require an & in front of them to reference
     them.
+ 3. It would be nice to have an unsigned decimal printout in printers.c but as one
+    adds more features the API starts to expand quickly. Perhaps options that are
+    selectable that are themselves part of the API such as unsigned(void) that apply
+    widely.
+
 Updates:
  1. fixed bug in queues. p() never worked - it did the same as q()
