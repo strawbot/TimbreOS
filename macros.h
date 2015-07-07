@@ -1,4 +1,3 @@
-
 /* Macros for botKernel  Rob Chapman  Mar 21, 1995 */
 // Copyright TimbreWorks Engineering 1990-2005
 

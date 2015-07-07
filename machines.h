@@ -10,6 +10,7 @@ void runMachines(void);
 void initMachines(void);
 void listm(void);
 void listq(Qtype * q);
+void machineName(vector machine, const char * name);
 void activateOnceNamed(vector machine, const char *name);
 void showMachineName(Cell x);
 

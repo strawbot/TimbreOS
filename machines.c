@@ -72,11 +72,10 @@ void runMachines(void) // run all machines
 #include "printers.h"
 QUEUE(MACHINES * 2, machinenameq);
 
-void activateOnceNamed(vector machine, const char * name)
+void machineName(vector machine, const char * name) // give name to machine
 {
 	Cell m,n,i;
 
-	activateMachineOnce(machine);
 	i = queryq(machinenameq)/2U;
 	while(i--)
 	{
@@ -87,6 +86,12 @@ void activateOnceNamed(vector machine, const char * name)
 	}
 	pushq((Cell)machine, machinenameq);
 	pushq((Cell)name, machinenameq);
+}
+
+void activateOnceNamed(vector machine, const char * name)
+{
+	activateMachineOnce(machine);
+	machineName(machine, name);
 }
 
 void showMachineName(Cell x)
