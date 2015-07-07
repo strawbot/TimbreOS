@@ -53,4 +53,7 @@ Issues:
 	transient machines. Need a way of declaring machines at run time on startup so
 	their name can be associated with an address. Kind of like ActivateOnce but 
 	separate from activation; just declaration.
+ 2. timeouts should be like queues and not require an & in front of them to reference
+    them.
 Updates:
+ 1. fixed bug in queues. p() never worked - it did the same as q()
