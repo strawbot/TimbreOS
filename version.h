@@ -6,10 +6,21 @@
 #define VERSION_ID 0xB11DDA7E // BILDDATE
 
 typedef struct {
-	unsigned long headerTag;
+	Long headerTag;
 	char buildName[16];
 	char buildDate[32];
 } version_t;
+
+typedef struct {
+	union {
+		Long version;
+		struct {
+			Byte major;
+			Byte minor;
+			Short build;
+		};
+	};
+} mmb_t;
 
 /*
 	__DATE__  "Feb 12 1996"
@@ -21,14 +32,15 @@ typedef struct {
 
 char * getBuildDate(void);
 char * getBuildName(void);
-unsigned long majorVersion(void);
-unsigned long minorVersion(void);
-unsigned long buildVersion(void);
+Long majorVersion(void);
+Long minorVersion(void);
+Long buildVersion(void);
 
-unsigned long extractMajorVersion(version_t *version);
-unsigned long extractMinorVersion(version_t *version);
-unsigned long extractBuildVersion(version_t *version);
-unsigned long extractVersion(unsigned long address);
+Long extractMajorVersion(version_t *version);
+Long extractMinorVersion(version_t *version);
+Long extractBuildVersion(version_t *version);
+Long extractVersion(Long address);
+Long getVersion(void);
 
 void setBuildPrompt(void);
 void showVersion(void);
