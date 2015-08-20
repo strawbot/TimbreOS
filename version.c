@@ -20,23 +20,23 @@ char * getBuildName(void)
 	return &version.buildName[0];
 }
 
-unsigned long majorVersion(void) // use last two digits of year
+Long majorVersion(void) // use last two digits of year
 {
 	return extractMajorVersion(&version);
 }
 
-unsigned long minorVersion(void) // month 1-12
+Long minorVersion(void) // month 1-12
 {
 	return extractMinorVersion(&version);
 }
 	
-unsigned long buildVersion(void) // return ((day-1)*24 + hour)*60 + minute
+Long buildVersion(void) // return ((day-1)*24 + hour)*60 + minute
 {
 	return extractBuildVersion(&version);
 }
 
 // major, minor, build extraction	
-unsigned long extractMajorVersion(version_t *version)
+Long extractMajorVersion(version_t *version)
 {
 	char year[3];
 	
@@ -44,7 +44,7 @@ unsigned long extractMajorVersion(version_t *version)
 	return strtoul(year, (char **)NULL, 10);
 }
 
-unsigned long extractMinorVersion(version_t *version)
+Long extractMinorVersion(version_t *version)
 {
 	if (0 == memcmp(&version->buildDate[0], "Jan", 3)) return 1;
 	if (0 == memcmp(&version->buildDate[0], "Feb", 3)) return 2;
@@ -61,12 +61,12 @@ unsigned long extractMinorVersion(version_t *version)
 	return 0;
 }
 
-unsigned long extractBuildVersion(version_t *version)
+Long extractBuildVersion(version_t *version)
 {
 	char day[3] = {0, 0, 0};
 	char hour[3] = {0, 0, 0};
 	char minute[3] = {0, 0, 0};
-	unsigned long build;
+	Long build;
 	
 	memcpy(&day[0], &version->buildDate[4], 2);
 	memcpy(&hour[0], &version->buildDate[12], 2);
@@ -77,10 +77,10 @@ unsigned long extractBuildVersion(version_t *version)
 	return build * 60 + strtoul(minute, (char **)NULL, 10);
 }
 
-unsigned long extractVersion(unsigned long address) // address might not be long aligned
+Long extractVersion(Long address) // address might not be long aligned
 {
 	version_t *version = (version_t *)address;
-	unsigned long mmb = 0;
+	Long mmb = 0;
 	
 	if (bytesToLong((Byte *)&version->headerTag) == VERSION_ID)
 	{
@@ -88,6 +88,17 @@ unsigned long extractVersion(unsigned long address) // address might not be long
 		mmb = (mmb<<8) + extractMinorVersion(version);
 		mmb = (mmb<<16) + extractBuildVersion(version);
 	}
+	return mmb;
+}
+
+Long getVersion(void)
+{
+	Long mmb = 0;
+	
+	mmb = extractMajorVersion(&version);
+	mmb = (mmb<<8) + extractMinorVersion(&version);
+	mmb = (mmb<<16) + extractBuildVersion(&version);
+
 	return mmb;
 }
 

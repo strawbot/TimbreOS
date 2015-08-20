@@ -174,9 +174,3 @@ void fletcher32_cmd(void)
 	
 	lit(fletcher32(address, len));
 }
-
-//void fwdb_cmd(void);
-//void fwdb_cmd(void)
-//{
-//	lit(&fwdb);
-//}
