@@ -70,8 +70,6 @@ void initializeTalk(void)  /* -- */
 	talkState = RUNNING;
 }
 
-Cell recursed; // incremented if we recursed when we should never do
-
 void talkStateMachine(void)
 {
 	if (qbq(eq) != 0) // check output from kernel
@@ -80,19 +78,7 @@ void talkStateMachine(void)
 	{
 		getInput();
 		if (qbq(kq)) // check input to kernel
-		{
 			yellowOn(); // blink yellow LED when processing text
-			switch(talkState)
-			{
-				case RUNNING:	talkState = WAITING; // avoid recursion
-								BARON();
-								talkState = RUNNING;
-								break;
-				case WAITING:	recursed++;
-								talkState = RUNNING;
-								break;
-			}
-		}
 		else
 			yellowOff();
 	}
