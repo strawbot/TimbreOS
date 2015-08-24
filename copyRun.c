@@ -132,12 +132,12 @@ void copyRun_cmd(void)
 
 void copyApp_cmd(void)
 {
-	lit(copyApp(ret));
+	_TOP_ = copyApp(_TOP_);
 }
 
 void runApp_cmd(void)
 {
-	lit(runApp(ret));
+	_TOP_ = runApp(_TOP_);
 }
 
 void checkHeader_cmd(void)
