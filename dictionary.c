@@ -33,7 +33,6 @@ static void qfree(Cell address)
 }
 
 // growth and shrink
-#define BUFFER 20		// keep this much left
 #define HASH_SEED 8315	// hash starting point
 // prime numbers just less than n**2
 static Short primeSizes[] = {256-5,512-3,1024-3,2048-9,4096-3,8192-1,16384-3,32768-19,65536-15};
@@ -41,7 +40,7 @@ static Short primeSizes[] = {256-5,512-3,1024-3,2048-9,4096-3,8192-1,16384-3,327
 static Short hashSize(Short n)  // select table size
 {
     for (Long i = 0; i < sizeof(primeSizes); i++)
-		if (primeSizes[i] >= n)
+        if (primeSizes[i]/2 >= n)
 			return primeSizes[i];
     return primeSizes[sizeof(primeSizes)/sizeof(primeSizes[0])-1];
 }
@@ -239,7 +238,7 @@ void initDict(dictionary_t * dict, Short n) // fill in dictionary template and a
     char ** table = (char**)allocate(size * sizeof(char**));
 
 	dict->capacity = size;
-	dict->free = size - BUFFER;
+    dict->free = size/2;
     dict->table = (char **)table;
     for (Short i=0; i<dict->capacity; i++)
         dict->table[i] = NULL;
