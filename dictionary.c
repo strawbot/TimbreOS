@@ -11,7 +11,6 @@
  *  to free up tables. This way initDict could be used without emptyDict.
  */
 #include "dictionary.h"
-#include "printers.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -109,8 +108,6 @@ static char ** hash(char * string, dictionary_t * dict)
 	}
 
     hash %= dict->capacity;
-    if (hash >= dict->capacity)
-        printf("Hash [%d] too big [%d]",hash, dict->capacity);
     return &dict->table[hash];
 }
 
@@ -207,9 +204,7 @@ void dictDelete(char * string, dictionary_t * dict) // delete inserted string fr
 
     if (*loc) {
         if (**loc) {
-//		print("deleting"), printHex((Cell)loc), printHex((Cell)*loc);
             *loc = &zeroString[0];
-//			printHex((Cell)*loc);
             minusEntry(dict);
             deleteAdjunct(loc, dict);
 		}
@@ -248,9 +243,6 @@ void initDict(dictionary_t * dict, Short n) // fill in dictionary template and a
     dict->table = (char **)table;
     for (Short i=0; i<dict->capacity; i++)
         dict->table[i] = NULL;
-//    memset(table, 0, size*sizeof(Cell));
-//    print ("Table:"),printHex((Cell)table),printHex((Cell)table+size*sizeof(Cell));
-//    printHex((Cell)&dict->table[dict->capacity] - (Cell)table);
     dict->adjunct = NULL;
 }
 

@@ -28,12 +28,6 @@ void *malloc(size_t size)
     return m;
 }
 
-void exception(int x)
-{
-    if (x)
-        printf("excpeioion");
-}
-
 extern "C" {
 
 #define error(msg)			print("Error: "#msg"\n")
@@ -95,14 +89,16 @@ void testDictionary::TestFree()
 void testDictionary::TestSizes()
 {
     QCOMPARE((int)hashSize(1), 251);
-    QCOMPARE((int)hashSize(251), 251);
+    QCOMPARE((int)hashSize(251), 509);
     QCOMPARE((int)hashSize(252), 509);
     QCOMPARE((int)hashSize(510), 1021);
-    QCOMPARE((int)hashSize(1022), 2039);
+    QCOMPARE((int)hashSize(1022), 4093);
     QCOMPARE((int)hashSize(2040), 4093);
     QCOMPARE((int)hashSize(4094), 8191);
-    QCOMPARE((int)hashSize(8192), 16381);
-    QCOMPARE((int)hashSize(16382), 32749);
+    QCOMPARE((int)hashSize(16381/2), 16381);
+    QCOMPARE((int)hashSize(8192), 32749);
+    QCOMPARE((int)hashSize(32749/2), 32749);
+    QCOMPARE((int)hashSize(16382), 65521);
     QCOMPARE((int)hashSize(32750), 65521);
     QCOMPARE((int)hashSize(65535), 65521);
 }
@@ -111,7 +107,7 @@ void testDictionary::TestInitDict()
 {
     QVERIFY(testdict.adjunct == 0);
     QCOMPARE((int)testdict.capacity, 251);
-    QCOMPARE((int)testdict.free, testdict.capacity-BUFFER);
+    QCOMPARE((int)testdict.free, testdict.capacity/2);
     QVERIFY(testdict.table != 0);
 
     QVERIFY(testdict.table[0] == NULL);
@@ -143,7 +139,7 @@ void testDictionary::TestEntries()
         plusEntry(&testdict);
     QCOMPARE(0, (int)testdict.free);
     plusEntry(&testdict);
-    QCOMPARE(n-1, (int)testdict.free);
+    QCOMPARE(testdict.capacity/2-1, (int)testdict.free);
 }
 
 void testDictionary::TestCheckAdjunct()
