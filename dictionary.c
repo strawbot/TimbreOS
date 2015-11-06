@@ -108,16 +108,23 @@ static char ** hash(char * string, dictionary_t * dict)
 		hash = (hash << 3) | (hash >> 13);
 	}
 
-	return &dict->table[hash % dict->capacity];
+    hash %= dict->capacity;
+    if (hash >= dict->capacity)
+        printf("Hash [%d] too big [%d]",hash, dict->capacity);
+    return &dict->table[hash];
 }
 
 // rehash based on first character of string
 static char ** rehash(char * string, char  ** loc, dictionary_t * dict)
 {
 	loc += (*string + 1) * sizeof(Cell);
-    if (loc >= &dict->table[dict->capacity - 1])
-        loc -= dict->capacity;// * sizeof(Cell);
-	return loc;
+    if (loc >= &dict->table[dict->capacity - 1]) {
+        Short index = loc - &dict->table[0];
+
+        index %= dict->capacity;
+        loc = &dict->table[index];
+    }
+    return loc;
 }
 
 // locate and bump if necessary
@@ -146,7 +153,7 @@ static Cell bumpAdjunct(Cell adjunct, char ** loc, dictionary_t * dict)
 	
 	if (dict->adjunct == NULL) return adjunct;
 	
-	index = (Short)(loc - dict->table);
+    index = (Short)(loc - dict->table)/sizeof(Cell);
 	bumped = dict->adjunct[index];
 	dict->adjunct[index] = adjunct;
 	
@@ -156,7 +163,7 @@ static Cell bumpAdjunct(Cell adjunct, char ** loc, dictionary_t * dict)
 static void deleteAdjunct(char ** loc, dictionary_t * dict)
 {
 	if (dict->adjunct)
-		dict->adjunct[(Short)(loc - dict->table)] = 0;
+        dict->adjunct[(Short)(loc - dict->table)/sizeof(Cell)] = 0;
 }
 
 // Dictionary interface
@@ -180,7 +187,7 @@ void dictInsert(char * string, dictionary_t * dict) // insert a string into the 
 	}
 	*loc = string;
     if (dict->adjunct != NULL)
-        dict->adjunct[(Short)(loc - dict->table)] = adjunct;
+        dict->adjunct[(Short)(loc - dict->table)/sizeof(Cell)] = adjunct;
 }
 
 void dictAppend(char * string, dictionary_t * dict) // append a string to the dictionary
@@ -200,11 +207,11 @@ void dictDelete(char * string, dictionary_t * dict) // delete inserted string fr
 
     if (*loc) {
         if (**loc) {
-		print("deleting"), printHex((Cell)loc), printHex((Cell)*loc);
+//		print("deleting"), printHex((Cell)loc), printHex((Cell)*loc);
             *loc = &zeroString[0];
-			printHex((Cell)*loc);
+//			printHex((Cell)*loc);
             minusEntry(dict);
-			deleteAdjunct(loc, dict);
+            deleteAdjunct(loc, dict);
 		}
 	}
 }
@@ -219,12 +226,12 @@ Cell * dictAdjunct(char * string, dictionary_t * dict) // return an associate ce
 	char ** loc  = locate(string, dict);
 
 	checkAdjunct(dict);
-	return &dict->adjunct[loc - dict->table];
+    return &dict->adjunct[(loc - dict->table)/sizeof(Cell)];
 }
 
 dictionary_t * dictionary(Short size) // return a dictionary big enough to hold size
 {
-    dictionary_t * dict = (dictionary_t *)allocate(size * sizeof(Cell));
+    dictionary_t * dict = (dictionary_t *)allocate(sizeof(dictionary_t));
 	
     initDict(dict, size);
 	
@@ -234,14 +241,17 @@ dictionary_t * dictionary(Short size) // return a dictionary big enough to hold 
 void initDict(dictionary_t * dict, Short n) // fill in dictionary template and allocate string table
 {
 	Short size = hashSize(n);
-    void * table = allocate(size * sizeof(Cell));
+    char ** table = (char**)allocate(size * sizeof(char**));
 
 	dict->capacity = size;
 	dict->free = size - BUFFER;
     dict->table = (char **)table;
-    memset(table, 0, size*sizeof(Cell));
-    print ("Table:"),printHex((Cell)table),printHex((Cell)table+size*sizeof(Cell));
-	dict->adjunct = NULL;
+    for (Short i=0; i<dict->capacity; i++)
+        dict->table[i] = NULL;
+//    memset(table, 0, size*sizeof(Cell));
+//    print ("Table:"),printHex((Cell)table),printHex((Cell)table+size*sizeof(Cell));
+//    printHex((Cell)&dict->table[dict->capacity] - (Cell)table);
+    dict->adjunct = NULL;
 }
 
 void emptyDict(dictionary_t * dict) // return previous tables and start anew
@@ -272,4 +282,11 @@ void emptyDict(dictionary_t * dict) // return previous tables and start anew
 
  5. purpose of zeroString is to hold a location in a chain of rehashes. It can be replaced but who
  will signal its replacement? When will it be reused? Append and Insert should be able to use it.
+
+ 6. to keep collisions low the free is much less than capacity. Perhaps half.
+    Once there are no more free, then a new dictionary twice the size should
+    be generated. When requesting a size, the dict size returned should be at
+    least twice the size. I.E. request 240 means that it must fit at least
+    480. Capacity will be 509 and free will be 254.
+
 */
