@@ -34,6 +34,7 @@ private slots:
     void TestDelete();
     void TestFind();
     void TestAdjunct();
+    void TestUpsize();
 };
 
 #endif // TESTDICTIONARY_H

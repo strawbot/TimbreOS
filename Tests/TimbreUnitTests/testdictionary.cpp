@@ -28,6 +28,12 @@ void *malloc(size_t size)
     return m;
 }
 
+void breakpoint(void)
+{
+    printf("");
+}
+
+
 extern "C" {
 
 #define error(msg)			print("Error: "#msg"\n")
@@ -37,7 +43,7 @@ extern "C" {
 #include "dictionary.c"
 }
 
-dictionary_t testdict = {NULL, NULL, 0, 0};
+dictionary_t testdict = {NULL, NULL, 0, 0, false};
 
 testDictionary::testDictionary(QObject *parent) :
     QObject(parent)
@@ -54,6 +60,13 @@ std::string randomString()
     while(length--)
         random[length] = rand()%(lastChar-firstChar) + firstChar;
     return random;
+}
+
+void fillDicitionary()
+{
+    while (testdict.free)
+       dictInsert((char*)randomString().c_str(), &testdict);
+
 }
 
 void testDictionary::init()
@@ -298,4 +311,54 @@ void testDictionary::TestAdjunct()
     *dictAdjunct(clone, &testdict) += 1;
     QVERIFY(1 == *dictAdjunct(s, &testdict));
 
+}
+
+void testDictionary::TestUpsize()
+{
+    char * s1 = (char *)"string";
+    char * s2 = (char *)"string";
+    char * s3 = (char *)"other string";
+    Short n = testdict.capacity;
+
+    dictInsert(s1, &testdict);
+    dictInsert(s2, &testdict);
+    dictInsert(s3, &testdict);
+    upsizeDict(&testdict);
+    QVERIFY(n != testdict.capacity);
+    QVERIFY(s2 == dictFind(s2, &testdict));
+    QVERIFY(s3 == dictFind(s3, &testdict));
+    dictDelete(s2, &testdict);
+    QVERIFY(s1 == dictFind(s2, &testdict));
+
+    emptyDict(&testdict);
+    initDict(&testdict, 1);
+    QVERIFY(n == testdict.capacity);
+    while (testdict.free)
+        dictInsert((char*)randomString().c_str(), &testdict);
+    QBENCHMARK_ONCE {upsizeDict(&testdict);}
+    QVERIFY(n != testdict.capacity);
+
+    // test upsize flag
+    emptyDict(&testdict);
+    initDict(&testdict, 1);
+    QVERIFY(n == testdict.capacity);
+    fillDicitionary();
+    dictInsert((char*)randomString().c_str(), &testdict);
+    QVERIFY(n == testdict.capacity);
+    // test auto overflow update
+    emptyDict(&testdict);
+    initDict(&testdict, 1);
+    fillDicitionary();
+    setUpsize(true, &testdict);
+    dictInsert((char*)randomString().c_str(), &testdict);
+    QVERIFY(n != testdict.capacity);
+
+    // test adjunct upsize and ordering
+    dictInsert(s1, &testdict);
+    dictInsert(s3, &testdict);
+    *dictAdjunct(s1, &testdict) = 1;
+    *dictAdjunct(s3, &testdict) = 2;
+    upsizeDict(&testdict);
+    QCOMPARE((int)*dictAdjunct(s1, &testdict), 1);
+    QCOMPARE((int)*dictAdjunct(s3, &testdict), 2);
 }

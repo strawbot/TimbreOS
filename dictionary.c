@@ -2,11 +2,11 @@
 // fast hashed string lookup with adjunct meaning
 
 /* Notes:
- *  use 1% of capacity for original free value
+ *  use 50% of capacity for original free value
  *  when free goes to zero, check resize flag to see if it should be upsized
  *  if you want a dictionary of size == capacity, it will not fit because free is always < capacity
  *   should free be less than capacity?
- *    free = 99*capacity/100;
+ *    free = 50*capacity/100;
  *  Could add a marker to dictionary structure that indicates first use and whether it is valid or not
  *  to free up tables. This way initDict could be used without emptyDict.
  */
@@ -34,8 +34,8 @@ static void qfree(Cell address)
 
 // growth and shrink
 #define HASH_SEED 8315	// hash starting point
-// prime numbers just less than n**2
-static Short primeSizes[] = {256-5,512-3,1024-3,2048-9,4096-3,8192-1,16384-3,32768-19,65536-15};
+// hash table sizes
+static Short primeSizes[] = {HASH8, HASH9, HASH10, HASH11, HASH12, HASH13, HASH14, HASH15, HASH16};
 
 static Short hashSize(Short n)  // select table size
 {
@@ -48,9 +48,13 @@ static Short hashSize(Short n)  // select table size
 static void plusEntry(dictionary_t * dict) // place to upsize; could use 2/3 full crit to upsize
 {
 	if (dict->free == 0) {
-		note("Dictionary full. Emptying.");
-		emptyDict(dict);
-        initDict(dict, dict->capacity);
+        if (dict->upsize)
+            upsizeDict(dict);
+        else {
+            note("Dictionary full. Emptying.");
+            emptyDict(dict);
+            initDict(dict, dict->capacity/2);
+        }
 	}
 	dict->free -= 1;
 }
@@ -130,8 +134,35 @@ static char ** locate(char * string, dictionary_t * dict)
 
     while (different(string, loc))
         loc = rehash(string, loc, dict);
-
 	return loc;
+}
+
+char ** locateAppend(char * string, dictionary_t * dict)
+{
+    char ** loc = hash(string, dict);
+
+    while (used(*loc))
+        loc = rehash(string, loc, dict);
+    return loc;
+}
+
+char ** locateLast(char * string, dictionary_t * dict)
+{
+    char ** loc, ** matchloc;
+
+    loc = matchloc = hash(string, dict);
+
+    while (true) {
+
+        if (used(*loc)) {
+            if (same(string, *loc))
+                matchloc = loc;
+            loc = rehash(string, loc, dict);
+        }
+        else
+            break;
+    }
+    return matchloc;
 }
 
 static char * bump(char * string, char ** loc)
@@ -159,7 +190,7 @@ static Cell bumpAdjunct(Cell adjunct, char ** loc, dictionary_t * dict)
 static void deleteAdjunct(char ** loc, dictionary_t * dict)
 {
 	if (dict->adjunct)
-        dict->adjunct[(Short)(loc - dict->table)/sizeof(Cell)] = 0;
+        *adjunctLocation(loc, dict) = 0;
 }
 
 // Dictionary interface
@@ -183,18 +214,13 @@ void dictInsert(char * string, dictionary_t * dict) // insert a string into the 
 	}
 	*loc = string;
     if (dict->adjunct != NULL)
-        dict->adjunct[(Short)(loc - dict->table)/sizeof(Cell)] = adjunct;
+        *adjunctLocation(loc, dict) = adjunct;
 }
 
 void dictAppend(char * string, dictionary_t * dict) // append a string to the dictionary
 {
-	char ** loc;
-
-	plusEntry(dict);
-	loc = hash(string, dict);
-    while (used(*loc))
-		loc = rehash(string, loc, dict);
-	*loc = string;
+    plusEntry(dict);
+    *locateAppend(string, dict) = string;
 }
 	
 void dictDelete(char * string, dictionary_t * dict) // delete inserted string from dictionary
@@ -220,6 +246,11 @@ Cell * dictAdjunct(char * string, dictionary_t * dict) // return an associate ce
 	char ** loc  = locate(string, dict);
 
 	checkAdjunct(dict);
+    return adjunctLocation(loc, dict);
+}
+
+Cell * adjunctLocation(char ** loc, dictionary_t * dict)
+{
     return &dict->adjunct[(loc - dict->table)/sizeof(Cell)];
 }
 
@@ -243,6 +274,12 @@ void initDict(dictionary_t * dict, Short n) // fill in dictionary template and a
     for (Short i=0; i<dict->capacity; i++)
         dict->table[i] = NULL;
     dict->adjunct = NULL;
+    dict->upsize = false;
+}
+
+void setUpsize(bool flag, dictionary_t * dict)
+{
+    dict->upsize = flag;
 }
 
 void emptyDict(dictionary_t * dict) // return previous tables and start anew
@@ -253,14 +290,51 @@ void emptyDict(dictionary_t * dict) // return previous tables and start anew
     dict->adjunct = NULL;
 }
 
+// Upsizing dictionary
+// must maintain ordering of strings and their associated ajunct value
+// first one found in old is deleted from old and appended to new; continue till string is not in old
+void upsizeDict(dictionary_t * dict)
+{
+    dictionary_t old;
+
+    old.adjunct = dict->adjunct;
+    old.capacity = dict->capacity;
+    old.free = dict->free;
+    old.table = dict->table;
+    old.upsize = dict->upsize;
+
+    initDict(dict, old.capacity);               // get a new dictionary
+    if (old.adjunct)
+        checkAdjunct(dict);
+
+    for (Short i=0; i<old.capacity; i++) {
+        char * string = old.table[i];
+        char ** locold;
+        Cell adj;
+
+        if (used(string)) {
+            while (true) {
+                locold = locate(string, &old);
+                if (used(*locold)) {
+                    dictAppend(*locold, dict);
+                    if (old.adjunct) {
+                        adj = *adjunctLocation(locold, &old);
+                        if (adj)
+                            *adjunctLocation(locateLast(string, dict), dict) = adj;
+                    }
+                    *locold = zeroString;
+                }
+                else
+                    break;
+            }
+        }
+    }
+    emptyDict(&old);
+}
 
 /* Notes:
- 1. to upsize: get dictionary size and double it.
- walk through 1st dictionary until all locations unused. For each location,
- get string, do a find, then move string and adjunct to new dictionary. This reverses
- the order of same strings tho. Perhaps that would need to be recursive to do it right.
- Recognizing same strings as a special case could be sped up for upsizing.
- 
+ 1. What to do if allocation of memory fails?
+
  2. start with a statically generated dictionary so it can be used withouth memory
  allocation? Or check at compile to see if memory allocation is available and if not
  do a static allocation? or leave that as outside the scope of the tool.
@@ -274,10 +348,12 @@ void emptyDict(dictionary_t * dict) // return previous tables and start anew
  5. purpose of zeroString is to hold a location in a chain of rehashes. It can be replaced but who
  will signal its replacement? When will it be reused? Append and Insert should be able to use it.
 
- 6. to keep collisions low the free is much less than capacity. Perhaps half.
-    Once there are no more free, then a new dictionary twice the size should
-    be generated. When requesting a size, the dict size returned should be at
-    least twice the size. I.E. request 240 means that it must fit at least
-    480. Capacity will be 509 and free will be 254.
+ 6. should be a way to code for no memory allocation in case it is not available. Somehow get the
+    dictionary table and ajunct at compile time using macros to get the right size.
 
+ 7. adjunct which doesn't exist or if the string doesn't get found should return NULL instead
+    of a location.
+
+ 8. since used locations don't get passed to new dictionary when upsizing, there might be a
+    different dynamic. But it might be ok. Kind of clears out the clutter. Only there if deletes are used.
 */
