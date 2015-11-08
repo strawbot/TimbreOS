@@ -20,7 +20,7 @@ private slots:
     void TestFree();
     void TestSizes();
     void TestInitDict();
-    void TestEmptyDict();
+    void TestfreeDict();
     void TestEntries();
     void TestCheckAdjunct();
     void TestUsed();

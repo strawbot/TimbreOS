@@ -71,7 +71,7 @@ void fillDicitionary()
 
 void testDictionary::init()
 {
-    emptyDict(&testdict);
+    freeDict(&testdict);
     initDict(&testdict, 1);
     srand(0);
     s = (char *)"string1";
@@ -132,9 +132,9 @@ void testDictionary::TestInitDict()
         QVERIFY(testdict.table[i] == NULL);
 }
 
-void testDictionary::TestEmptyDict()
+void testDictionary::TestfreeDict()
 {
-    emptyDict(&testdict);
+    freeDict(&testdict);
     QVERIFY(testdict.table == 0);
     QVERIFY(testdict.adjunct == 0);
     QVERIFY(0 != strcmp(s, zeroString));
@@ -332,23 +332,16 @@ void testDictionary::TestUpsize()
     dictDelete(s2, &testdict);
     QVERIFY(s1 == dictFind(s2, &testdict));
 
-    emptyDict(&testdict);
-    initDict(&testdict, 1);
-    QVERIFY(n == testdict.capacity);
-    while (testdict.free)
-        dictInsert((char*)randomString().c_str(), &testdict);
-    QBENCHMARK_ONCE {upsizeDict(&testdict);}
-    QVERIFY(n != testdict.capacity);
-
     // test upsize flag
-    emptyDict(&testdict);
+    freeDict(&testdict);
     initDict(&testdict, 1);
     QVERIFY(n == testdict.capacity);
     fillDicitionary();
     dictInsert((char*)randomString().c_str(), &testdict);
     QVERIFY(n == testdict.capacity);
+
     // test auto overflow update
-    emptyDict(&testdict);
+    freeDict(&testdict);
     initDict(&testdict, 1);
     fillDicitionary();
     setUpsize(true, &testdict);
@@ -363,4 +356,13 @@ void testDictionary::TestUpsize()
     upsizeDict(&testdict);
     QCOMPARE((int)*dictAdjunct(s1, &testdict), 1);
     QCOMPARE((int)*dictAdjunct(s3, &testdict), 2);
+
+    // benchmark an upsize
+    freeDict(&testdict);
+    initDict(&testdict, HASH16);
+    QVERIFY(HASH16 == testdict.capacity);
+    while (testdict.free)
+        dictInsert((char*)randomString().c_str(), &testdict);
+    QBENCHMARK_ONCE {upsizeDict(&testdict);}
+    QVERIFY(n != testdict.capacity);
 }
