@@ -14,7 +14,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-// Externals
 // Helper
 void * allocate(size_t size)
 {
@@ -245,6 +244,9 @@ Cell * dictAdjunct(char * string, dictionary_t * dict) // return an associate ce
 {
 	char ** loc  = locate(string, dict);
 
+    if (!used(*loc))
+        return NULL;
+
 	checkAdjunct(dict);
     return adjunctLocation(loc, dict);
 }
@@ -351,9 +353,13 @@ void upsizeDict(dictionary_t * dict)
  6. should be a way to code for no memory allocation in case it is not available. Somehow get the
     dictionary table and ajunct at compile time using macros to get the right size.
 
- 7. adjunct which doesn't exist or if the string doesn't get found should return NULL instead
-    of a location.
-
- 8. since used locations don't get passed to new dictionary when upsizing, there might be a
+ 7. since used locations don't get passed to new dictionary when upsizing, there might be a
     different dynamic. But it might be ok. Kind of clears out the clutter. Only there if deletes are used.
+
+ 8. statically defined dictionaries could not be upgraded and should contain a flag to prevent that. Perhaps
+    the upsize flag would prevent initdict from doing a free and instead would force it to empty all locations.
+    Maybe there is a cleanDict() function which only does the cleaning or table and adjunct and resetting
+    of free.
+
+ 9. should the HASHn sized reflect the free size and not the capacity?
 */

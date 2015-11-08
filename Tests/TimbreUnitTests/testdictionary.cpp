@@ -195,7 +195,7 @@ void testDictionary::TestHash()
     // perfect distribution would yield a sum of half the capacity; more collisions to single location get exponentially worse
     checkAdjunct(&testdict);
     for (Byte i=0; i<testdict.capacity*50/100; i++) { // fill up 50% of the dictionary
-        Cell * adj = dictAdjunct((char*)randomString().c_str(), &testdict);
+        Cell * adj = adjunctLocation(locate((char*)randomString().c_str(), &testdict), &testdict);
         if (*adj)
             *adj *= 2;
         else
@@ -306,6 +306,8 @@ void testDictionary::TestAdjunct()
 {
     char *clone = (char *)std::string(s).c_str();
 
+    QVERIFY(NULL == dictAdjunct(s, &testdict));
+    QVERIFY(NULL == dictAdjunct(clone, &testdict));
     dictInsert(s, &testdict);
     QVERIFY(0 == *dictAdjunct(s, &testdict));
     *dictAdjunct(clone, &testdict) += 1;
