@@ -43,6 +43,12 @@ enum {// prime numbers just less than n**2
 /* attempt 2
 #define DICT_TABLE(n, name) struct name{Cell table[n]; Cell adjunct[n]; Short capacity; Short free; bool upsize;} name = {0,0,n,n/2,false}
 */
+// attempt 3; like QUEUE, BYTEQ
+#define HASHDICT(n, name) \
+    static char * name##table[n]={NULL}; \
+    static Cell name##adjunct[n]={0}; \
+    dictionary_t name={&name##table[0], &name##adjunct[0], n, n/2, false}
+
 /* would like it to work but not allowed
 #define DICT(n, name) \
 #if   n/2 < HASH8  DICT_TABLE(HASH8, name) \
