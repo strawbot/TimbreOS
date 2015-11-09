@@ -3,3 +3,6 @@ wordlist.txt
 help.c
 *.bak
 kernel.s
+*.o
+moc*.cpp
+Tests/build-TimbreUnitTests-Desktop-Debug
