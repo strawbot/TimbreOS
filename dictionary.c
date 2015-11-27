@@ -63,14 +63,6 @@ static void minusEntry(dictionary_t * dict) // place to downsize if desired
     dict->free += 1;
 }
 
-static void checkAdjunct(dictionary_t * dict)
-{
-    if (dict->adjunct == 0) {
-        dict->adjunct = (Cell *)allocate(dict->capacity*sizeof(Cell));
-        memset(dict->adjunct, 0, dict->capacity*sizeof(Cell));
-    }
-}
-
 // Table checks
 static char zeroString[] = {'\0'}; // used in place of deleted locations
 
@@ -145,24 +137,6 @@ static Short locateAppend(char * string, dictionary_t * dict)
     return index;
 }
 
-static Short locateLast(char * string, dictionary_t * dict)
-{
-    Short index, lastIndex;
-
-    index = lastIndex = hash(string, dict);
-
-    while(true) {
-        if (used(dict->table[index])) {
-            if (same(string, dict->table[index]))
-                lastIndex = index;
-            index = rehash(string, index, dict);
-        }
-        else
-            break;
-    }
-    return lastIndex;
-}
-
 // Dictionary interface
 
 // Management
@@ -179,7 +153,7 @@ void initDict(dictionary_t * dict, Short n) // fill in dictionary template and a
 {
     dict->capacity = hashSize(n);
     dict->table = (char**)allocate(dict->capacity * sizeof(char**));
-    dict->adjunct = NULL;
+    dict->adjunct = (Cell *)allocate(dict->capacity*sizeof(Cell));
     emptyDict(dict);
 }
 
@@ -190,11 +164,10 @@ void setUpsize(bool flag, dictionary_t * dict)
 
 void emptyDict(dictionary_t * dict) // empty out any content
 {
-    for (Short i=0; i<dict->capacity; i++)
+    for (Short i=0; i<dict->capacity; i++) {
         dict->table[i] = NULL;
-    if (dict->adjunct)
-        for (Short i=0; i<dict->capacity; i++)
-            dict->adjunct[i] = 0;
+        dict->adjunct[i] = 0;
+    }
     dict->free = dict->capacity/2;
     dict->upsize = false;
 }
@@ -212,6 +185,7 @@ void freeDict(dictionary_t * dict) // return previous tables and start anew
 // first one found in old is deleted from old and appended to new; continue till string is not in old
 void upsizeDict(dictionary_t * dict)
 {
+    Short index, last;
     dictionary_t old;
 
     old.adjunct = dict->adjunct;
@@ -221,24 +195,22 @@ void upsizeDict(dictionary_t * dict)
     old.upsize = dict->upsize;
 
     initDict(dict, old.capacity);               // get a new dictionary
-    if (old.adjunct)
-        checkAdjunct(dict);
 
     for (Short i=0; i<old.capacity; i++) {
         char * string = old.table[i];
 
         if (used(string)) {
             while (true) { // relocate all strings that match
-                Short index = locate(string, &old);
-                if (used(old.table[index])) {
-                    dictAppend(old.table[index], dict);
-                    if (old.adjunct) {
-                        dict->adjunct[locateLast(string, dict)] = old.adjunct[index];
-                    }
-                    old.table[index] = zeroString;
-                }
-                else
-                    break;
+                index = locate(string, &old); // get first occurance in old dict
+                string = old.table[index];
+
+                if (!used(string)) break;
+
+                last = locateAppend(string, dict); // append to new dict
+                dict->table[last] = string;
+                dict->adjunct[last] = old.adjunct[index];
+
+                old.table[index] = zeroString;      // remove from old dict
             }
         }
     }
@@ -248,28 +220,27 @@ void upsizeDict(dictionary_t * dict)
 // Usage
 void dictInsert(char * string, dictionary_t * dict) // insert a string into the dictionary
 {
-    Cell adjunct = 0;
+    Cell adjunct = 0, temp;
     Short index;
 
     plusEntry(dict);
     index = hash(string, dict);
     while (used(dict->table[index])) {
-        if (same(string, dict->table[index])) { // if string same, insert newer and push found one deeper in the chain
+        // if same, insert newer and push other deeper in the chain
+        if (same(string, dict->table[index])) {
             char *s = dict->table[index];
-            dict->table[index] = string;
-            string = s;
+            temp = dict->adjunct[index];
 
-            if (dict->adjunct != NULL) {
-                Cell temp = dict->adjunct[index];
-                dict->adjunct[index] = adjunct;
-                adjunct = temp;
-            }
-        }
-        index = rehash(string, index, dict);
+            dict->table[index] = string;
+            dict->adjunct[index] = adjunct;
+
+            string = s;
+            adjunct = temp;
+         }
+         index = rehash(string, index, dict);
     }
     dict->table[index] = string;
-    if (dict->adjunct != NULL) // in case we are ripling the adjunct location too
-        dict->adjunct[index] = adjunct;
+    dict->adjunct[index] = adjunct;
 }
 
 void dictAppend(char * string, dictionary_t * dict) // append a string to the dictionary
@@ -286,8 +257,7 @@ void dictDelete(char * string, dictionary_t * dict) // delete inserted string fr
         if (*dict->table[index]) {
             dict->table[index] = zeroString;
             minusEntry(dict);
-            if (dict->adjunct)
-                dict->adjunct[index] = 0;
+            dict->adjunct[index] = 0;
         }
     }
 }
@@ -304,7 +274,6 @@ Cell * dictAdjunct(char * string, dictionary_t * dict) // return an associate ce
     if (!used(dict->table[index]))
         return NULL;
 
-    checkAdjunct(dict);
     return &dict->adjunct[index];
 }
 
