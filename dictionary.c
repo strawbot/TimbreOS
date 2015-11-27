@@ -13,6 +13,7 @@
  */
 
 #include "dictionary.h"
+#include "printers.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -29,7 +30,7 @@ static void * allocate(size_t size)
 
 static void qfree(Cell address)
 {
-	if (address)
+    if (address)
         free((void *)address);
 }
 
@@ -42,25 +43,24 @@ static Short hashSize(Short n)  // select table size
 {
     for (Long i = 0; i < sizeof(primeSizes); i++)
         if (primeSizes[i]/2 >= n)
-			return primeSizes[i];
+            return primeSizes[i];
     return primeSizes[sizeof(primeSizes)/sizeof(primeSizes[0])-1];
 }
 
 static void plusEntry(dictionary_t * dict) // upsize if full and allowed; otherwise empty
 {
-	if (dict->free == 0) {
+    if (dict->free == 0) {
         if (dict->upsize)
             upsizeDict(dict);
-        else {
+        else
             emptyDict(dict);
-        }
-	}
-	dict->free -= 1;
+    }
+    dict->free -= 1;
 }
 
 static void minusEntry(dictionary_t * dict) // place to downsize if desired
 {
-	dict->free += 1;
+    dict->free += 1;
 }
 
 static void checkAdjunct(dictionary_t * dict)
@@ -72,11 +72,11 @@ static void checkAdjunct(dictionary_t * dict)
 }
 
 // Table checks
-static char zeroString[] = {'\0'}; // used to fill previously filled locations
+static char zeroString[] = {'\0'}; // used in place of deleted locations
 
 static bool used(char * string)
 {
-	if (string)
+    if (string)
         return *string != '\0';
     return false;
 }
@@ -87,7 +87,7 @@ static bool same(char * s1, char * s2)
         return true;
     if (*s2 == 0)
         return false;
-	return 0 == strcmp(s1, s2);
+    return 0 == strcmp(s1, s2);
 }
 
 static bool different(char *string, char ** loc)
@@ -100,105 +100,67 @@ static bool different(char *string, char ** loc)
 }
 
 // Hashing algorithms
-static char ** hash(char * string, dictionary_t * dict)
+static Short hash(char * string, dictionary_t * dict)
 {
-	Short hash = HASH_SEED;
-	
-	while (*string) {
-		hash ^= (Short)(*string++);
-		hash = (hash << 3) | (hash >> 13);
-	}
+    Short hash = HASH_SEED;
+
+    while (*string) {
+        hash ^= (Short)(*string++);
+        hash = (hash << 3) | (hash >> 13);
+    }
 
     hash %= dict->capacity;
-    return &dict->table[hash];
+    return hash;
 }
 
 // rehash based on first character of string
-static char ** rehash(char * string, char  ** loc, dictionary_t * dict)
+static Short rehash(char * string, Short index, dictionary_t * dict)
 {
-	loc += (*string + 1) * sizeof(Cell);
-    if (loc >= &dict->table[dict->capacity - 1]) {
-        Short index = loc - &dict->table[0];
+    index += (*string + 1);
+    index %= dict->capacity;
 
-        index %= dict->capacity;
-        loc = &dict->table[index];
-    }
-    return loc;
+    return index;
 }
 
-// locate and bump if necessary
 // hash to location yields 3 results:
 //  if empty use it
-//  else if occupied by same string, bump string along then rehash
 //  else rehash
-static char ** locate(char * string, dictionary_t * dict)
+static Short locate(char * string, dictionary_t * dict)
 {
-    char ** loc  = hash(string, dict);
+    Short index = hash(string, dict);
 
-    while (different(string, loc))
-        loc = rehash(string, loc, dict);
-	return loc;
+    while(different(string, &dict->table[index]))
+        index = rehash(string, index, dict);
+
+    return index;
 }
 
-static char ** locateAppend(char * string, dictionary_t * dict)
+static Short locateAppend(char * string, dictionary_t * dict)
 {
-    char ** loc = hash(string, dict);
+    Short index = hash(string, dict);
 
-    while (used(*loc))
-        loc = rehash(string, loc, dict);
-    return loc;
+    while(used(dict->table[index]))
+        index = rehash(string, index, dict);
+
+    return index;
 }
 
-static char ** locateLast(char * string, dictionary_t * dict)
+static Short locateLast(char * string, dictionary_t * dict)
 {
-    char ** loc, ** matchloc;
+    Short index, lastIndex;
 
-    loc = matchloc = hash(string, dict);
+    index = lastIndex = hash(string, dict);
 
-    while (true) {
-
-        if (used(*loc)) {
-            if (same(string, *loc))
-                matchloc = loc;
-            loc = rehash(string, loc, dict);
+    while(true) {
+        if (used(dict->table[index])) {
+            if (same(string, dict->table[index]))
+                lastIndex = index;
+            index = rehash(string, index, dict);
         }
         else
             break;
     }
-    return matchloc;
-}
-
-static char * bump(char * string, char ** loc)
-{
-	char * bumped = *loc;
-	
-	*loc = string;
-	return bumped;
-}
-
-static Cell bumpAdjunct(Cell adjunct, char ** loc, dictionary_t * dict)
-{
-	Short index;
-	Cell bumped;
-	
-	if (dict->adjunct == NULL) return adjunct;
-	
-    index = (Short)(loc - dict->table)/sizeof(Cell);
-	bumped = dict->adjunct[index];
-	dict->adjunct[index] = adjunct;
-	
-	return bumped;
-}
-
-static Cell * adjunctLocation(char ** loc, dictionary_t * dict)
-{
-    return &dict->adjunct[(loc - dict->table)/sizeof(Cell)];
-}
-
-static void deleteAdjunct(char ** loc, dictionary_t * dict)
-{
-	if (dict->adjunct)
-        *adjunctLocation(loc, dict) = 0;
+    return lastIndex;
 }
 
 // Dictionary interface
@@ -207,10 +169,10 @@ static void deleteAdjunct(char ** loc, dictionary_t * dict)
 dictionary_t * dictionary(Short size) // return a dictionary big enough to hold size
 {
     dictionary_t * dict = (dictionary_t *)allocate(sizeof(dictionary_t));
-	
+
     initDict(dict, size);
-	
-	return dict;
+
+    return dict;
 }
 
 void initDict(dictionary_t * dict, Short n) // fill in dictionary template and allocate string table
@@ -231,15 +193,16 @@ void emptyDict(dictionary_t * dict) // empty out any content
     for (Short i=0; i<dict->capacity; i++)
         dict->table[i] = NULL;
     if (dict->adjunct)
-        memset(dict->adjunct, 0, dict->capacity*sizeof(Cell));
+        for (Short i=0; i<dict->capacity; i++)
+            dict->adjunct[i] = 0;
     dict->free = dict->capacity/2;
     dict->upsize = false;
 }
 
 void freeDict(dictionary_t * dict) // return previous tables and start anew
 {
-	qfree((Cell)dict->table);
-	qfree((Cell)dict->adjunct);
+    qfree((Cell)dict->table);
+    qfree((Cell)dict->adjunct);
     dict->table = NULL;
     dict->adjunct = NULL;
 }
@@ -263,20 +226,16 @@ void upsizeDict(dictionary_t * dict)
 
     for (Short i=0; i<old.capacity; i++) {
         char * string = old.table[i];
-        char ** locold;
-        Cell adj;
 
         if (used(string)) {
-            while (true) {
-                locold = locate(string, &old);
-                if (used(*locold)) {
-                    dictAppend(*locold, dict);
+            while (true) { // relocate all strings that match
+                Short index = locate(string, &old);
+                if (used(old.table[index])) {
+                    dictAppend(old.table[index], dict);
                     if (old.adjunct) {
-                        adj = *adjunctLocation(locold, &old);
-                        if (adj)
-                            *adjunctLocation(locateLast(string, dict), dict) = adj;
+                        dict->adjunct[locateLast(string, dict)] = old.adjunct[index];
                     }
-                    *locold = zeroString;
+                    old.table[index] = zeroString;
                 }
                 else
                     break;
@@ -290,55 +249,70 @@ void upsizeDict(dictionary_t * dict)
 void dictInsert(char * string, dictionary_t * dict) // insert a string into the dictionary
 {
     Cell adjunct = 0;
-    char ** loc;
+    Short index;
 
     plusEntry(dict);
-    loc = hash(string, dict);
-    while (used(*loc)) {
-        if (same(string, *loc)) {
-            string = bump(string, loc);
-            adjunct = bumpAdjunct(adjunct, loc, dict);
+    index = hash(string, dict);
+    while (used(dict->table[index])) {
+        if (same(string, dict->table[index])) { // if string same, insert newer and push found one deeper in the chain
+            char *s = dict->table[index];
+            dict->table[index] = string;
+            string = s;
+
+            if (dict->adjunct != NULL) {
+                Cell temp = dict->adjunct[index];
+                dict->adjunct[index] = adjunct;
+                adjunct = temp;
+            }
         }
-        loc = rehash(string, loc, dict);
+        index = rehash(string, index, dict);
     }
-    *loc = string;
-    if (dict->adjunct != NULL)
-        *adjunctLocation(loc, dict) = adjunct;
+    dict->table[index] = string;
+    if (dict->adjunct != NULL) // in case we are ripling the adjunct location too
+        dict->adjunct[index] = adjunct;
 }
 
 void dictAppend(char * string, dictionary_t * dict) // append a string to the dictionary
 {
     plusEntry(dict);
-    *locateAppend(string, dict) = string;
+    dict->table[locateAppend(string, dict)] = string;
 }
 
 void dictDelete(char * string, dictionary_t * dict) // delete inserted string from dictionary
 {
-    char ** loc = locate(string, dict);
+    Short index = locate(string, dict);
 
-    if (*loc) {
-        if (**loc) {
-            *loc = &zeroString[0];
+    if (dict->table[index]) {
+        if (*dict->table[index]) {
+            dict->table[index] = zeroString;
             minusEntry(dict);
-            deleteAdjunct(loc, dict);
+            if (dict->adjunct)
+                dict->adjunct[index] = 0;
         }
     }
 }
 
 char * dictFind(char * string, dictionary_t * dict) // find a string in the dict
 {
-    return *locate(string, dict);
+    return dict->table[locate(string, dict)];
 }
 
 Cell * dictAdjunct(char * string, dictionary_t * dict) // return an associate cell for string
 {
-    char ** loc  = locate(string, dict);
+    Short index = locate(string, dict);
 
-    if (!used(*loc))
+    if (!used(dict->table[index]))
         return NULL;
 
     checkAdjunct(dict);
-    return adjunctLocation(loc, dict);
+    return &dict->adjunct[index];
+}
+
+void dictPrint(dictionary_t *dict)
+{
+    for (Short i=0; i<dict->capacity; i++)
+        if (used(dict->table[i]))
+                print("\n"), print(dict->table[i]);
 }
 
 /* Notes:
@@ -356,4 +330,8 @@ Cell * dictAdjunct(char * string, dictionary_t * dict) // return an associate ce
     of free.
 
  7. should the HASHn sized reflect the free size and not the capacity?
+
+ 8. The assumption to be tested is that link lists of the same string will always maintain order
+    and not get out of order as the dicitonary fills up. This is the reason for zeroString as a
+    place holder.
 */
