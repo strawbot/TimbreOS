@@ -36,7 +36,7 @@ void breakpoint(void)
 
 extern "C" {
 
-#define error(msg)			print("Error: "#msg"\n")
+#define errorMsg(msg)			print("Error: "#msg"\n")
 #define note(msg)			print("Note: "#msg"\n")
 
 #include "printers.c"
@@ -52,20 +52,24 @@ testDictionary::testDictionary(QObject *parent) :
 
 const char firstChar = '!', lastChar = '~';
 
-std::string randomString()
+char * randomString()
 {
     Byte length = 1 + rand()%20; // length of string to be between 1 and 20 characters
     std::string random;
     random.resize(length);
     while(length--)
         random[length] = rand()%(lastChar-firstChar) + firstChar;
-    return random;
+
+    char * str = new char[strlen(random.c_str())+1];
+
+    strcpy(str, random.c_str());
+    return str;
 }
 
-void fillDicitionary()
+void fillDictionary()
 {
     while (testdict.free)
-       dictInsert((char*)randomString().c_str(), &testdict);
+       dictInsert(randomString(), &testdict);
 
 }
 
@@ -178,24 +182,22 @@ void testDictionary::TestSame()
 
 void testDictionary::TestHash()
 {
-    QCOMPARE(false, hash((char *)"string1", &testdict) == hash((char *)"string2", &testdict));
-    QCOMPARE(false, hash((char *)"hello", &testdict) == hash((char *)"world", &testdict));
-
-    char ** end = &testdict.table[testdict.capacity-1];
+    QVERIFY(hash((char *)"string1", &testdict) != hash((char *)"string2", &testdict));
+    QVERIFY(hash((char *)"hello", &testdict) != hash((char *)"world", &testdict));
 
     for (Short i=0; i<testdict.capacity*10; i++) {
-        char ** loc = hash((char*)randomString().c_str(), &testdict);
-        if ( loc > end)
-            printf("Hash [%p] too big [%p]", loc, end);
+        Short index = hash(randomString(), &testdict);
+        if ( index > testdict.capacity)
+            printf("Hash [%i] too big [%i]", index, testdict.capacity);
         else
-            QVERIFY(loc <= end);
+            QVERIFY(testdict.capacity > index);
     }
 
     // test distribution: use half the capicity of random strings and double the content if already 1 otherwise set to 1
     // perfect distribution would yield a sum of half the capacity; more collisions to single location get exponentially worse
     checkAdjunct(&testdict);
     for (Byte i=0; i<testdict.capacity*50/100; i++) { // fill up 50% of the dictionary
-        Cell * adj = adjunctLocation(locate((char*)randomString().c_str(), &testdict), &testdict);
+        Cell *adj = &testdict.adjunct[locate(randomString(), &testdict)];
         if (*adj)
             *adj *= 2;
         else
@@ -210,39 +212,25 @@ void testDictionary::TestHash()
 
 void testDictionary::TestRehash()
 {
-    char ** end = &testdict.table[testdict.capacity-1];
-    local = hash(s, &testdict);
-    QVERIFY(local != rehash(s, local, &testdict));
-    local = end;
+    Short index = hash(s, &testdict);
+    QVERIFY(index != rehash(s, index, &testdict));
+    index = testdict.capacity;
     for (Short i=0; i<testdict.capacity*10; i++) {
-        local = rehash((char*)randomString().c_str(), end, &testdict);
-        QVERIFY(local <= end);
+        index = rehash(randomString(), testdict.capacity, &testdict);
+        QVERIFY(index <= testdict.capacity);
     }
 }
 
 void testDictionary::TestLocate()
 {
-    local = locate(s, &testdict);
-    QVERIFY(*local == NULL);
-    *local = s;
-    QCOMPARE(local, locate(s, &testdict));
-    *local = zeroString;
-    QVERIFY(local != locate(s, &testdict));
-    *local = (char*)"zeroString";
-    QVERIFY(local != locate(s, &testdict));
-}
-
-void testDictionary::TestBump()
-{
-    local = hash(s, &testdict);
-    QVERIFY(NULL == bump(s, local));
-    QVERIFY(s == bump(NULL, local));
-    checkAdjunct(&testdict);
-    QVERIFY(0 == bumpAdjunct(24, local, &testdict));
-    QVERIFY(24 == bumpAdjunct(0, local, &testdict));
-    bumpAdjunct(24, local, &testdict);
-    deleteAdjunct(local, &testdict);
-    QVERIFY(0 == bumpAdjunct(0, local, &testdict));
+    Short index = locate(s, &testdict);
+    QVERIFY(testdict.table[index] == NULL);
+    testdict.table[index] = s;
+    QCOMPARE(index, locate(s, &testdict));
+    testdict.table[index] = zeroString;
+    QVERIFY(index != locate(s, &testdict));
+    testdict.table[index] = (char*)"zeroString";
+    QVERIFY(index != locate(s, &testdict));
 }
 
 void testDictionary::TestInsert()
@@ -252,7 +240,7 @@ void testDictionary::TestInsert()
     for (Byte i=0; i<5; i++)
         dictInsert(s, &testdict);
     QVERIFY(n-5 == testdict.free);
-    dictInsert((char*)randomString().c_str(), &testdict);
+    dictInsert(randomString(), &testdict);
     QVERIFY(n-6 == testdict.free);
 }
 
@@ -264,9 +252,10 @@ void testDictionary::TestAppend()
     for (Byte i=0; i<5; i++)
         dictAppend(s, &testdict);
     QVERIFY(n-5 == testdict.free);
-    dictAppend((char*)randomString().c_str(), &testdict);
+    dictAppend(randomString(), &testdict);
     QVERIFY(n-6 == testdict.free);
 }
+
 void testDictionary::TestDelete()
 {
     Short n;
@@ -300,11 +289,22 @@ void testDictionary::TestFind()
     QVERIFY(s == dictFind(clone, &testdict)); // finding zerostring here -> should find other; skip zero string
     dictDelete(clone, &testdict);
     QVERIFY(NULL == dictFind(s, &testdict));
+
+    // check to see all get resolved properly
+    emptyDict(&testdict);
+    fillDictionary();
+    for (Short i=0; i<testdict.capacity; i++) {
+        char * string = testdict.table[i];
+
+        if (used(string))
+            QVERIFY(0 == strcmp(string, dictFind(string, &testdict)));
+    }
 }
 
 void testDictionary::TestAdjunct()
 {
     char *clone = (char *)std::string(s).c_str();
+    char * string, * string2;
 
     QVERIFY(NULL == dictAdjunct(s, &testdict));
     QVERIFY(NULL == dictAdjunct(clone, &testdict));
@@ -313,6 +313,38 @@ void testDictionary::TestAdjunct()
     *dictAdjunct(clone, &testdict) += 1;
     QVERIFY(1 == *dictAdjunct(s, &testdict));
 
+
+    // test to see if adjunct gets moved with string inserts
+    emptyDict(&testdict);
+    int i = testdict.free;
+    while (i--) {
+       string = randomString();
+       while (dictFind(string, &testdict)) // must be unique
+           string = randomString();
+       dictInsert(string, &testdict);
+       *(char **)dictAdjunct(string, &testdict) = string;
+    }
+
+    // and again with appends
+    emptyDict(&testdict);
+    i = testdict.free;
+    while (i--) {
+       string = randomString();
+       dictAppend(string, &testdict);
+       *(char **)dictAdjunct(string, &testdict) = string;
+       for (Short j=0; j<testdict.capacity; j++)
+           if (testdict.table[j] != (char *)testdict.adjunct[j])
+               breakpoint();
+    }
+    for (Short i=0; i<testdict.capacity; i++) { // check
+        string = testdict.table[i];
+
+        if (used(string)) {
+            string2 = (char *)*dictAdjunct(string, &testdict);
+            QVERIFY(0 != string2);
+            QVERIFY(0 == strcmp(string, (char *)string2));
+        }
+    }
 }
 
 void testDictionary::TestUpsize()
@@ -327,8 +359,8 @@ void testDictionary::TestUpsize()
     dictInsert(s3, &testdict);
     upsizeDict(&testdict);
     QVERIFY(n != testdict.capacity);
-    QVERIFY(s2 == dictFind(s2, &testdict));
-    QVERIFY(s3 == dictFind(s3, &testdict));
+    QCOMPARE(dictFind(s2, &testdict), s2);
+    QCOMPARE(dictFind(s3, &testdict), s3);
     dictDelete(s2, &testdict);
     QVERIFY(s1 == dictFind(s2, &testdict));
 
@@ -336,16 +368,16 @@ void testDictionary::TestUpsize()
     freeDict(&testdict);
     initDict(&testdict, 1);
     QVERIFY(n == testdict.capacity);
-    fillDicitionary();
-    dictInsert((char*)randomString().c_str(), &testdict);
+    fillDictionary();
+    dictInsert(randomString(), &testdict);
     QVERIFY(n == testdict.capacity);
 
     // test auto overflow update
     freeDict(&testdict);
     initDict(&testdict, 1);
-    fillDicitionary();
+    fillDictionary();
     setUpsize(true, &testdict);
-    dictInsert((char*)randomString().c_str(), &testdict);
+    dictInsert(randomString(), &testdict);
     QVERIFY(n != testdict.capacity);
 
     // test adjunct upsize and ordering
@@ -362,7 +394,7 @@ void testDictionary::TestUpsize()
     initDict(&testdict, HASH16);
     QVERIFY(HASH16 == testdict.capacity);
     while (testdict.free)
-        dictInsert((char*)randomString().c_str(), &testdict);
+        dictInsert(randomString(), &testdict);
     QBENCHMARK_ONCE {upsizeDict(&testdict);}
     QVERIFY(n != testdict.capacity);
 }

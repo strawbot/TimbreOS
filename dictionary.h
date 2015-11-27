@@ -1,11 +1,14 @@
 #include "bktypes.h"
 
+#ifndef _DICTIONARY_H_
+#define _DICTIONARY_H_
+
 // Dictionary structure
 typedef struct {
-	char ** table;	// entries point to strings
+    char ** table;	// entries point to strings
     Cell * adjunct; // contains an associated value
     Short capacity; // maximum 64K entries
-	Short free;		// how many left
+    Short free;		// how many left
     bool upsize;    // whether to upsize or empty the dictionary when full
 } dictionary_t;
 
@@ -20,6 +23,7 @@ void dictAppend(char * string, dictionary_t * dict);
 void dictDelete(char * string, dictionary_t * dict);
 char * dictFind(char * string, dictionary_t * dict);
 Cell * dictAdjunct(char * string, dictionary_t * dict);
+void dictPrint(dictionary_t *dict);
 
 // prime numbers just less than n**2
 enum {
@@ -39,3 +43,5 @@ enum {
     static char * name##table[n]={NULL}; \
     static Cell name##adjunct[n]={0}; \
     dictionary_t name={&name##table[0], &name##adjunct[0], n, n/2, false}
+
+#endif
