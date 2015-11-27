@@ -122,7 +122,7 @@ void testDictionary::TestSizes()
 
 void testDictionary::TestInitDict()
 {
-    QVERIFY(testdict.adjunct == 0);
+    QVERIFY(testdict.adjunct != 0);
     QCOMPARE((int)testdict.capacity, 251);
     QCOMPARE((int)testdict.free, testdict.capacity/2);
     QVERIFY(testdict.table != 0);
@@ -159,13 +159,6 @@ void testDictionary::TestEntries()
     QCOMPARE(testdict.capacity/2-1, (int)testdict.free);
 }
 
-void testDictionary::TestCheckAdjunct()
-{
-    QVERIFY(testdict.adjunct == 0);
-    checkAdjunct(&testdict);
-    QVERIFY(testdict.adjunct != 0);
-}
-
 void testDictionary::TestUsed()
 {
     QVERIFY(!used(NULL));
@@ -182,32 +175,29 @@ void testDictionary::TestSame()
 
 void testDictionary::TestHash()
 {
+    // test uniquity
     QVERIFY(hash((char *)"string1", &testdict) != hash((char *)"string2", &testdict));
     QVERIFY(hash((char *)"hello", &testdict) != hash((char *)"world", &testdict));
 
-    for (Short i=0; i<testdict.capacity*10; i++) {
-        Short index = hash(randomString(), &testdict);
-        if ( index > testdict.capacity)
-            printf("Hash [%i] too big [%i]", index, testdict.capacity);
-        else
-            QVERIFY(testdict.capacity > index);
-    }
+    // test boundaries
+    for (Short i=0; i<testdict.capacity*10; i++)
+        QVERIFY(testdict.capacity > hash(randomString(), &testdict));
 
-    // test distribution: use half the capicity of random strings and double the content if already 1 otherwise set to 1
-    // perfect distribution would yield a sum of half the capacity; more collisions to single location get exponentially worse
-    checkAdjunct(&testdict);
-    for (Byte i=0; i<testdict.capacity*50/100; i++) { // fill up 50% of the dictionary
-        Cell *adj = &testdict.adjunct[locate(randomString(), &testdict)];
-        if (*adj)
-            *adj *= 2;
-        else
-            *adj = 1;
-    }
-    Cell sum = 0;
+    // test distribution: use percent of the capicity of random strings and double the content if already 1 otherwise set to 1
+    // perfect distribution would yield a sum of part of the capacity; more collisions to single location get exponentially worse
+    int percent = 50;
+    for (int i=0; i<testdict.capacity*percent/100; i++) // fill up %age of the dictionary
+        testdict.adjunct[locate(randomString(), &testdict)] += 1;
+
+    Cell collisions = 0;
     for (int i=0; i<testdict.capacity; i++)
-        sum += testdict.adjunct[i];
-    print("Over capacity by: "), printDec((float)sum*100/testdict.capacity - 100), print("%\n");
-    QVERIFY(sum <  testdict.capacity + testdict.capacity*3);
+        if (testdict.adjunct[i])
+            collisions += testdict.adjunct[i] - 1;
+    printFloat((float)collisions*100/testdict.capacity, 1);
+    print("% collisions when ");
+    printDec(percent);
+    print("% full\n");
+    QVERIFY(collisions <  testdict.capacity);
 }
 
 void testDictionary::TestRehash()

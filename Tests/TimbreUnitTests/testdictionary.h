@@ -22,7 +22,6 @@ private slots:
     void TestInitDict();
     void TestfreeDict();
     void TestEntries();
-    void TestCheckAdjunct();
     void TestUsed();
     void TestSame();
     void TestHash();
