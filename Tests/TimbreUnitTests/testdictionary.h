@@ -28,7 +28,6 @@ private slots:
     void TestHash();
     void TestRehash();
     void TestLocate();
-    void TestBump();
     void TestInsert();
     void TestAppend();
     void TestDelete();
