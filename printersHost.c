@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "printers.h"
  
-void print(char *message)
+void print(const char *message)
 {
 	printf("%s", message);
 }
