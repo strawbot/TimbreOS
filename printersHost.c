@@ -42,6 +42,11 @@ void printHex2(unsigned int hex)
 	printf(" %02X",hex);
 }
 
+void printFloat(float f, int n)
+{
+    printf("%.*f ", n, f);
+}
+
 void flush(void)
 {
 	fflush(stdout);
