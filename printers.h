@@ -3,6 +3,7 @@
 void print(const char *message);
 void printHex(unsigned int hex);
 void printnHex(unsigned int n, unsigned int hex);
+void printnDec(unsigned int n, unsigned int dec);
 void printDec(unsigned int dec);
 void printDec0(unsigned int dec);
 void printFloat(float dec, int n);

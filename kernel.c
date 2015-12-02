@@ -881,6 +881,7 @@ void PARSE(void)  /* char -- */ // parse string till char or 0 from input to her
 		s[++n] = b;
 	}
 	*s = n;
+	s[++n] = 0; // null terminate for usage as C string
 	in_ = (Cell)(input - tib_.name8);
 }
 /*

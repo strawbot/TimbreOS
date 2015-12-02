@@ -30,6 +30,11 @@ void printnHex(unsigned int n, unsigned int hex)
 	}
 }
 
+void printnDec(unsigned int n, unsigned int dec)
+{
+	lit(dec), lit(n), DOT_R();
+}
+
 void printDec(unsigned int dec)
 {
 	lit(dec), DOT();
