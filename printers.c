@@ -30,6 +30,11 @@ void printnHex(unsigned int n, unsigned int hex)
 	}
 }
 
+void printnDec(unsigned int n, unsigned int dec)
+{
+	lit(dec), lit(n), DOT_R();
+}
+
 void printDec(unsigned int dec)
 {
 	lit(dec), DOT();
@@ -69,4 +74,17 @@ void printHex2(unsigned int hex)
 void flush(void)
 {
 	sendeq();
+}
+
+void pdump(unsigned char * a, unsigned int lines)
+{
+	while(lines--) {
+		print("\n");
+		printHex((unsigned int)(long)a);
+		print(":");
+		for (int j=0; j<2; j++) {
+			print(" ");
+			for (int i=0; i<8; i++) print(" "), printHex2(*a++);
+		}
+	}
 }
