@@ -59,6 +59,7 @@ Issues:
     adds more features the API starts to expand quickly. Perhaps options that are
     selectable that are themselves part of the API such as unsigned(void) that apply
     widely.
+ 4. Should move from botkernel to timbre. bktypes -> ttypes, botkernl -> timbre etc
 
 Updates:
  1. fixed bug in queues. p() never worked - it did the same as q()
