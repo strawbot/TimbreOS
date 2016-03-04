@@ -11,6 +11,7 @@ void printBin(unsigned int bin);
 void printChar(unsigned char ch);
 void printHex2(unsigned int hex);
 void flush(void);
+void pdump(unsigned char * a, unsigned int lines);
 
 #ifndef PRINTERS_H
 #define PRINTERS_H

@@ -75,3 +75,16 @@ void flush(void)
 {
 	sendeq();
 }
+
+void pdump(unsigned char * a, unsigned int lines)
+{
+	while(lines--) {
+		print("\n");
+		printHex((unsigned int)(long)a);
+		print(":");
+		for (int j=0; j<2; j++) {
+			print(" ");
+			for (int i=0; i<8; i++) print(" "), printHex2(*a++);
+		}
+	}
+}
