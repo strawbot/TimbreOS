@@ -18,15 +18,21 @@ Word bytesToWord(Byte *b)
 
 void longToBytes(Long l, Byte *b)
 {
-	b[0] = (Byte)(l >> 24);
-	b[1] = (Byte)(l >> 16);
-	b[2] = (Byte)(l >> 8);
-	b[3] = (Byte)(l);
+    Byte power = sizeof(Long), index = 0;
+
+    while (power--)
+        b[index++] = (Byte)(l >> power*8);
 }
 
 Long bytesToLong(Byte *b)
 {
-	return ( (Long)b[0] << 24 | (Long)b[1] << 16 | (Long)b[2] << 8 | (Long)b[3] );
+    Byte power = sizeof(Long), index = 0;
+    Long out = 0;
+
+    while (power--)
+        out |= (Long)b[index++] << power*8;
+
+    return out;
 }
 
 void octetToBytes(Octet l, Byte *b)
