@@ -4,12 +4,15 @@
 
 void wordToBytes(Word l, Byte *b);
 Word bytesToWord(Byte *b);
+void wholeToBytes(Whole l, Byte *b);
+Whole bytesToWhole(Byte *b);
 void longToBytes(Long l, Byte *b);
 Long bytesToLong(Byte *b);
 void octetToBytes(Octet l, Byte *b);
 Octet bytesToOctet(Byte *b);
 
 Short shortEndSwap(Short data);
+Whole wholeEndSwap(Whole data);
 Long longEndSwap(Long data);
 Octet octetEndSwap(Octet data);
 
@@ -22,8 +25,8 @@ Octet octetEndSwap(Octet data);
 // for using Tyler's code
 #define u16ToBytes(l, b)	wordToBytes(l, b)
 #define bytesToU16(b)		bytesToWord(b)
-#define u32ToBytes(l, b)	longToBytes(l, b)
-#define bytesToU32(b)		bytesToLong(b)
+#define u32ToBytes(l, b)	wholeToBytes(l, b)
+#define bytesToU32(b)		bytesToWhole(b)
 #define u64ToBytes(l, b)	octetToBytes(l, b)
 #define bytesToU64(b)		bytesToOctet(b)
 

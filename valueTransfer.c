@@ -1,5 +1,5 @@
 // Value transfer to/from byte arrays and basic types  Robert Chapman III  Oct 2, 2012
-
+// Note that Long can be 64bit depending on platform. Whole is 32 bit.
 // Big endian arrays. Most significant byte is the first byte in the array
 
 #include "bktypes.h"
@@ -14,6 +14,25 @@ void wordToBytes(Word l, Byte *b)
 Word bytesToWord(Byte *b)
 {
 	return ( (Word)b[0] << 8 | (Word)b[1] );
+}
+
+void wholeToBytes(Whole l, Byte *b)
+{
+    Byte power = sizeof(Whole), index = 0;
+
+    while (power--)
+        b[index++] = (Byte)(l >> power*8);
+}
+
+Whole bytesToWhole(Byte *b)
+{
+    Byte power = sizeof(Whole), index = 0;
+    Whole out = 0;
+
+    while (power--)
+        out |= (Whole)b[index++] << power*8;
+
+    return out;
 }
 
 void longToBytes(Long l, Byte *b)
@@ -57,6 +76,12 @@ Octet bytesToOctet(Byte *b)
 Short shortEndSwap(Short data)
 {
 	return (data<<8) | (data>>8);
+}
+
+Whole wholeEndSwap(Whole data)
+{
+	return   ( (Whole)shortEndSwap( (Short)(data>>16) ) ) |
+		   ( ( (Whole)shortEndSwap( (Short)data       ) )<<16 );
 }
 
 Long longEndSwap(Long data)
