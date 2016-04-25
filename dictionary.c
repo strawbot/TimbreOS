@@ -34,8 +34,8 @@ static void qfree(Cell address)
         free((void *)address);
 }
 
-// growth and shrink
 #define HASH_SEED 8315	// hash starting point
+
 // hash table sizes
 static Short primeSizes[] = {HASH8, HASH9, HASH10, HASH11, HASH12, HASH13, HASH14, HASH15, HASH16};
 
@@ -47,33 +47,17 @@ static Short hashSize(Short n)  // select table size
     return primeSizes[sizeof(primeSizes)/sizeof(primeSizes[0])-1];
 }
 
-static void plusEntry(dictionary_t * dict) // upsize if full and allowed; otherwise empty
-{
-    if (dict->free == 0) {
-        if (dict->upsize)
-            upsizeDict(dict);
-        else
-            emptyDict(dict);
-    }
-    dict->free -= 1;
-}
-
-static void minusEntry(dictionary_t * dict) // place to downsize if desired
-{
-    dict->free += 1;
-}
-
 // Table checks
 static char zeroString[] = {'\0'}; // used in place of deleted locations
 
-static bool used(char * string)
+static bool used(char * string) // true if string is valid and not zerostring
 {
     if (string)
         return *string != '\0';
     return false;
 }
 
-static bool same(char * s1, char * s2)
+static bool same(char * s1, char * s2) // true if string matches
 {
     if (s1 == s2)
         return true;
@@ -82,7 +66,7 @@ static bool same(char * s1, char * s2)
     return 0 == strcmp(s1, s2);
 }
 
-static bool different(char *string, char ** loc)
+static bool different(char *string, char ** loc) // true if string valid and different
 {
     if (loc == NULL)
         return false;
@@ -114,9 +98,7 @@ static Short rehash(char * string, Short index, dictionary_t * dict)
     return index;
 }
 
-// hash to location yields 3 results:
-//  if empty use it
-//  else rehash
+// locate start or end of chain of same string
 static Short locate(char * string, dictionary_t * dict)
 {
     Short index = hash(string, dict);
@@ -135,6 +117,23 @@ static Short locateAppend(char * string, dictionary_t * dict)
         index = rehash(string, index, dict);
 
     return index;
+}
+
+// growth and shrink
+static void plusEntry(dictionary_t * dict) // upsize if full and allowed; otherwise empty
+{
+    if (dict->free == 0) {
+        if (dict->upsize)
+            upsizeDict(dict);
+        else
+            emptyDict(dict);
+    }
+    dict->free -= 1;
+}
+
+static void minusEntry(dictionary_t * dict) // place to downsize if desired
+{
+    dict->free += 1;
 }
 
 // Dictionary interface
