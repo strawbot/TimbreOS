@@ -1047,12 +1047,29 @@ void DIGITS(void)  /* a \ c -- n */ // convert string to number according to bas
 	*sp = 0;
 	while (n--)
 	{
-		m = *a++;
+		m = *a;
 		if (!toDigit(&m))
 		{
-			error();
+			if (*a == '.') { // try for float .abc
+				float f = 0;
+
+				a += n;
+				while (n--) {
+					m = *a--;
+					if (!toDigit(&m)) {
+						error();
+						return;
+					}
+					f = (f+m)/base_;
+				}
+				f = f + *sp;
+				*sp = *(Cell *)&f;
+			}
+			else
+				error();
 			return;
 		}
+		a++;
 		*sp = *sp*base_ + m;
 	}
 }
