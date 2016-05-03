@@ -48,6 +48,8 @@ extern void (***ip)(), (**tick)(); /* Indirect-threaded code pointers */
 extern Byte lastkey;
 
 void setPrompt(char *);
+void DOT_PROMPT(void);
+#define dotPrompt() DOT_PROMPT()
 void dotnb(Byte field, Byte digits, Cell n, Byte r);
 
 /* ==== Nested shells for error protection ==== */
