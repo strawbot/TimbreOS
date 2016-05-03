@@ -1034,7 +1034,7 @@ void NUMBER_QUERY(void)  /* string -- f */
 	*(Cell *)sp[0]=sp[1],sp+=2;	/* { ! }*/
 }
 
-void DIGITS(void)  /* a \ c -- n */ // convert string to number according to base
+void signedDigits(Byte sign) /* a \ c -- n */ // convert string to number according to base
 {
 	Byte n = (Byte)*sp++, *a = (Byte *)*sp, m;
 
@@ -1050,7 +1050,7 @@ void DIGITS(void)  /* a \ c -- n */ // convert string to number according to bas
 		m = *a;
 		if (!toDigit(&m))
 		{
-			if (*a == '.') { // try for float .abc
+			if (*a == '.') { // try for float
 				float f = 0;
 
 				a += n;
@@ -1063,6 +1063,7 @@ void DIGITS(void)  /* a \ c -- n */ // convert string to number according to bas
 					f = (f+m)/base_;
 				}
 				f = f + *sp;
+				if (sign)  f = -f;
 				*sp = *(Cell *)&f;
 			}
 			else
@@ -1072,6 +1073,12 @@ void DIGITS(void)  /* a \ c -- n */ // convert string to number according to bas
 		a++;
 		*sp = *sp*base_ + m;
 	}
+	if (sign) sp[0] = -sp[0];
+}
+
+void DIGITS(void)  /* a \ c -- n */ // convert string to number according to base
+{
+	signedDigits(0);
 }
 
 /*
@@ -1082,16 +1089,14 @@ nip */
 
 void NUMBER(void)  /* string -- n */
 {
-	Byte b = base_, f;
+	Byte b = base_, sign;
 
 	COUNT();
-	if ((f = (Byte) (*(Byte *)sp[1] == '-') ) != 0)
+	if ((sign = (Byte) (*(Byte *)sp[1] == '-') ) != 0)
 		sp[1] += 1, sp[0] -= 1;
 	SET_BASE();
-	DIGITS();
+	signedDigits(sign);
 	if (interpretError) return;
-	if (f)
-		sp[0] = -sp[0];
 	base_ = b;
 }
 /* base @ >r
