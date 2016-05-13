@@ -82,9 +82,9 @@ void pdump(unsigned char * a, unsigned int lines)
 		print("\n");
 		printHex((unsigned int)(long)a);
 		print(":");
-		for (int j=0; j<2; j++) {
-			print(" ");
-			for (int i=0; i<8; i++) print(" "), printHex2(*a++);
-		}
+		for (int i=0; i<16; i++) printHex2(a[i]);
+		print("  ");
+		for (int i=0; i<16; i++) printChar(a[i]>31 && a[i]<128 ? a[i] : '.');
+		a += 16;
 	}
 }
