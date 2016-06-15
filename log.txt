@@ -60,6 +60,8 @@ Issues:
     selectable that are themselves part of the API such as unsigned(void) that apply
     widely.
  4. Should move from botkernel to timbre. bktypes -> ttypes, botkernl -> timbre etc
+ 5. Provide a kill command to delete a machine from the machine queue from the command
+    line. To aid in debugging.
 
 Updates:
  1. fixed bug in queues. p() never worked - it did the same as q()
