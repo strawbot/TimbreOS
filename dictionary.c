@@ -23,7 +23,7 @@ static void * allocate(size_t size)
     void * m = malloc(size);
 
     if (m == NULL)
-        errorMsg("Memory Allocation Failed!");
+        print("\nMemory Allocation Failed!");
 
     return m;
 }
