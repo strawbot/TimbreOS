@@ -10,6 +10,7 @@ typedef struct {
     Short capacity; // maximum 64K entries
     Short free;		// how many left
     bool upsize;    // whether to upsize or empty the dictionary when full
+    Short iter;     // used for iterating over dictionary
 } dictionary_t;
 
 dictionary_t * dictionary(Short size);
@@ -23,7 +24,10 @@ void dictAppend(char * string, dictionary_t * dict);
 void dictDelete(char * string, dictionary_t * dict);
 char * dictFind(char * string, dictionary_t * dict);
 Cell * dictAdjunct(char * string, dictionary_t * dict);
+
 void dictPrint(dictionary_t *dict);
+char * dictFirst(dictionary_t * dict);
+char * dictNext(dictionary_t * dict);
 
 // prime numbers just less than n**2
 enum {

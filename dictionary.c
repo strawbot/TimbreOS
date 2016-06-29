@@ -278,9 +278,34 @@ Cell * dictAdjunct(char * string, dictionary_t * dict) // return an associate ce
 
 void dictPrint(dictionary_t *dict)
 {
-    for (Short i=0; i<dict->capacity; i++)
-        if (used(dict->table[i]))
-                print("\n"), print(dict->table[i]);
+	for (char * entry = dictFirst(dict); entry; entry = dictNext(dict)) {
+		print("\n"), print(entry);
+		print("  adjunct: "), printHex(dict->adjunct[dict->iter]);
+    }
+}
+
+// Iterator access
+// must use dictFirst to initiate; then dictNext to get subsequent entries
+// end is detected when NULL string is returned from either function
+char * dictFirst(dictionary_t * dict)
+{
+	dict->iter = 0;
+	if (used(dict->table[0]))
+		return dict->table[0];
+	else
+		return dictNext(dict);
+}
+
+char * dictNext(dictionary_t * dict)
+{
+	Short i = dict->iter;
+
+    while (++i < dict->capacity)
+        if (used(dict->table[i])) {
+        	dict->iter = i;
+        	return dict->table[i];
+        }
+    return NULL;
 }
 
 /* Notes:
