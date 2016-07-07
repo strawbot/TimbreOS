@@ -46,6 +46,6 @@ enum {
 #define HASHDICT(n, name) \
     static char * name##table[n]={NULL}; \
     static Cell name##adjunct[n]={0}; \
-    dictionary_t name={&name##table[0], &name##adjunct[0], n, n/2, false}
+	dictionary_t name={&name##table[0], &name##adjunct[0], n, n/2, false, 0}
 
 #endif
