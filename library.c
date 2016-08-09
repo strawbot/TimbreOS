@@ -282,7 +282,7 @@ void debugpmsg(PGM_P m)
 
 void dump(void) // ram dump
 {
-	Byte n = (Byte)*_DROP_;
+	Short n = (Short)*_DROP_;
 	Cell memory = *_DROP_;
 	
 	dotindex((Byte)memory);
