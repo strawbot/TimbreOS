@@ -65,3 +65,5 @@ Issues:
 
 Updates:
  1. fixed bug in queues. p() never worked - it did the same as q()
+ 2. increased limit of number of words in dictionary from 255 to 65535
+ 3. increased number of lines for DUMP from 255 to 65535
