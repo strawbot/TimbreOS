@@ -10,6 +10,8 @@
 #include "localio.h"
 #include "library.h"
 
+#define FLOAT_SUPPORT  // comment out to remove support for floating point
+
 // nameless but has a tick
 Headless(LIT)
 Headless(BRANCH)
@@ -800,8 +802,8 @@ void KEY_QUERY(void)  /* -- flag */
 }
 
 void KEY(void)  /* -- char */
-{
-	for(;;)    /* BEGIN */
+{ // TODO: incorporate machines otherwise only interupts will work with this
+	for(;;)    /* BEGIN */ 
 	{
 		KEY_QUERY();
 		if(*_DROP_)break;       /* 0= WHILE */
@@ -1034,7 +1036,7 @@ void NUMBER_QUERY(void)  /* string -- f */
 	*(Cell *)sp[0]=sp[1],sp+=2;	/* { ! }*/
 }
 
-void DIGITS(void)  /* a \ c -- n */ // convert string to number according to base
+void signedDigits(bool sign) /* a \ c -- n */ // convert string to number according to base
 {
 	Byte n = (Byte)*sp++, *a = (Byte *)*sp, m;
 
@@ -1047,14 +1049,40 @@ void DIGITS(void)  /* a \ c -- n */ // convert string to number according to bas
 	*sp = 0;
 	while (n--)
 	{
-		m = *a++;
+		m = *a;
 		if (!toDigit(&m))
 		{
-			error();
+#ifdef FLOAT_SUPPORT
+			if (*a == '.') { // try for float
+				float f = 0;
+
+				a += n;
+				while (n--) {
+					m = *a--;
+					if (!toDigit(&m)) {
+						error();
+						return;
+					}
+					f = (f+m)/base_;
+				}
+				f = f + *sp;
+				if (sign)  f = -f;
+				*sp = *(Cell *)&f;
+			}
+			else
+#endif
+				error();
 			return;
 		}
+		a++;
 		*sp = *sp*base_ + m;
 	}
+	if (sign) sp[0] = -sp[0];
+}
+
+void DIGITS(void)  /* a \ c -- n */ // convert string to number according to base
+{
+	signedDigits(0);
 }
 
 /*
@@ -1065,16 +1093,15 @@ nip */
 
 void NUMBER(void)  /* string -- n */
 {
-	Byte b = base_, f;
+	Byte b = base_;
+	bool sign;
 
 	COUNT();
-	if ((f = (Byte) (*(Byte *)sp[1] == '-') ) != 0)
+	sign = *(Byte *)sp[1] == '-';
+	if (sign)
 		sp[1] += 1, sp[0] -= 1;
 	SET_BASE();
-	DIGITS();
-	if (interpretError) return;
-	if (f)
-		sp[0] = -sp[0];
+	signedDigits(sign);
 	base_ = b;
 }
 /* base @ >r

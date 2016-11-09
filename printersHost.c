@@ -10,7 +10,7 @@ void print(const char *message)
 
 void printHex(unsigned int hex)
 {
-	printf("%8X ", hex);
+	printf("%08X ", hex);
 }
 
 void printDec(unsigned int dec)

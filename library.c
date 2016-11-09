@@ -282,7 +282,7 @@ void debugpmsg(PGM_P m)
 
 void dump(void) // ram dump
 {
-	Byte n = (Byte)*_DROP_;
+	Short n = (Short)*_DROP_;
 	Cell memory = *_DROP_;
 	
 	dotindex((Byte)memory);
@@ -324,9 +324,9 @@ void DOT_S(void)  /* -- */
     immediatenames immediatebodies
     constantnames constantbodies
 */
-Byte search_names(Byte *name, PGM_P dictionary) // return name number or 0 if not found
+Short search_names(Byte *name, PGM_P dictionary) // return name number or 0 if not found
 {
-	Byte index = 1;
+	Short index = 1;
 	
 	while(pgm_read_byte(dictionary))
 	{
@@ -340,7 +340,7 @@ Byte search_names(Byte *name, PGM_P dictionary) // return name number or 0 if no
 
 void search_dictionaries(void) // look through dictionaries for word
 { // s -- a \ f
-	Byte index, length = *(Byte *)(_TOP_);
+	Short index, length = *(Byte *)(_TOP_);
 	Byte name[31+1]; //[length+1];
 	
 	memcpy(&name[0], (Byte *)(_TOP_+1), length);
