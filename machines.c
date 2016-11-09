@@ -13,7 +13,7 @@
 #include "library.h"
 
 QUEUE(MACHINES, machineq);
-Byte mmoverflow, mmunderflow;
+Byte mmoverflow = 0, mmunderflow = 0;
 
 void activate(vector Machine)
 {
@@ -133,15 +133,20 @@ void listq(Qtype *q) // list q items
 }
 #endif
 
-void listm(void) // list machine statuses
+void listMachines(void)
 {
-	print("\nDepth:"), printDec(runDepth);
+	print("\nDepth: "), printDec(runDepth);
 	listq(machineq);
 	if (mmunderflow)
-		print("\nmunderflows"), printDec(mmunderflow);
+		print("\nmunderflows: "), printDec(mmunderflow);
 	if (mmoverflow)
-		print("\nmoverflows"), printDec(mmoverflow);
-	print("\n");
+		print("\nmoverflows: "), printDec(mmoverflow);
+	DOT_PROMPT();
+}
+
+void listm(void) // list machine statuses
+{
+	activate(listMachines);
 }
 
 void resetMachineMonitor(void);
@@ -164,6 +169,7 @@ static Long lastTime;
 static QUEUE(N, sumq);
 
 static void machineMonitor(void);
+//Keeps statistics on minimum and maximum run time for a queue of machines
 static void machineMonitor(void)
 {
 	Long span, thisTime = getTime();
