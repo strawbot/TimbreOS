@@ -1,0 +1,50 @@
+// Names and function binding for words, constants and immediates
+
+Include ../clibindings.txt
+
+Words
+	lm listm				// list machines
+	stats	machineStats // show time statistics on machine loop
+	0stats	resetMachineMonitor // reset machine stats
+	help help // print list of one liners about words in dictionary
+	
+	start	startTime	// note the starting time
+	end		endTime		// display elapsed time since start
+	time showTime // display local time
+	
+	version showVersion // display application name and build date/time
+	
+	// SFP
+	initsfp initSfp // initialize sfp firmware
+	sfpstats showSfpStats // show sfp statistics
+	nodestats showNodeStatus // node stats
+	initsfpstats initSfpStats // zero out all sfp stats
+
+	reboot reboot // reboot the software
+
+	checksum fletcher32_cmd // ( a n - c ) return checksum from a for n bytes
+
+//	su sendData // ( a n - ) send n bytes at address a over usb
+	lf listFrames // dump out pool of frames 
+
+	// copy and run
+    car			copyRun_cmd // ( a - )copy and run an application from flash
+	copyapp		copyApp_cmd // ( a - f ) copy application
+    runapp		runApp_cmd // ( a - f ) run application
+    vh			checkHeader_cmd // ( a -- ) check header checksum
+    vi			checkImage_cmd // ( a -- ) check image checksum
+    dh			dumpHeader_cmd // ( a -- ) dump header parameters of an image
+
+	// rtc
+	date showDateTime // show date and time
+	setdate setDate // ( Y M D - ) set the date
+	settime setTime // ( H M S - ) set the time
+
+	// stm bootloader call
+	stmboot bootloader // invoke system bootloader so new firmware can be downloaded
+
+End
+
+Constants
+	iflash 0x8000000 // start of internal flash
+End

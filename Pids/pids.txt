@@ -1,0 +1,41 @@
+// Packet IDs. Declare byte value in hex or increment from last one by ++
+
+	ACK_BIT		0x80	used for indicating SPS frames
+	SPS_BIT		0x40	used for indicating type of an SPS frame
+	PID_BITS	(0xFF&(~(ACK_BIT|SPS_BIT)))	used to mask off upper bits
+//
+//
+	CONFIG		0x00	for exchanging configurations on a link: spid + specifics; ie testframe
+	SPS_ACK		++		confirm sps; link only - not networkable
+//
+	WHO_PIDS	(SPS_ACK) all pids greater than, use the who header for routing
+//
+	SPS			++		used for initializing SPS frame acks and setting id
+//
+	PING		++		to check other end
+	PING_BACK	++ 		expected response to a PING
+//
+	GET_VERSION	++		get the version number
+	VERSION_NO	++		return the version number
+//
+	TALK_IN		++		keyboard input to be interpreted
+	TALK_OUT	++		used to send emits out usb port
+	EVAL		++		evaluate text with destination; who, text
+	CALL_CODE	++		call code starting at this location; who, addr32
+//
+	MEMORY		++		use for memory transactions: read/write/erase/confirm...
+	FILES		++		user for file transactions: read/write/delete/...
+
+// Must be last PID
+	MAX_PIDS	++		number of PIDS defined
+
+// Parameters
+	MAX_FRAME_LENGTH (254)	no more than 254; set according to link resources
+	MAX_FRAMES (5)			number of frames floating around system
+	SPS_RETRIES			(5)		maximum number of SPS retries
+	SFP_POLL_TIME		(2)		polling in link down
+	SFP_SPS_TIME		(2500)	time between retransmissions
+	SFP_FRAME_TIME		(50)	maximum time to wait between bytes for a frame
+	SFP_FRAME_PROCESS	(1000)	maximum time to wait for frame processing
+	STALE_RX_FRAME 		(1000)	number of milliseconds to hang onto a received frame
+

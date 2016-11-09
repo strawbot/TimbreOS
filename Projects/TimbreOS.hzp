@@ -1,0 +1,55 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="TimbreOS" target="8" version="2">
+  <project Name="Timbre">
+    <configuration
+      Name="Common"
+      build_output_directory="$(LIBRARIES)"
+      project_directory=""
+      project_type="Library" />
+    <folder Name="Source Files">
+      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
+      <file file_name="../Timbre/blinkBlink.c" />
+      <file file_name="../Timbre/byteq.c" />
+      <file file_name="../Timbre/checksum.c" />
+      <file file_name="../Timbre/copyRun.c" />
+      <file file_name="../Timbre/ii.c" />
+      <file file_name="../Timbre/kernel.c" />
+      <file file_name="../Timbre/library.c" />
+      <file file_name="../Timbre/printers.c" />
+      <file file_name="../Timbre/queue.c" />
+      <file file_name="../Timbre/timeout.c" />
+      <file file_name="../Timbre/timestamp.c">
+        <configuration Name="THUMB Debug" build_exclude_from_build="Yes" />
+      </file>
+      <file file_name="../Timbre/valueTransfer.c" />
+      <file file_name="../Timbre/version.c" />
+      <file file_name="../Timbre/localio.c" />
+      <file file_name="../Timbre/machines.c" />
+      <file file_name="../Timbre/float.c" />
+      <file file_name="../Timbre/dictionary.c" />
+    </folder>
+  </project>
+  <project Name="SFP">
+    <configuration
+      Name="Common"
+      build_output_directory="$(LIBRARIES)"
+      project_directory=""
+      project_type="Library" />
+    <folder Name="Source Files">
+      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
+      <file file_name="../SFP/frame.c" />
+      <file file_name="../SFP/framePool.c" />
+      <file file_name="../SFP/link.c" />
+      <file file_name="../SFP/node.c" />
+      <file file_name="../SFP/services.c" />
+      <file file_name="../SFP/sfpRxSm.c" />
+      <file file_name="../SFP/sfpTxSm.c" />
+      <file file_name="../SFP/stats.c" />
+      <file file_name="../SFP/Handlers/memoryHandler.c">
+        <configuration Name="THUMB Debug" build_exclude_from_build="Yes" />
+      </file>
+      <file file_name="../SFP/Handlers/talkHandler.c" />
+      <file file_name="../SFP/Handlers/versionHandler.c" />
+    </folder>
+  </project>
+</solution>

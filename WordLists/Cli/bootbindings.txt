@@ -1,0 +1,3 @@
+// Names and function binding for words, constants and immediates
+
+Include ../commonbindings.txt

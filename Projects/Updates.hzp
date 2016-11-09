@@ -1,0 +1,49 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="Updates" target="8" version="2">
+  <project Name="Update PIDs">
+    <configuration
+      Name="Common"
+      build_always_rebuild="No"
+      combine_command="python ../Pids/parsepids.py"
+      combine_output_filepath="../pids.h"
+      project_directory=""
+      project_type="Combining" />
+    <file file_name="../Pids/parsepids.py" />
+    <file file_name="../Pids/pids.txt" />
+  </project>
+  <project Name="Update CPU ids">
+    <configuration
+      Name="Common"
+      build_always_rebuild="No"
+      combine_command="python ../Who/parsecpuids.py"
+      combine_command_wd="$(ProjectDir)"
+      combine_output_filepath="../who.h"
+      combine_set_readonly="No"
+      project_directory=""
+      project_type="Combining" />
+    <file file_name="../Who/cpuids.txt" />
+    <file file_name="../Who/parsecpuids.py" />
+  </project>
+  <project Name="Update Wordlist">
+    <configuration
+      Name="Common"
+      build_always_rebuild="Yes"
+      combine_command="python ../WordLists/parsewords.py"
+      combine_output_filepath="../WordLists/Cli/wordlist.c"
+      project_directory=""
+      project_type="Combining" />
+    <file file_name="../WordLists/clibindings.txt" />
+    <file file_name="../WordLists/parsewords.py" />
+  </project>
+  <project Name="Update build version">
+    <configuration
+      Name="Common"
+      build_always_rebuild="Yes"
+      combine_command="python ../Scripts/copy.py ../$(LocalProjectDir)/build_version.txt ../$(LocalProjectDir)/build_version.h"
+      combine_output_filepath="../$(LocalProjectDir)/build_version.h"
+      project_directory=""
+      project_type="Combining" />
+    <file file_name="../$(LocalProjectDir)/build_version.txt" />
+    <file file_name="../Scripts/copy.py" />
+  </project>
+</solution>
