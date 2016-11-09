@@ -9,6 +9,7 @@
 #include "byteq.h"
 #include "kernel.h"
 #include "localio.h"
+#include "machines.h"
 
 /*
  * Memory model:
@@ -58,30 +59,12 @@ void keyin(Byte c) // called from interrupt
 
 // UART interpreter
 
-enum {RUNNING, WAITING } talkState = WAITING;
-
 void initializeTalk(void)  /* -- */
 {
     rp0_ = rp = (Cell *)(&space[MSIZE]);
 	sp0_ = sp = rp0_ - RCELLS;
 	dp_ = (Cell)&space[0];
-	setup_io();
 	RESET_KERNEL();
-	talkState = RUNNING;
-}
-
-void talkStateMachine(void)
-{
-	if (qbq(eq) != 0) // check output from kernel
-		sendeq();
-	else
-	{
-		getInput();
-		if (qbq(kq)) // check input to kernel
-			yellowOn(); // blink yellow LED when processing text
-		else
-			yellowOff();
-	}
 }
 
 extern Byte prompt_[];
@@ -104,4 +87,41 @@ void set_prompt(Cell address)
 		memcpy(&prompt_[0], "\005C00: ", 6);
 	if (debug)
 		lit(13), EMIT(), DOT_PROMPT();
+}
+
+static enum {INITIALIZING, WAITING, RUNNING } talkState = INITIALIZING;
+
+Cell recursed; // incremented if we recursed when we should never do
+
+void timbreTalk(void)
+{
+	switch(talkState)
+	{
+	case INITIALIZING:
+		initializeTalk();
+		talkState = RUNNING;
+		break;
+	case RUNNING:
+		talkState = WAITING; // avoid recursion via outputs
+		COLLECTOR();
+		talkState = RUNNING;
+		break;
+	case WAITING:
+		recursed++;
+		talkState = RUNNING;
+		break;
+	}
+}
+
+// Run the CLI
+void timbreTalkMachine(void)
+{
+    timbreTalk();
+	activate(timbreTalkMachine);
+}
+
+void sendeq(void)
+{
+	while (fullbq(eq))
+		runMachines();
 }
