@@ -171,5 +171,7 @@
     <file file_name="../cli.c" />
     <file file_name="../SimpleBoard/initApp.c" />
     <file file_name="../uart.c" />
+    <file file_name="../WordLists/Cli/help.c" />
+    <file file_name="../WordLists/Cli/wordlist.c" />
   </project>
 </solution>

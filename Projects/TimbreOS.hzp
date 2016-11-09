@@ -11,7 +11,9 @@
       <file file_name="../Timbre/blinkBlink.c" />
       <file file_name="../Timbre/byteq.c" />
       <file file_name="../Timbre/checksum.c" />
-      <file file_name="../Timbre/copyRun.c" />
+      <file file_name="../Timbre/copyRun.c">
+        <configuration Name="THUMB Debug" build_exclude_from_build="Yes" />
+      </file>
       <file file_name="../Timbre/ii.c" />
       <file file_name="../Timbre/kernel.c" />
       <file file_name="../Timbre/library.c" />

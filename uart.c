@@ -56,13 +56,13 @@ void serialMachine(void)
 void initSerialLink(void)
 {
 	serialLink_t * link = &serialUart;
-	UART_HandleTypeDef * huart = serialUart.port;
+	UART_HandleTypeDef * huart;
 
 	link->txq = eq;
 	link->linkIn = serialUartIn;
 	link->linkOut = serialUartOut;
 	link->linkEmpty = serialEmpty;
-	link->port = &UART_PORT;
+	link->port = huart = &UART_PORT;
 	
 	/* Enable the UART Error Interrupt: (Frame error, noise error, overrun error) */
 	SET_BIT(huart->Instance->CR3, USART_CR3_EIE);

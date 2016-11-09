@@ -13,19 +13,22 @@ void cli(void);
 void initSfp(void);
 void initDebugUart(void);
 void timbreTalk(void);
+void initSerialLink(void);
 
 void initApp(void)
 {
 	initMachines();
 	greenOn();
  	activateOnce(blinkBlinkMachine);
+
 // 	initSfp();
 // 	initDebugUart();
-// 	autoEchoOn();
-//  	timbreTalk();
-// 	activateOnce(timbreTalkMachine);
-// 	setBuildPrompt();
-//     showVersion();
-// 	DOT_PROMPT();
+	initSerialLink();
+ 	autoEchoOn();
+  	timbreTalk();
+ 	activateOnce(timbreTalkMachine);
+ 	setBuildPrompt();
+     showVersion();
+ 	DOT_PROMPT();
 }
 
