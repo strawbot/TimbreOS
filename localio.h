@@ -4,6 +4,7 @@
 extern Cell dp_;
 extern Byte eq[], kq[];
 
+Byte kqleft(void);
 void keyin(Byte c);
 void reconstitute(void);
 void safe_emit(Byte c);

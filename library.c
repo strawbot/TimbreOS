@@ -73,11 +73,6 @@ extern Byte keyEcho;
 Cell droppedInput;
 void ZERO_TIB(void);
 
-Byte kqleft(void)  // how much room left
-{
-	return (Byte)(sizebq(kq) - qbq(kq));
-}
-
 void evaluate(Byte *string)
 {
 	Byte length	= (Byte)strlen((char *)string);
