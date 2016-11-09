@@ -45,6 +45,7 @@ void blinkBlink(void)
 	}
 }
 
+// Blink LED twice in succession every second to indicate boot code is running and timing is accurate
 void blinkBlonk(void)
 {
 	static struct {void (*action)(void); Long time; int next; } state[] = {
