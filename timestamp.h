@@ -5,10 +5,6 @@
 void oneMillisecondTick(void);
 void initTimeStamp(void);
 Long getTime(void);
-void showTime(void);
-void startTime(void);
-void sdotms(Long time);
-void endTime(void);
 
 #ifndef TIMESTAMP_H
 #define TIMESTAMP_H

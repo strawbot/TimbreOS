@@ -6,7 +6,7 @@
 */
 
 #include "timestamp.h"
-#include "timeout.h"
+//#include "timeout.h"
 
 static Long localtime; // local time is time since startup
 
@@ -25,37 +25,4 @@ void initTimeStamp(void)
 Long getTime(void)
 {
 	return localtime;
-}
-
-// CLI for timing
-#include "printers.h"
-Long startingTime;
-
-void showTime(void)
-{
-	printDec(getTime());
-}
-
-void sdotms(Long time)
-{
-	Long ms = time%(1 TO_SECOND);
-
-	printDec0(time/(1 TO_SECOND));
-	print(".");
-	printDec0(ms/100);
-	printDec0((ms%100)/10);
-	printDec0(ms%10);
-}
-
-void startTime(void)
-{
-	startingTime = getTime();
-}
-
-void endTime(void)
-{
-	Long t = getTime() - startingTime;
-	
-	print(" Elapsed time (S.ms): ");
-	sdotms(t);
 }

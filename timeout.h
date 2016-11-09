@@ -64,4 +64,9 @@ void stopTimeout(Timeout *timer);
 void startTimeout(Timeout *timer);
 void repeatTimeout(Timeout *timer);
 void timeoutWait(Cell time);
+void restartTimeout(Timeout *timer);
 
+void showTime(void);
+void startTime(void);
+void sdotms(Long time);
+void endTime(void);

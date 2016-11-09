@@ -38,6 +38,12 @@ void repeatTimeout(Timeout *timer) // set the timeout time for an interval after
 	timer->off = false;
 }
 
+void restartTimeout(Timeout *timer) // restart the timeout from right now
+{
+	timer->timeset = getTime(); // not set here to avoid wraparound issues
+	timer->off = false;
+}
+
 void timeoutWait(Cell time) // timed delay loop
 {
 	Timeout timer;
@@ -45,4 +51,37 @@ void timeoutWait(Cell time) // timed delay loop
 	setTimeout(time, &timer);
 	while (!checkTimeout(&timer))
 		;
+}
+
+// CLI for timing
+#include "printers.h"
+Long startingTime;
+
+void showTime(void)
+{
+	printDec(getTime());
+}
+
+void sdotms(Long time)
+{
+	Long ms = time%(1 TO_SECOND);
+
+	printDec0(time/(1 TO_SECOND));
+	print(".");
+	printDec0(ms/100);
+	printDec0((ms%100)/10);
+	printDec0(ms%10);
+}
+
+void startTime(void)
+{
+	startingTime = getTime();
+}
+
+void endTime(void)
+{
+	Long t = getTime() - startingTime;
+	
+	print(" Elapsed time (S.ms): ");
+	sdotms(t);
 }
