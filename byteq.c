@@ -45,7 +45,7 @@ Byte qbq(Byte *q) // query #elements in q
 	return (Byte)(q[BQREMOVE] + sizebq(q) + 1 - q[BQINSERT]);
 }
 
-Byte fullbq(Byte *q) // true if q is full
+bool fullbq(Byte *q) // true if q is full
 {
 	return (Byte)(qbq(q) == sizebq(q));
 }

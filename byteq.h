@@ -68,7 +68,7 @@ void pushbq(Byte b, Byte *q);
 Byte pullbq(Byte *q);
 Byte qbq(Byte *q);
 Byte sizebq(Byte *q);
-Byte fullbq(Byte *q);
+bool fullbq(Byte *q);
 
 #define leftbq(q)	 (sizebq(q) - qbq(q)) // how much is left
 #define wrappedbq(q)	q[BQREMOVE] = q[BQINSERT]; // align removal pointer with insert
