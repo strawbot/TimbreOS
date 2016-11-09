@@ -21,6 +21,15 @@ Long fletcher32Byte(Byte data, Long checksum)
 	return ((Long)sum2<<16) | (Long)sum1;
 }
 
+Long fletcher32Segment(Byte *data, Long len, Long checksum)
+{
+	Short sum1 = (Short)(checksum), sum2 = (Short)(checksum>>16);
+	
+	while (len--)
+		sum2 += sum1 += *data++;
+	return ((Long)sum2<<16) | (Long)sum1;
+}
+
 Long fletcher32(Byte *data, Long len)
 {
 	Short sum1 = 0, sum2 = 0;
