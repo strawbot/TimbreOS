@@ -13,4 +13,10 @@ Words
 	time showTime // display local time
 	
 	version showVersion // display application name and build date/time
+	
+	triangle triangleWaveform // output a triangle waveform on DAC 1
+	sine sineWaveform // output a sine wave on DAC 1
+	square squareWaveform // output a square wave on DAC 1
+	hz hertz // ( n ) set frequency for DAC 1 outptut
+	khz kilohertz // ( n ) set frequency in Khz for DAC 1 output
 End

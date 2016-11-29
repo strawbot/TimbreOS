@@ -43,6 +43,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_hal.h"
+#include "dac.h"
+#include "dma.h"
 #include "tim.h"
 #include "usart.h"
 #include "usb_device.h"
@@ -89,12 +91,15 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USB_DEVICE_Init();
   MX_USART3_UART_Init();
   MX_TIM7_Init();
+  MX_DAC_Init();
+  MX_TIM2_Init();
 
   /* USER CODE BEGIN 2 */
-
+ 
   /* USER CODE END 2 */
 
   /* Infinite loop */

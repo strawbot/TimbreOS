@@ -5,11 +5,11 @@
 #include "localio.h"
 #include "machines.h"
 
-static serialLink_t serialUart;
+static serialLink_t uartLink;
 
-void serialUartHandler(void)
+void uartLinkHandler(void)
 {
-	serialLink_t * link = &serialUart;
+	serialLink_t * link = &uartLink;
 	UART_HandleTypeDef * huart = (UART_HandleTypeDef *)(link->port);
 	uint32_t isrflags = READ_REG(huart->Instance->SR);
 
@@ -24,14 +24,14 @@ void serialUartHandler(void)
 	}
 }
 
-static void serialUartIn(serialLink_t *link)
+static void uartLinkIn(serialLink_t *link)
 {
 	UART_HandleTypeDef * huart = (UART_HandleTypeDef *)(link->port);
 	
 	keyin(huart->Instance->DR);
 }
 
-static void serialUartOut(serialLink_t *link)
+static void uartLinkOut(serialLink_t *link)
 {
 	UART_HandleTypeDef * huart = (UART_HandleTypeDef *)(link->port);
 
@@ -45,9 +45,9 @@ static bool serialEmpty(serialLink_t *link)
 
 void serialMachine(void)
 {
-	UART_HandleTypeDef * huart = serialUart.port;
+	UART_HandleTypeDef * huart = uartLink.port;
 
-	if (!serialEmpty(&serialUart))
+	if (!serialEmpty(&uartLink))
 		/* Enable the UART Transmit data register empty Interrupt */
     	SET_BIT(huart->Instance->CR1, USART_CR1_TXEIE);
 	activate(serialMachine);
@@ -55,12 +55,12 @@ void serialMachine(void)
 
 void initSerialLink(void)
 {
-	serialLink_t * link = &serialUart;
+	serialLink_t * link = &uartLink;
 	UART_HandleTypeDef * huart;
 
 	link->txq = eq;
-	link->linkIn = serialUartIn;
-	link->linkOut = serialUartOut;
+	link->linkIn = uartLinkIn;
+	link->linkOut = uartLinkOut;
 	link->linkEmpty = serialEmpty;
 	link->port = huart = &UART_PORT;
 	

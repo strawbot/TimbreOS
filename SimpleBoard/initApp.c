@@ -3,32 +3,29 @@
 #include "version.h"
 #include "link.h"
 
-void timbreTalkMachine(void);
-void autoEchoOn(void);
-void DOT_PROMPT(void);
-void blinkBlinkMachine(void);
 void greenOn(void);
-void greenOff(void);
-void cli(void);
-void initSfp(void);
-void initDebugUart(void);
-void timbreTalk(void);
+void blinkBlinkMachine(void);
 void initSerialLink(void);
+void initSfp(void);
+void autoEchoOn(void);
+void timbreTalk(void);
+void timbreTalkMachine(void);
+void DOT_PROMPT(void);
+void initWaveforms(void);
 
 void initApp(void)
 {
 	initMachines();
 	greenOn();
  	activateOnce(blinkBlinkMachine);
-
-// 	initSfp();
-// 	initDebugUart();
 	initSerialLink();
+// 	initSfp();
  	autoEchoOn();
   	timbreTalk();
  	activateOnce(timbreTalkMachine);
  	setBuildPrompt();
-     showVersion();
+    showVersion();
  	DOT_PROMPT();
+	initWaveforms();
 }
 

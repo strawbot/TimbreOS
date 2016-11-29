@@ -25,7 +25,7 @@
       c_preprocessor_definitions="USE_HAL_DRIVER;STM32F415xx"
       c_user_include_directories="$(PackagesDir)/CMSIS_4/CMSIS/Include;./../Inc;./../Drivers/STM32F4xx_HAL_Driver/Inc;./../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;./../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;./../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;./../Drivers/CMSIS/Device/ST/STM32F4xx/Include;./../Drivers/CMSIS/Include"
       debug_register_definition_file="$(TargetsDir)/STM32/STM32F41x_Peripherals.xml"
-      linker_additional_files="$(LIBRARIES)/Timbre.a;$(LIBRARIES)/Application.a"
+      linker_additional_files="$(LIBRARIES)/Sfp.a;$(LIBRARIES)/Timbre.a;$(LIBRARIES)/Application.a"
       linker_memory_map_file="$(TargetsDir)/STM32/STM32F415RG_MemoryMap.xml"
       linker_section_placement_file="$(StudioDir)/targets/Cortex_M/flash_placement.xml"
       macros="STMCUBE=..;LIBRARIES=../Libraries"
@@ -88,6 +88,8 @@
         <file file_name="./../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c" />
         <file file_name="./../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c" />
         <file file_name="./../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c" />
+        <file file_name="../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dac.c" />
+        <file file_name="../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dac_ex.c" />
       </folder>
       <folder Name="CMSIS">
         <file file_name="" />
@@ -116,6 +118,8 @@
         <file file_name="./../Src/main.c" />
         <file file_name="./../Src/usart.c" />
         <file file_name="../Src/tim.c" />
+        <file file_name="../Src/dac.c" />
+        <file file_name="../Src/dma.c" />
       </folder>
     </folder>
     <folder Name="HAL">
@@ -170,8 +174,12 @@
       project_type="Library" />
     <file file_name="../cli.c" />
     <file file_name="../SimpleBoard/initApp.c" />
-    <file file_name="../uart.c" />
+    <file file_name="../uart.c">
+      <configuration Name="THUMB Debug" build_exclude_from_build="No" />
+    </file>
     <file file_name="../WordLists/Cli/help.c" />
     <file file_name="../WordLists/Cli/wordlist.c" />
+    <file file_name="../network.c" />
+    <file file_name="../sinewave.c" />
   </project>
 </solution>

@@ -85,7 +85,9 @@ void help(void) {
     printif("here   ( - a ) return address of end of dictionary\n");
     printif("hex   interpret all following numbers as hex\n");
     printif("hold   ( c - ) hold a character in number sequence\n");
+    printif("hz   ( n ) set frequency for DAC 1 outptut\n");
     printif("if  [i]  ( n - ) execute following code if top of stack is non-zero\n");
+    printif("khz   ( n ) set frequency in Khz for DAC 1 output\n");
     printif("koff   turn off automatic key echo\n");
     printif("kon   turn on automatic key echo\n");
     printif("l!   (n a - )store next into memory using top as address (processor sized)\n");
@@ -108,11 +110,14 @@ void help(void) {
     printif("s@   ( a - h ) return contents of memory using top stack item as the address (16 bit)\n");
     printif("shift   ( n m - p ) shift n by m bit left for minus and right for positive\n");
     printif("sign   ( n - ) prepend sign to number sequence if n is negative\n");
+    printif("sine   output a sine wave on DAC 1\n");
     printif("sp!   ( ... - ) empty the data stack\n");
+    printif("square   output a square wave on DAC 1\n");
     printif("start   note the starting time\n");
     printif("stats   show time statistics on machine loop\n");
     printif("swap   ( n m - m n ) swap top two items on the data stack\n");
     printif("time   display local time\n");
+    printif("triangle   output a triangle waveform on DAC 1\n");
     printif("type   ( a n - ) output n characters starting at a\n");
     printif("u<   ( u v - f ) leave a boolean on stack indicating if unsigned next is less than top\n");
     printif("u>   ( u b - f ) leave a boolean on stack indicating if unsigned next is greater than top\n");
