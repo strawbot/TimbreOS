@@ -18,8 +18,8 @@ void initApp(void)
 	initMachines();
 	greenOn();
  	activateOnce(blinkBlinkMachine);
-	initSerialLink();
-// 	initSfp();
+//	initSerialLink();
+ 	initSfp();
  	autoEchoOn();
   	timbreTalk();
  	activateOnce(timbreTalkMachine);

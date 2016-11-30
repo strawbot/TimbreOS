@@ -47,7 +47,31 @@ void sfpMachine(void)
 		/* Enable the UART Transmit data register empty Interrupt */
     	SET_BIT(huart->Instance->CR1, USART_CR1_TXEIE);
 
+	processFrames();
+	sendeqSfp();
 	activate(sfpMachine);
+}
+
+static bool checkUart(sfpLink_t *link)
+{
+	UART_HandleTypeDef * huart = (UART_HandleTypeDef *)(link->port);
+	
+	return (READ_REG(huart->Instance->SR) & USART_SR_RXNE) != RESET;
+}
+
+static Byte getUart(sfpLink_t * link)
+{
+	UART_HandleTypeDef * huart = (UART_HandleTypeDef *)(link->port);
+	
+	BytesIn(link);
+	return huart->Instance->DR;
+}
+
+static bool uartEmpty(struct sfpLink_t * link)
+{
+	UART_HandleTypeDef * huart = (UART_HandleTypeDef *)(link->port);
+
+	return (READ_REG(huart->Instance->SR) & USART_SR_TXE) != RESET;
 }
 
 void initSfp(void)
@@ -68,6 +92,10 @@ void initSfp(void)
 	link = &uartLink;
 	initLink(link, "UART Link");
 	link->port = huart = &UART_PORT;
+	link->sfpRx = checkUart;
+	link->sfpGet = getUart;
+	link->sfpTx = uartEmpty;
+	link->sfpPut = uartPut;
 
 	// initialize state machines
 	initSfpRxSM(link, uartFrameq);
@@ -99,8 +127,7 @@ void uartLinkHandler(void)
 	UART_HandleTypeDef * huart = (UART_HandleTypeDef *)(link->port);
 	uint32_t isrflags = READ_REG(huart->Instance->SR);
 
-	if ((isrflags & USART_SR_RXNE) != RESET)
-		sfpRxSm(link);
+	sfpRxSm(link);
 	
 	if ((isrflags & USART_SR_TXE) != RESET) {
 		if (link->sfpBytesToTx)

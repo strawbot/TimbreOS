@@ -9,11 +9,9 @@
       arm_architecture="v7EM"
       arm_core_type="Cortex-M4"
       arm_fpu_type="FPv4-SP-D16"
-      arm_linker_heap_size="128"
       arm_linker_jtag_pad_pre_dr="1"
       arm_linker_jtag_pad_pre_ir="5"
       arm_linker_process_stack_size="0"
-      arm_linker_stack_size="256"
       arm_simulator_memory_simulation_filename="$(TargetsDir)/STM32/STM32SimulatorMemory$(HostDLL)"
       arm_simulator_memory_simulation_parameter="STM32F415RG;0x100000;0x20000"
       arm_target_connect_with_reset="No"
@@ -153,6 +151,7 @@
   <configuration
     Name="Common"
     arm_architecture="v7EM"
+    arm_linker_stack_size="1024"
     build_treat_warnings_as_errors="Yes"
     c_additional_options="-Wno-unused-parameter"
     c_only_additional_options="-Wno-missing-field-initializers"
@@ -175,7 +174,7 @@
     <file file_name="../cli.c" />
     <file file_name="../SimpleBoard/initApp.c" />
     <file file_name="../uart.c">
-      <configuration Name="THUMB Debug" build_exclude_from_build="No" />
+      <configuration Name="THUMB Debug" build_exclude_from_build="Yes" />
     </file>
     <file file_name="../WordLists/Cli/help.c" />
     <file file_name="../WordLists/Cli/wordlist.c" />
