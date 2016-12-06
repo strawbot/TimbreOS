@@ -4,6 +4,7 @@
 #include "byteq.h"
 #include "localio.h"
 #include "machines.h"
+#include "devices.h"
 
 static serialLink_t uartLink;
 
@@ -53,7 +54,7 @@ void serialMachine(void)
 	activate(serialMachine);
 }
 
-void initSerialUart(void)
+void initTalkPort(void)
 {
 	serialLink_t * link = &uartLink;
 	UART_HandleTypeDef * huart;
@@ -62,7 +63,7 @@ void initSerialUart(void)
 	link->linkIn = uartLinkIn;
 	link->linkOut = uartLinkOut;
 	link->linkEmpty = serialEmpty;
-	link->port = huart = &UART_PORT;
+	link->port = huart = &SERIAL_UART;
 	
 	/* Enable the UART Error Interrupt: (Frame error, noise error, overrun error) */
 	SET_BIT(huart->Instance->CR3, USART_CR3_EIE);

@@ -6,4 +6,6 @@
 #define SFP_UART huart3
 #define TIME_BASE htim7
 
+extern UART_HandleTypeDef huart3;
+
 #endif

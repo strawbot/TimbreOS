@@ -3,10 +3,7 @@
 #include "stats.h"
 #include "sfpRxSm.h"
 #include "sfpTxSm.h"
-#include "stm32f4xx_hal.h"
-
-extern UART_HandleTypeDef huart3;
-#define UART_PORT huart3
+#include "devices.h"
 
 sfpLink_t uartLink;
 
@@ -79,7 +76,7 @@ static bool uartEmpty(struct sfpLink_t * link)
 void initSfpUart(void)
 {
 	sfpLink_t *link  = &uartLink;
-	UART_HandleTypeDef * huart = &UART_PORT;
+	UART_HandleTypeDef * huart = &SFP_UART;
 	
 	// initialize UART link
 	initLink(link, "UART Link");

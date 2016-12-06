@@ -182,9 +182,8 @@
     <file file_name="../uartSfp.c">
       <configuration Name="THUMB Debug" build_exclude_from_build="No" />
     </file>
-    <file file_name="../MiniM4/serialNode.c">
-      <configuration Name="THUMB Debug" build_exclude_from_build="Yes" />
+    <file file_name="../MiniM4/sfpNode.c">
+      <configuration Name="THUMB Debug" build_exclude_from_build="No" />
     </file>
-    <file file_name="../MiniM4/sfpNode.c" />
   </project>
 </solution>

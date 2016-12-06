@@ -1,9 +1,4 @@
 #include "bktypes.h"
-#include "stm32f4xx_hal.h"
-
-extern UART_HandleTypeDef huart3;
-
-#define UART_PORT huart3;
 
 // Link structure
 typedef struct serialLink_t{ // Link information

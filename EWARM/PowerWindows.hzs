@@ -62,7 +62,7 @@
   <Watches active="0" update="Never" />
  </Watch4>
  <Files>
-  <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../Src/main.c" y="77" path="../Src/main.c" left="0" selected="1" name="unnamed" top="52" />
+  <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../Src/main.c" y="77" path="../Src/main.c" left="0" selected="0" name="unnamed" top="52" />
   <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../Src/gpio.c" y="76" path="../Src/gpio.c" left="0" selected="0" name="unnamed" top="27" />
   <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../SFP/sfp.h" y="2" path="../SFP/sfp.h" left="0" selected="0" name="unnamed" top="2" />
   <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../Timbre/version.c" y="5" path="../Timbre/version.c" left="0" selected="0" name="unnamed" top="0" />
@@ -86,7 +86,7 @@
   <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c" y="808" path="../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c" left="0" selected="0" name="unnamed" top="778" />
   <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h" y="222" path="../Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h" left="0" selected="0" name="unnamed" top="194" />
   <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h" y="192" path="../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h" left="0" selected="0" name="unnamed" top="151" />
-  <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../uartLink.h" y="4" path="../uartLink.h" left="0" selected="0" name="unnamed" top="0" />
+  <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../uartLink.h" y="1" path="../uartLink.h" left="0" selected="0" name="unnamed" top="0" />
   <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../SFP/link.c" y="20" path="../SFP/link.c" left="0" selected="0" name="unnamed" top="12" />
   <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../Timbre/globals.h" y="12" path="../Timbre/globals.h" left="0" selected="0" name="unnamed" top="0" />
   <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../Timbre/queue.c" y="25" path="../Timbre/queue.c" left="0" selected="0" name="unnamed" top="0" />
@@ -107,10 +107,11 @@
   <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../SFP/node.c" y="64" path="../SFP/node.c" left="0" selected="0" name="unnamed" top="39" />
   <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../SFP/services.h" y="17" path="../SFP/services.h" left="0" selected="0" name="unnamed" top="0" />
   <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../Timbre/copyRun.c" y="0" path="../Timbre/copyRun.c" left="0" selected="0" name="unnamed" top="0" />
-  <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../uartSfp.c" y="69" path="../uartSfp.c" left="0" selected="0" name="unnamed" top="16" />
-  <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../MiniM4/serialNode.c" y="5" path="../MiniM4/serialNode.c" left="0" selected="0" name="unnamed" top="0" />
-  <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../MiniM4/sfpNode.c" y="30" path="../MiniM4/sfpNode.c" left="0" selected="0" name="unnamed" top="0" />
+  <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../uartSfp.c" y="5" path="../uartSfp.c" left="0" selected="0" name="unnamed" top="0" />
+  <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../MiniM4/sfpNode.c" y="30" path="../MiniM4/sfpNode.c" left="0" selected="0" name="unnamed" top="33" />
   <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="" x="0" debugPath="../Timbre/timeout.c" y="13" path="../Timbre/timeout.c" left="0" selected="0" name="unnamed" top="0" />
+  <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="34" debugPath="../uartSerial.c" y="65" path="../uartSerial.c" left="0" selected="0" name="unnamed" top="0" />
+  <SessionOpenFile useTextEdit="1" useBinaryEdit="0" codecName="Default" x="0" debugPath="../MiniM4/devices.h" y="8" path="../MiniM4/devices.h" left="0" selected="1" name="unnamed" top="0" />
  </Files>
  <ARMCrossStudioWindow activeProject="PowerWindows" autoConnectTarget="ST-LINK/V2" debugSearchFileMap="" fileDialogInitialDirectory="/Users/robchapm/TimbreWorks/Projext/PowerWindows/MiniM4" fileDialogDefaultFilter="*.txt;*.log" autoConnectCapabilities="266111" debugSearchPath="" buildConfiguration="THUMB Debug" />
 </session>
