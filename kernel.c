@@ -1067,7 +1067,8 @@ void signedDigits(bool sign) /* a \ c -- n */ // convert string to number accord
 				}
 				f = f + *sp;
 				if (sign)  f = -f;
-				*sp = *(Cell *)&f;
+//				*sp = *(Cell *)&f;
+				*(float *)sp = f;
 			}
 			else
 #endif
