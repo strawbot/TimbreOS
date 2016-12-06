@@ -155,7 +155,7 @@ void initMachines(void)
 {
 	zeroq(machineq);
 	zeroq(machinenameq);
-	resetMachineMonitor();
+	activate(resetMachineMonitor);
 }
 
 // Machine cycle timer  Robert Chapman  Jan 16, 2015
