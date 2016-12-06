@@ -53,7 +53,7 @@ void serialMachine(void)
 	activate(serialMachine);
 }
 
-void initSerialLink(void)
+void initSerialUart(void)
 {
 	serialLink_t * link = &uartLink;
 	UART_HandleTypeDef * huart;

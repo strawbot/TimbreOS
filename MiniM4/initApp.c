@@ -5,8 +5,7 @@
 
 void greenOn(void);
 void blinkBlinkMachine(void);
-void initSerialLink(void);
-void initSfp(void);
+void initTalkPort(void);
 void autoEchoOn(void);
 void timbreTalk(void);
 void timbreTalkMachine(void);
@@ -18,8 +17,7 @@ void initApp(void)
 	initMachines();
 	greenOn();
  	activateOnce(blinkBlinkMachine);
-//	initSerialLink();
- 	initSfp();
+ 	initTalkPort();
  	autoEchoOn();
   	timbreTalk();
  	activateOnce(timbreTalkMachine);

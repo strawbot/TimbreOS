@@ -54,4 +54,5 @@
       <file file_name="../SFP/Handlers/versionHandler.c" />
     </folder>
   </project>
+  <configuration Name="Common" gcc_optimization_level="Level 3" />
 </solution>

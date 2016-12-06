@@ -43,7 +43,7 @@
       combine_output_filepath="../$(LocalProjectDir)/build_version.h"
       project_directory=""
       project_type="Combining" />
-    <file file_name="../$(LocalProjectDir)/build_version.txt" />
     <file file_name="../Scripts/copy.py" />
+    <file file_name="../MiniM4/build_version.txt" />
   </project>
 </solution>

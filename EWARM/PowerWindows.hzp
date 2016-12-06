@@ -161,7 +161,7 @@
     gcc_cplusplus_language_standard="c++11"
     gcc_enable_all_warnings="Yes"
     gcc_optimization_level="Optimize For Size"
-    macros="FIRMWARE=../;TIMBRE=../Timbre;SFP=../SFP;LIBRARIES=../Libraries;STMCUBE=../;LocalProjectDir=SimpleBoard" />
+    macros="FIRMWARE=../;TIMBRE=../Timbre;SFP=../SFP;LIBRARIES=../Libraries;STMCUBE=../;LocalProjectDir=MiniM4" />
   <import file_name="../Projects/TimbreOS.hzp" />
   <import file_name="../Projects/Updates.hzp" />
   <project Name="Application">
@@ -172,13 +172,19 @@
       project_directory=""
       project_type="Library" />
     <file file_name="../cli.c" />
-    <file file_name="../SimpleBoard/initApp.c" />
-    <file file_name="../uart.c">
-      <configuration Name="THUMB Debug" build_exclude_from_build="Yes" />
-    </file>
+    <file file_name="../MiniM4/initApp.c" />
     <file file_name="../WordLists/Cli/help.c" />
     <file file_name="../WordLists/Cli/wordlist.c" />
-    <file file_name="../network.c" />
     <file file_name="../sinewave.c" />
+    <file file_name="../uartSerial.c">
+      <configuration Name="THUMB Debug" build_exclude_from_build="Yes" />
+    </file>
+    <file file_name="../uartSfp.c">
+      <configuration Name="THUMB Debug" build_exclude_from_build="No" />
+    </file>
+    <file file_name="../MiniM4/serialNode.c">
+      <configuration Name="THUMB Debug" build_exclude_from_build="Yes" />
+    </file>
+    <file file_name="../MiniM4/sfpNode.c" />
   </project>
 </solution>
