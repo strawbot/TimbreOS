@@ -62,6 +62,9 @@ Issues:
  4. Should move from botkernel to timbre. bktypes -> ttypes, botkernl -> timbre etc
  5. Provide a kill command to delete a machine from the machine queue from the command
     line. To aid in debugging.
+ 6. Perhaps queues should be of void * instead of Cell and then anything can be stored
+    in there.
+ 7. Timestamp should be a typedef used by all time references instead of Long.
 
 Updates:
  1. fixed bug in queues. p() never worked - it did the same as q()
