@@ -89,12 +89,11 @@ void set_prompt(Cell address)
 		lit(13), EMIT(), DOT_PROMPT();
 }
 
-static enum {INITIALIZING, WAITING, RUNNING } talkState = INITIALIZING;
-
-Cell recursed; // incremented if we recursed when we should never do
-
 void timbreTalk(void)
 {
+	static enum {INITIALIZING, WAITING, RUNNING } talkState = INITIALIZING;
+	static Cell recursed = 0; // incremented if we recursed when we should never do
+
 	switch(talkState)
 	{
 	case INITIALIZING:
