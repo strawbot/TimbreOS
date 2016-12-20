@@ -3,3 +3,8 @@
 *.a
 *.elf
 *.map
+.qmake.stash
+Makefile
+moc_*.cpp
+*.3-pre1
+*.autosave
