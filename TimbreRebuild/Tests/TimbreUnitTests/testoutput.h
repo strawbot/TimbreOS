@@ -21,8 +21,10 @@ private slots:
     void TestCount();
     void TestType();
     void TestSpaces();
-    void TestHex();
+    void TestBin();
+    void TestOct();
     void TestDecimal();
+    void TestHex();
     void TestHold();
     void TestStartNumberConversion();
     void TestConvertDigit();
@@ -31,6 +33,8 @@ private slots:
     void TestEndNumberConversion();
     void TestDotr();
     void TestDot();
+    void TestSetPrompt();
+    void TestdotPrompt();
 };
 
 #endif // TESTOUTPUT_H

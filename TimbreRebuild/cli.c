@@ -346,7 +346,16 @@ void byteErase(void)  /* addr \ count -- */
 }
 
 // output stream
-static BQUEUE(160, emitq);
+#define BEEP 7
+#define BSPACE 8
+#define LFEED 10
+#define CRETURN 13
+#define ESCAPE 27
+#define DELETE 127
+
+#define EMITQ_SIZE 160
+
+static BQUEUE(EMITQ_SIZE, emitq);
 
 static Cell outp=0;
 
@@ -364,12 +373,6 @@ void safeEmit(Byte c)
 	}
 	pushbq(c, emitq);
 }
-
-#define BEEP 7
-#define BSPACE 8
-#define LFEED 10
-#define CRETURN 13
-#define DELETE 127
 
 void emitByte(Byte c)
 {
@@ -448,7 +451,9 @@ void hex(void)  /* -- */
 	base = 16;
 }
 
-BQUEUE(20, padq); // safe place to format numbers
+#define PAD_SIZE 20
+
+BQUEUE(PAD_SIZE, padq); // safe place to format numbers
 
 void hold(void)  /* char -- */
 {
@@ -533,13 +538,38 @@ void dot(void)  /* n -- */
 	spaces(1);
 }
 
+// prompt
+#ifndef PROMPTSTRING  // replace by defining
+#define PROMPTSTRING "\010timbre: "
+#endif
+
+static Byte prompt[10]={PROMPTSTRING};
+static Byte compiling = 0;
+
+void setPrompt(const char *string)
+{
+	Byte length = (Byte)strlen(string);
+
+	if (length > sizeof(prompt) + 1)
+		length = sizeof(prompt) - 1;
+	prompt[0] = length;
+	memcpy(&prompt[1], string, length);
+}
+
+void dotPrompt(void)
+{
+	maybeCr();
+	compiling ?	lit((Cell)"\002] ") : lit((Cell)prompt);
+	count();
+	type();
+}
+
 // compiler
 #define Headless(function) \
 extern void function(void); \
 struct { vector tick; }_##function = {function};
 
-Cell compiling = 0;
-thread *ip, tick;
+thread tick;
 
 void righBracket(void)
 {
@@ -557,24 +587,9 @@ void compileIt(thread t)
 	comma();
 }
 
-void litii(void)  /* -- n */
-{
-	lit((Cell)*ip++);
-}
-
-Headless(litii)
-
-void literal(Cell n)
-{
-	if (compiling)
-		compileIt(&_litii.tick);
-	lit(n);
-	comma();
-}
-
 void executeIt(thread t)
 {
-	tick = *t;
+	tick = t;
 	(*t)();
 }
 
@@ -583,25 +598,48 @@ void execute(void) /* a - */
 	executeIt((thread)ret());
 }
 
-// prompt
-#ifndef PROMPTSTRING  // replace by defining
-#define PROMPTSTRING "\010timbre: "
-#endif
+// inner interpreters
+typedef struct body{
+	thread ii; // inner interpreter
+	struct body * list[]; // points other body's inner interpreters
+} body;
 
-Byte prompt[10]={PROMPTSTRING};
+body * ip;
 
-void setPrompt(char *string)
+void lii(void)  /* -- n */ // inline literals
 {
-	prompt[0] = (Byte)strlen(string);
-	strcpy((char*)&prompt[1], string);
+	lit((Cell)ip++->ii);
 }
 
-void dotPrompt(void)
+void vii()	/* -- ii */ // adddress returner
 {
-	maybeCr();
-	compiling ?	lit((Cell)"\002] ") : lit((Cell)prompt);
-	count();
-	type();
+	lit((Cell)(tick+1));
+}
+
+void cii()	/* -- ii */ // constant retreiver
+{
+	lit((Cell)*(tick+1));
+}
+
+void colonii() // macro threader
+{
+	body * save = ip;
+
+	ip = (body *)(tick+1);
+	while((tick = ip++->ii) != 0)
+		(**tick)();
+	ip = save;
+}
+
+// threaded compilers
+Headless(lii)
+
+void literal(Cell n)
+{
+	if (compiling)
+		compileIt(&_lii.tick);
+	lit(n);
+	comma();
 }
 
 // parsing
@@ -934,16 +972,16 @@ void collectKeys(void)
 	Byte key = pullbq(keyq);
 
 	switch (key) {
-	case 10: // ignore line feeds
+	case LFEED: // ignore line feeds
 		return;
-	case 8:
-	case 127: // backspace or delete
+	case BSPACE:
+	case DELETE: // backspace or delete
 		if (tib.in != 0)
 			tib.in -= 1;
 		else
-			key = 7;
+			key = BEEP;
 		break;
-	case 13:
+	case CRETURN:
 	case 0:  // a cursor return
 		keyEcho = autoecho;
 		key = 0;
@@ -958,16 +996,18 @@ void collectKeys(void)
 		dotPrompt();
 		return;
 	default:
-		if ( key < 27 )
-			key = 7;
+		if ( key < ESCAPE )
+			key = BEEP;
 		else if ( tib.in < LINE_LENGTH ) { // check in not out!
 			tib.buffer[tib.in] = key;
 			tib.in++;
 		}
 		else
-			key = 7;
+			key = BEEP;
 	}
 
 	if (keyEcho)
 		emitByte(key);
 }
+
+// TODO: make storage local; group by function; factor out magic numbers; improve names; make macro support optional;

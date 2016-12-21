@@ -13,6 +13,9 @@ Cell numEmits();
 Byte getBase();
 extern bool emitOverflow;
 Cell outs();
-extern Byte base;
+Byte * getPrompt();
+Byte getCompile();
+Cell getTick();
+Cell getLii();
 extern Byte padq[];
 }

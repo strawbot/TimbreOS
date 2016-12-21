@@ -67,6 +67,27 @@ Byte getBase()
     return base;
 }
 
+Byte * getPrompt()
+{
+    return prompt;
+}
+
+// compile
+Byte getCompile()
+{
+    return compiling;
+}
+
+Cell getTick()
+{
+    return (Cell)tick;
+}
+
+Cell getLii()
+{
+    return (Cell)&_lii.tick;
+}
+
 // dictionaries
 #define NAMES(name) PROGMEM char name[] = {
 #define NAME(s) s "\000"

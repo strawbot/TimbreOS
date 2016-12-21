@@ -112,18 +112,32 @@ void testoutput::TestSpaces()
     QVERIFY(getEmit() == ' ');
 }
 
+void testoutput::TestBin()
+{
+    QCOMPARE(getBase(), (Byte)10);
+    bin();
+    QCOMPARE(getBase(), (Byte)2);
+}
+
+void testoutput::TestOct()
+{
+    QCOMPARE(getBase(), (Byte)10);
+    oct();
+    QCOMPARE(getBase(), (Byte)8);
+}
+
+void testoutput::TestDecimal()
+{
+    bin();
+    decimal();
+    QCOMPARE(getBase(), (Byte)10);
+}
+
 void testoutput::TestHex()
 {
     QCOMPARE(getBase(), (Byte)10);
     hex();
     QCOMPARE(getBase(), (Byte)16);
-}
-
-void testoutput::TestDecimal()
-{
-    hex();
-    decimal();
-    QCOMPARE(getBase(), (Byte)10);
 }
 
 void testoutput::TestHold()
@@ -241,3 +255,28 @@ void testoutput::TestDot()
         QVERIFY(getEmit() == 'F');
 }
 
+void testoutput::TestSetPrompt()
+{
+    setPrompt("");
+    QVERIFY(*getPrompt() == 0);
+    setPrompt("very long prompt");
+    QVERIFY(*getPrompt() < sizeof("very long prompt"));
+    setPrompt("x");
+    QVERIFY(getPrompt()[1] == 'x');
+}
+
+void testoutput::TestdotPrompt()
+{
+    setPrompt("x");
+    dotPrompt();
+    QVERIFY(getEmit() == 10);
+    QVERIFY(getEmit() == 13);
+    QVERIFY(getEmit() == 'x');
+    QVERIFY(outs() == 1);
+    righBracket();
+    dotPrompt();
+    QVERIFY(getEmit() == 10);
+    QVERIFY(getEmit() == 13);
+    QVERIFY(getEmit() == ']');
+    QVERIFY(getEmit() == ' ');
+}
