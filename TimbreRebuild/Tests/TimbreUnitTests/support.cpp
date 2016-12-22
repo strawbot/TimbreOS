@@ -85,7 +85,7 @@ Cell getTick()
 
 Cell getLii()
 {
-    return (Cell)&_lii.tick;
+    return (Cell)&_lii.ii;
 }
 
 // dictionaries

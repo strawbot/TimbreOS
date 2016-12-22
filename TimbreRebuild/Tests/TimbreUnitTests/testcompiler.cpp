@@ -1,7 +1,7 @@
 #include <QtTest>
 
-#include "support.h"
 #include "testcompiler.h"
+#include "support.h"
 
 bool executed;
 
@@ -10,7 +10,7 @@ void exec()
     executed = true;
 }
 
-struct { vector tick; }func = {exec};
+tcbody func = {.ii = exec};
 
 testcompiler::testcompiler(QObject *parent) : QObject(parent)
 {
@@ -50,14 +50,14 @@ void testcompiler::testCompileit()
 void testcompiler::testExecuteit()
 {
     QVERIFY(executed == false);
-    executeIt(&func.tick);
+    executeIt(&func);
     QVERIFY(executed == true);
-    QVERIFY(getTick() == (Cell)&func.tick);
+    QVERIFY(getTick() == (Cell)&func);
 }
 
 void testcompiler::testExecute()
 {
-    lit((Cell)&func.tick);
+    lit((Cell)&func);
     execute();
     QVERIFY(executed == true);
     QVERIFY(depth() == 0);
@@ -67,7 +67,7 @@ void testcompiler::testLii()
 {
     Cell c[] = {(Cell)colonii, getLii(), 0x1234, 0};
 
-    executeIt((thread)c);
+    executeIt((tcode)c);
     QVERIFY(ret() == 0x1234);
 }
 
@@ -75,7 +75,7 @@ void testcompiler::testVii()
 {
     Cell c[] = {(Cell)vii, 0x1234};
 
-    executeIt((thread)c);
+    executeIt((tcode)c);
     QVERIFY(ret() == (Cell)&c[1]);
 }
 
@@ -83,7 +83,7 @@ void testcompiler::testCii()
 {
     Cell c[] = {(Cell)cii, 0x1234};
 
-    executeIt((thread)c);
+    executeIt((tcode)c);
     QVERIFY(ret() == 0x1234);
 }
 
@@ -95,7 +95,7 @@ void testcompiler::testColonii()
     Cell d[] = {(Cell)colonii, (Cell)c, 0};
     Cell e[] = {(Cell)colonii, (Cell)d, (Cell)b, 0};
 
-    executeIt((thread)e);
+    executeIt((tcode)e);
     QVERIFY(ret() == 0x1234);
     QVERIFY(ret() == 0x4321);
 }
@@ -108,6 +108,6 @@ void testcompiler::testLiteral()
     literal(0xabcd);
     lit(0);
     comma();
-    executeIt((thread)testMemory);
+    executeIt((tcode)testMemory);
     QVERIFY(ret() == 0xabcd);
 }

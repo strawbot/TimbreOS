@@ -83,14 +83,11 @@ void rfrom(void)  /* - m */
 #define binary(op) 	\
 	Cell top = popq(dataStack); \
 	Cell next = popq(dataStack); \
-	\
 	pushq(next op top, dataStack)
 #define binaryInts(op) 	\
 	Cell top = popq(dataStack); \
 	Cell next = popq(dataStack); \
-	\
 	pushq((Cell)((Integer)next op (Integer)top), dataStack)
-
 #define unary(op) pushq( op popq(dataStack), dataStack)
 
 void andOp(void)  /* m n - p */
@@ -565,11 +562,7 @@ void dotPrompt(void)
 }
 
 // compiler
-#define Headless(function) \
-extern void function(void); \
-struct { vector tick; }_##function = {function};
-
-thread tick;
+tcode tick;
 
 void righBracket(void)
 {
@@ -581,63 +574,58 @@ void leftBracket(void)
 	compiling = 0;
 }
 
-void compileIt(thread t)
+void compileIt(tcode t)
 {
 	lit((Cell)t);
 	comma();
 }
 
-void executeIt(thread t)
+void executeIt(tcode t)
 {
 	tick = t;
-	(*t)();
+	t->ii();
 }
 
 void execute(void) /* a - */
 {
-	executeIt((thread)ret());
+	executeIt((tcode)ret());
 }
 
 // inner interpreters
-typedef struct body{
-	thread ii; // inner interpreter
-	struct body * list[]; // points other body's inner interpreters
-} body;
-
-body * ip;
+tcode * ip;
 
 void vii()	/* -- ii */ // adddress returner
 {
-	lit((Cell)(tick+1));
+	lit((Cell)(tick->list));
 }
 
 void cii()	/* -- ii */ // constant retreiver
 {
-	lit((Cell)*(tick+1));
+	lit((Cell)(tick->list[0]));
 }
 
 void lii(void)  /* -- n */ // inline literals
 {
-	lit((Cell)ip++->ii);
+	lit((Cell)*ip++);
 }
 
 void colonii() // macro threader
 {
-	body * save = ip;
+	tcode * save = ip;
 
-	ip = (body *)(tick+1);
-	while((tick = ip++->ii) != 0)
-		(**tick)();
+	ip = tick->list;
+	while((tick = *ip++) != 0)
+		tick->ii();
 	ip = save;
 }
 
 // threaded compilers
-Headless(lii)
+Headless(lii);
 
 void literal(Cell n)
 {
 	if (compiling)
-		compileIt(&_lii.tick);
+		compileIt(&_lii);
 	lit(n);
 	comma();
 }
@@ -748,40 +736,40 @@ Short searchNames(Byte * name, PGM_P dictionary) // return name number or 0 if n
 	return 0;
 }
 
-Byte searchDictionaries(Byte * name, thread * t) // look through dictionaries for word
+Byte searchDictionaries(Byte * name, tcode * t) // look through dictionaries for word
 { // s -- a \ f
 	Short index;
 
 	index = searchNames(name, wordnames);
 	if (index != 0) {
-		*t = &wordbodies[index-1];
+		*t = (tcode)&wordbodies[index-1];
 		return NAME_BITS;
 	}
 
 	index = searchNames(name, constantnames);
 	if (index != 0) {
-		*t = &constantbodies[2*(index-1)]; // array of two pointers
+		*t = (tcode)&constantbodies[2*(index-1)]; // array of two pointers
 		return NAME_BITS;
 	}
 
 	index = searchNames(name, immediatenames);
 	if (index != 0) {
-		*t = &immediatebodies[index-1];
+		*t = (tcode)&immediatebodies[index-1];
 		return IMMEDIATE_BITS;
 	}
 
 	return 0;
 }
 
-thread link2tick(header * link)
+tcode link2tick(header * link)
 {
 	Byte length = link->name[0] & ~HEADER_BITS;
 	Cell t = align((Cell)link->name[1 + length]);
 
-	return (thread)t;
+	return (tcode)t;
 }
 
-Byte lookup(Byte * string, thread * t)
+Byte lookup(Byte * string, tcode * t)
 {
 	header * result;
 
@@ -918,7 +906,7 @@ void quit(void)  /* -- */
 void interpret(void)
 {
 	while (tib.buffer[tib.in] != 0) {
-		thread t;
+		tcode t;
 		Byte headbits;
 		Byte * string;
 

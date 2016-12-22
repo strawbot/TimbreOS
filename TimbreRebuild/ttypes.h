@@ -67,10 +67,19 @@ typedef unsigned char  bool;
 
 #define u8(n)	((Byte)n)
 
-// a C funtion address is a vector, everything else is a thread or points to
+// a C funtion address is a vector
+// a vector followed by pointers to other vectors is a threaded code body
 typedef void (*vector)();
-//typedef void (**thread)();
-#define thread vector *
+typedef struct tcbody{ // threaded code body
+	vector ii; // inner interpreter
+	struct tcbody * list[]; // points other body's inner interpreters
+} tcbody;
+typedef tcbody * tcode; // threaded code
+
+#define Headless(function) \
+	extern void function(void); \
+	tcbody _##function = {.ii = function}
+
 
 // bit flag generic macros
 #define clearBit(bit, flags)		flags &= ~(bit)

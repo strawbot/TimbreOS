@@ -40,7 +40,7 @@ void emitOp(void);
 void endNumberConversion(void);
 void equals(void);
 void execute(void);
-void executeIt(thread t);
+void executeIt(tcode t);
 void fetch(void);
 void greaterThan(void);
 void here(void);
