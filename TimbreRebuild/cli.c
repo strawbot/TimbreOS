@@ -606,11 +606,6 @@ typedef struct body{
 
 body * ip;
 
-void lii(void)  /* -- n */ // inline literals
-{
-	lit((Cell)ip++->ii);
-}
-
 void vii()	/* -- ii */ // adddress returner
 {
 	lit((Cell)(tick+1));
@@ -619,6 +614,11 @@ void vii()	/* -- ii */ // adddress returner
 void cii()	/* -- ii */ // constant retreiver
 {
 	lit((Cell)*(tick+1));
+}
+
+void lii(void)  /* -- n */ // inline literals
+{
+	lit((Cell)ip++->ii);
 }
 
 void colonii() // macro threader

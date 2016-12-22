@@ -92,11 +92,12 @@ void testcompiler::testColonii()
     Cell a[] = {(Cell)cii, 0x4321};
     Cell b[] = {(Cell)cii, 0x1234};
     Cell c[] = {(Cell)colonii, (Cell)a, 0};
-    Cell d[] = {(Cell)colonii, (Cell)b, (Cell)c, 0};
+    Cell d[] = {(Cell)colonii, (Cell)c, 0};
+    Cell e[] = {(Cell)colonii, (Cell)d, (Cell)b, 0};
 
-    executeIt((thread)d);
-    QVERIFY(ret() == 0x4321);
+    executeIt((thread)e);
     QVERIFY(ret() == 0x1234);
+    QVERIFY(ret() == 0x4321);
 }
 
 void testcompiler::testLiteral()
