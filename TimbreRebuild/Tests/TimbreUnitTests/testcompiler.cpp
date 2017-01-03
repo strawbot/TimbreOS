@@ -1,7 +1,7 @@
 #include <QtTest>
 
-#include "testcompiler.h"
 #include "support.h"
+#include "testcompiler.h"
 
 bool executed;
 
@@ -43,7 +43,7 @@ void testcompiler::testLeftbracket()
 
 void testcompiler::testCompileit()
 {
-    compileIt(1);
+    compileIt((tcode)1);
     QVERIFY(*(Cell *)testMemory == 1);
 }
 
@@ -102,6 +102,9 @@ void testcompiler::testColonii()
 
 void testcompiler::testLiteral()
 {
+    literal(123);
+    QVERIFY(depth() == 1);
+    QVERIFY(ret() == 123);
     righBracket();
     lit((Cell)colonii);
     comma();

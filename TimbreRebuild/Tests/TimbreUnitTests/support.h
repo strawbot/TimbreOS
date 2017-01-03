@@ -18,4 +18,25 @@ Byte getCompile();
 Cell getTick();
 Cell getLii();
 extern Byte padq[];
+Byte * getTib();
+void * getWordlist();
+
+void emptyKeyq(void);
+void inKey(Byte c);
+void inString(const char * cstring);
+void collector(void);
+
+#ifndef _SUPPORT_H_
+#define _SUPPORT_H_
+#define NAMES(name) PROGMEM char name[] = {""
+#define NAME(s) s "\000"
+#define END_NAMES };
+
+#define BODIES(functions) vector functions[] = {
+#define BODY(f) (vector)f,
+#define CONSTANTBODY(f)  (vector)cii,(vector)&f,
+#define CONSTANTNUMBER(n) (vector)cii,(vector)n,
+#define END_BODIES };
+
+#endif
 }

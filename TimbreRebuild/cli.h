@@ -5,6 +5,13 @@
 #ifndef _CLI_H_
 #define _CLI_H_
 
+#define BEEP 7
+#define BSPACE 8
+#define LFEED 10
+#define CRETURN 13
+#define ESCAPE 27
+#define DELETE 127
+
 #endif
 
 void absOp(void);
@@ -25,7 +32,7 @@ void collectKeys(void);
 void colonii(void);
 void comma(void);
 void comment(void);
-void compileIt(Cell tick);
+void compileIt(tcode tick);
 void convertDigit(void);
 void convertNumber(void);
 void count(void);
@@ -65,6 +72,8 @@ void notOp(void);
 void oct(void);
 void orOp(void);
 void over(void);
+void parse(Byte c);
+Byte * parseWord(Byte c);
 void plusBits(void);
 void plusOp(void);
 void questionDup(void);
@@ -73,12 +82,13 @@ Cell ret(void);
 void rfrom(void);
 void righBracket(void);
 void safeEmit(Byte c);
-void * searchWordlist(char * string);
+void * searchWordlist(Byte * string);
 void setPrompt(const char *string);
 void shiftOp(void);
 void shortFetch(void);
 void shortStore(void);
 void sign(void);
+void skip(Byte c);
 void slashModOp(void);
 void slashOp(void);
 void spaces(Cell n);
@@ -92,3 +102,4 @@ void type(void);
 void vii(void);
 void word(void);
 void xorOp(void);
+void zeroTib(void);

@@ -3,6 +3,7 @@
 
 #include "machines.h"
 #include "byteq.h"
+#include "cli.h"
 
 // parameters
 #define DCELLS 30  /* number of data stack cells */
@@ -343,18 +344,16 @@ void byteErase(void)  /* addr \ count -- */
 }
 
 // output stream
-#define BEEP 7
-#define BSPACE 8
-#define LFEED 10
-#define CRETURN 13
-#define ESCAPE 27
-#define DELETE 127
-
 #define EMITQ_SIZE 160
 
 static BQUEUE(EMITQ_SIZE, emitq);
 
 static Cell outp=0;
+
+void emptyEmitq(void)
+{
+	zerobq(emitq);
+}
 
 void safeEmit(Byte c)
 {
@@ -624,10 +623,11 @@ Headless(lii);
 
 void literal(Cell n)
 {
-	if (compiling)
-		compileIt(&_lii);
 	lit(n);
-	comma();
+	if (compiling) {
+		compileIt(&_lii);
+		comma();
+	}
 }
 
 // parsing
@@ -643,7 +643,7 @@ void zeroTib(void)
 
 void skip(Byte c) // skip c in input
 {
-	while (tib.buffer[tib.in] == c)
+	while (tib.buffer[tib.in] != 0 && tib.buffer[tib.in] == c)
 		tib.in++;
 }
 
@@ -655,8 +655,9 @@ void parse(Byte c) // parse string till char or 0 from input to here count prefi
 	while (*input != 0) {
 		Byte b = *input++;
 
-		if (b != c)
-			*++output = b;
+		if (b == c)
+			break;
+		*++output = b;
 	}
 	hp[0] = output - hp;	// count prefixed
 	output[1] = 0;			// null terminate for usage as C string
@@ -668,6 +669,16 @@ Byte * parseWord(Byte c) // return C-string from input
 	skip(c);
 	parse(c);
 	return &hp[1];
+}
+
+void comment(void)  /* char -- */ // scan input for end comment or 0
+{
+	Byte * input = &tib.buffer[tib.in];
+
+	while (*input)
+		if (*input++ == ')')
+			break;
+	tib.in = input - tib.buffer;
 }
 
 // dictionary words
@@ -693,15 +704,16 @@ typedef struct header {
 static header * wordlist = NULL; // list of words created from CLI
 
 // search CLI list
-header * searchWordlist(Byte * string)
+void * searchWordlist(Byte * cstring) // TODO: result should be header * which means typedef should be in cli.h
 {
 	header * list = wordlist;
 
 	while (list) {
 		Byte * name = list->name;
+		Byte length = strlen((char *)cstring);
 
-		if ((name[0] & ~IMMEDIATE_BITS) == string[0]) // smudged bit prevents matching bad headers
-			if (0 == memcmp(&name[1], &string[1], string[0]))
+		if ((name[0] & ~IMMEDIATE_BITS) == length) // smudged bit prevents matching bad headers
+			if (0 == memcmp(&name[1], cstring, length))
 				break;
 		list = list->list;
 	}
@@ -719,16 +731,17 @@ header * searchWordlist(Byte * string)
 extern vector wordbodies[];
 extern void (*constantbodies[])();
 extern void (*immediatebodies[])();
+// These are character arrays with a zero between strings; C inserts a final string zero - But only if there is a string
 extern PROGMEM char wordnames[];
 extern PROGMEM char constantnames[];
 extern PROGMEM char immediatenames[];
 
-Short searchNames(Byte * name, PGM_P dictionary) // return name number or 0 if not found
+Short searchNames(Byte * cstring, PGM_P dictionary) // return name number or 0 if not found
 {
 	Short index = 1;
 
 	while(pgm_read_byte(dictionary)) {
-		if (strcmp_P(name, dictionary) == 0)
+		if (strcmp_P(cstring, dictionary) == 0)
 			return index;
 		index++;
 		dictionary += strlen_P(dictionary) + 1;
@@ -736,23 +749,23 @@ Short searchNames(Byte * name, PGM_P dictionary) // return name number or 0 if n
 	return 0;
 }
 
-Byte searchDictionaries(Byte * name, tcode * t) // look through dictionaries for word
+Byte searchDictionaries(Byte * cstring, tcode * t) // look through dictionaries for word
 { // s -- a \ f
 	Short index;
 
-	index = searchNames(name, wordnames);
+	index = searchNames(cstring, wordnames);
 	if (index != 0) {
 		*t = (tcode)&wordbodies[index-1];
 		return NAME_BITS;
 	}
 
-	index = searchNames(name, constantnames);
+	index = searchNames(cstring, constantnames);
 	if (index != 0) {
 		*t = (tcode)&constantbodies[2*(index-1)]; // array of two pointers
 		return NAME_BITS;
 	}
 
-	index = searchNames(name, immediatenames);
+	index = searchNames(cstring, immediatenames);
 	if (index != 0) {
 		*t = (tcode)&immediatebodies[index-1];
 		return IMMEDIATE_BITS;
@@ -764,22 +777,22 @@ Byte searchDictionaries(Byte * name, tcode * t) // look through dictionaries for
 tcode link2tick(header * link)
 {
 	Byte length = link->name[0] & ~HEADER_BITS;
-	Cell t = align((Cell)link->name[1 + length]);
+	Cell t = align((Cell)&link->name[1 + length]);
 
 	return (tcode)t;
 }
 
-Byte lookup(Byte * string, tcode * t)
+Byte lookup(Byte * cstring, tcode * t)
 {
 	header * result;
 
-	result = searchWordlist(string);
+	result = (header *)searchWordlist(cstring);
 	if (result != 0) {
 		*t = link2tick(result);
 		return result->name[0] & HEADER_BITS;
 	}
 
-	return searchDictionaries(string, t);
+	return searchDictionaries(cstring, t);
 }
 
 // Error recovery
@@ -801,15 +814,15 @@ void error(void)  /* -- */
 }
 
 // Number conversion
-Byte checkBase(Byte * string) // check for prefixes: 0X, 0x, 0C, 0c, 0B or 0b
+Byte checkBase(Byte * cstring) // check for prefixes: 0X, 0x, 0C, 0c, 0B or 0b
 {
-	if (string[0] != 0 && string[1] != 0 && string[2] != 0) // count is longer than 2
-		if (*string == '0') {  // and first digit is 0
-			switch(string[1]) {
+	if (cstring[0] != 0 && cstring[1] != 0 && cstring[2] != 0) // count is longer than 2
+		if (*cstring == '0') {  // and first digit is 0
+			switch(cstring[1]) {
 			case 'b': case 'B':	bin(); break;
 			case 'c': case 'C':	oct(); break;
 			case 'x': case 'X':	hex(); break;
-			default: return 1; // skip leading zero
+			default: return 0;
 			}
 			return 2; // skip leading base change
 		}
@@ -818,7 +831,7 @@ Byte checkBase(Byte * string) // check for prefixes: 0X, 0x, 0C, 0c, 0B or 0b
 
 bool toDigit(Byte *n) // convert character to number according to base
 {// covers all alphanumerics and bases
-	Byte c = (Byte)(*n - '0');
+	Byte c = *n - '0';
 
 	if (c > 9) {
 		c -= 7;
@@ -833,38 +846,39 @@ bool toDigit(Byte *n) // convert character to number according to base
 	return true;
 }
 
-Cell signDigits(Byte * string, bool sign) // convert string to number according to base
+Cell signDigits(Byte * cstring, bool sign) // convert string to number according to base
 {
 	Cell n = 0;
 
-	if (*string == 0) {
+	if (*cstring == 0) {
 		error();
 		return 0;
 	}
 
-	while (*string) {
-		Byte c = *string++;
+	while (*cstring) {
+		Byte c = *cstring++;
 
 		if (!toDigit(&c)) {
 #ifdef FLOAT_SUPPORT
 			if (c == '.') { // decimal point encountered - try for mantissa
 				float f = 0;
 
-				while (*string) // start at end of string to work back to decimal
-					string++;
+				while (*cstring) // start at end of string to work back to decimal
+					cstring++;
 
-				while (*--string != '.') {
-					c = *string;
+				while (*--cstring != '.') {
+					c = *cstring;
 					if (!toDigit(&c)) {
 						error();
-						return;
+						return n;
 					}
 					f = (f+c)/base;
 				}
 				f = f + n;
 				if (sign)
 					f = -f;
-				return (Cell)f;
+				*(float *)&n = f;
+				return n;
 			}
 #endif
 			error();
@@ -877,16 +891,16 @@ Cell signDigits(Byte * string, bool sign) // convert string to number according 
 	return n;
 }
 
-Cell stringNumber(Byte * string)
+Cell stringNumber(Byte * cstring)
 {
 	Cell n;
 	Byte b = base;
-	bool sign = (*string == '-');
+	bool sign = (*cstring == '-');
 
 	if (sign)
-		string++;
-	string += checkBase(string);
-	n = signDigits(string, sign);
+		cstring++;
+	cstring += checkBase(cstring);
+	n = signDigits(cstring, sign);
 	base = b;
 	return n;
 }
@@ -898,6 +912,7 @@ void quit(void)  /* -- */
 	spStore();
 	rpStore();
 	zeroTib();
+	emptyEmitq();
 	leftBracket();
 	cursorReturn();
 	dotPrompt();
@@ -908,14 +923,14 @@ void interpret(void)
 	while (tib.buffer[tib.in] != 0) {
 		tcode t;
 		Byte headbits;
-		Byte * string;
+		Byte * cstring;
 
-		string = parseWord(' ');
-		headbits = lookup(string, &t);
+		cstring = parseWord(' ');
+		headbits = lookup(cstring, &t);
 		if (headbits != 0)
 			headbits == compiling ? compileIt(t) : executeIt(t);
 		else {
-			Cell n = stringNumber(string);
+			Cell n = stringNumber(cstring);
 
 			if (interpretError) {
 				quit();
@@ -926,20 +941,15 @@ void interpret(void)
 	}
 }
 
-void comment(void)  /* char -- */ // scan input for end comment or 0
-{
-	Byte * input = &tib.buffer[tib.in];
-
-	while (*input)
-		if (*input++ == ')')
-			break;
-	tib.in = input - tib.buffer;
-}
-
 // input stream
 BQUEUE(80,keyq);
 Byte keyEcho = 0;
 Byte autoecho = 0; // can be turned off to silently process a line
+
+void emptyKeyq(void)
+{
+	zerobq(keyq);
+}
 
 void autoEchoOn(void) // echo keys back
 {

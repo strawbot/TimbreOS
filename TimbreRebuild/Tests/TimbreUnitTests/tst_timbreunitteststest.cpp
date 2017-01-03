@@ -11,6 +11,9 @@ extern "C" {
 #include "testmemory.h"
 #include "testoutput.h"
 #include "testcompiler.h"
+#include "testparsing.h"
+#include "testinterpreter.h"
+#include "testinputstream.h"
 
 // Note: This is equivalent to QTEST_APPLESS_MAIN for multiple test classes.
 int main(int argc, char** argv)
@@ -41,10 +44,24 @@ int main(int argc, char** argv)
 //        testoutput tc;
 //        status |= QTest::qExec(&tc, argc, argv);
 //    }
-// compiler; prompt; parsing; dictionary; errors; numbers; interpreter; comment; input stream
-// output+prompt; input stream+parsing+comment; errors+numbers+interpreter+dictionary; compiler
+
+//    {
+//        testcompiler tc;
+//        status |= QTest::qExec(&tc, argc, argv);
+//    }
+
+//    {
+//        testparsing tc;
+//        status |= QTest::qExec(&tc, argc, argv);
+//    }
+
+//    {
+//        testinterpreter tc;
+//        status |= QTest::qExec(&tc, argc, argv);
+//    }
+
     {
-        testcompiler tc;
+        testinputstream tc;
         status |= QTest::qExec(&tc, argc, argv);
     }
 

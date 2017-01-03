@@ -1,10 +1,12 @@
 // Support functions for CLI
 
 extern "C" {
+#define FLOAT_SUPPORT
 
 #include "queue.c"
 #include "byteq.c"
 #include "cli.c"
+#include "support.h"
 
 // stacks
 Cell depth()
@@ -37,7 +39,7 @@ bool emitOverflow;
 
 void zeroEmits()
 {
-    zerobq(emitq);
+    emptyEmitq();
     emitOverflow = false;
 }
 
@@ -88,19 +90,16 @@ Cell getLii()
     return (Cell)&_lii.ii;
 }
 
+// parsing
+Byte * getTib()
+{
+    return &tib.buffer[tib.in];
+}
+
 // dictionaries
-#define NAMES(name) PROGMEM char name[] = {
-#define NAME(s) s "\000"
-#define END_NAMES };
-
-#define BODIES(functions) vector functions[] = {
-#define BODY(f) (void * const)f,
-#define CONSTANTBODY(f)  (void * const)CII,(void * const)&f,
-#define CONSTANTNUMBER(n) (void * const)CII,(void * const)n,
-#define END_BODIES };
-
 // Words
 NAMES(wordnames)
+    NAME("wordname")
 END_NAMES
 
 BODIES(wordbodies)
@@ -108,6 +107,7 @@ END_BODIES
 
 // Immediates
 NAMES(immediatenames)
+    NAME("immediatename")
 END_NAMES
 
 BODIES(immediatebodies)
@@ -115,7 +115,31 @@ END_BODIES
 
 // Constants
 NAMES(constantnames)
+    NAME("constantname")
 END_NAMES
 
 BODIES(constantbodies)
+    CONSTANTNUMBER(12345)
 END_BODIES
+
+void * getWordlist()
+{
+    return &wordlist;
+}
+
+void inKey(Byte c)
+{
+    pushbq(c, keyq);
+}
+
+void inString(const char * cstring)
+{
+    while (*cstring)
+        pushbq(*cstring++, keyq);
+}
+
+void collector(void)
+{
+    while (qbq(keyq))
+        collectKeys();
+}
