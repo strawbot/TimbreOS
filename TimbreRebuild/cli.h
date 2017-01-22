@@ -5,12 +5,54 @@
 #ifndef _CLI_H_
 #define _CLI_H_
 
+// parameters
+#ifndef CLI_PARAMETERS  // override by defining
+#define CLI_PARAMETERS
+
+#define DCELLS 30  /* number of data stack cells */
+#define RCELLS 30  /* number of return stack cells */
+#define LINE_LENGTH 80 /* number of characters allowed in tib */
+#define EMITQ_SIZE 160
+#define KEYQ_SIZE 80
+#define PAD_SIZE 20
+#define PROMPTSTRING "\010timbre: "
+
+#endif
+
+// stream tokens
 #define BEEP 7
 #define BSPACE 8
 #define LFEED 10
 #define CRETURN 13
 #define ESCAPE 27
 #define DELETE 127
+
+// Header bits
+#define NAME_BITS 0x80
+#define IMMEDIATE_BITS (NAME_BITS | 0x40)
+#define SMUDGE_BITS 0x20
+#define HEADER_BITS (IMMEDIATE_BITS | SMUDGE_BITS)
+
+typedef struct header {
+	struct header * list;
+	Byte name[];
+} header;
+
+// Non HARVAARD architectures
+#define PROGMEM const
+#define PGM_P const char *
+#define pgm_read_byte *
+#define strcmp_P(a,b) strcmp((char*)a,(char*)b)
+#define strlen_P(m) strlen(m)
+
+extern vector wordbodies[];
+extern void (*constantbodies[])();
+extern void (*immediatebodies[])();
+
+// These are character arrays with a zero between strings; C inserts a final string zero - But only if there is a string
+extern PROGMEM char wordnames[];
+extern PROGMEM char constantnames[];
+extern PROGMEM char immediatenames[];
 
 #endif
 

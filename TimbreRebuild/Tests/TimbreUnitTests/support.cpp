@@ -74,6 +74,11 @@ Byte * getPrompt()
     return prompt;
 }
 
+Byte * getPadq()
+{
+    return padq;
+}
+
 // compile
 Byte getCompile()
 {
@@ -142,4 +147,14 @@ void collector(void)
 {
     while (qbq(keyq))
         collectKeys();
+}
+
+Byte getInterpretError()
+{
+    return interpretError;
+}
+
+void clearInterpretError()
+{
+    interpretError = 0;
 }

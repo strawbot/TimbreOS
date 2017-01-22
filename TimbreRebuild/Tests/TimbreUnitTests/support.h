@@ -20,11 +20,14 @@ Cell getLii();
 extern Byte padq[];
 Byte * getTib();
 void * getWordlist();
+Byte * getPadq();
 
 void emptyKeyq(void);
 void inKey(Byte c);
 void inString(const char * cstring);
 void collector(void);
+Byte getInterpretError();
+void clearInterpretError();
 
 #ifndef _SUPPORT_H_
 #define _SUPPORT_H_

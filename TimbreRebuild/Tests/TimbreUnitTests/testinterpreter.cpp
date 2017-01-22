@@ -13,15 +13,15 @@ testinterpreter::testinterpreter(QObject *parent) : QObject(parent)
 #define SMUDGE_BITS 0x20
 #define HEADER_BITS (IMMEDIATE_BITS | SMUDGE_BITS)
 
-typedef struct header {
-    struct header * list;
+typedef struct header32 {
+    struct header32 * list;
     Byte name[32];
     vector tick;
-} header;
+} header32;
 
-header name1 = {NULL, {4|NAME_BITS, 'N', 'a', 'm', 'e'}, NULL};
-header name2 = {&name1, {6|NAME_BITS|SMUDGE_BITS, 'S', 'm', 'u', 'd', 'g', 'e'}, NULL};
-header name3 = {&name2, {9|NAME_BITS|IMMEDIATE_BITS, 'I', 'm', 'm', 'e', 'd', 'i', 'a', 't', 'e'}, NULL};
+header32 name1 = {NULL, {4|NAME_BITS, 'N', 'a', 'm', 'e'}, NULL};
+header32 name2 = {&name1, {6|NAME_BITS|SMUDGE_BITS, 'S', 'm', 'u', 'd', 'g', 'e'}, NULL};
+header32 name3 = {&name2, {9|NAME_BITS|IMMEDIATE_BITS, 'I', 'm', 'm', 'e', 'd', 'i', 'a', 't', 'e'}, NULL};
 
 Byte * string(const char * s)
 {
@@ -30,7 +30,7 @@ Byte * string(const char * s)
 
 void testinterpreter::init()
 {
-    *(header **)getWordlist() = &name3;
+    *(header32 **)getWordlist() = &name3;
     zeroEmits();
     hpStore();
     spStore();
@@ -107,7 +107,6 @@ void testinterpreter::testLookup()
 
 extern "C" void msg(const char * m);
 extern "C" void error(void);
-extern "C" Byte interpretError;
 
 void testinterpreter::testMsg()
 {
@@ -121,14 +120,14 @@ void testinterpreter::testMsg()
 
 void testinterpreter::testError()
 {
-    interpretError = 0;
+    clearInterpretError();
     testMemory[0] = 1;
     testMemory[1] = 'X';
     error();
     QVERIFY(getEmit() == 'X');
     QVERIFY(getEmit() == '<');
     QVERIFY(numEmits() == 5);
-    QVERIFY(interpretError == 1);
+    QVERIFY(getInterpretError() == 1);
 }
 
 extern "C" {
@@ -221,7 +220,7 @@ void testinterpreter::testQuit()
 {
     quit();
     QVERIFY(getBase() == 10);
-    QVERIFY(interpretError == 0);
+    QVERIFY(getInterpretError()== 0);
     QVERIFY(getCompile() == 0);
     QVERIFY(depth() == 0);
 }

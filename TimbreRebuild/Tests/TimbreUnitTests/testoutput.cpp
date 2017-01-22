@@ -144,8 +144,8 @@ void testoutput::TestHold()
 {
     lit(10);
     hold();
-    QVERIFY(qbq(padq) == 1);
-    QVERIFY(pullbq(padq) == 10);
+    QVERIFY(qbq(getPadq()) == 1);
+    QVERIFY(pullbq(getPadq()) == 10);
     QVERIFY(depth() == 0);
 }
 
@@ -154,33 +154,33 @@ void testoutput::TestStartNumberConversion()
     lit(10);
     hold();
     startNumberConversion();
-    QVERIFY(qbq(padq) == 0);
+    QVERIFY(qbq(getPadq()) == 0);
 }
 
 void testoutput::TestConvertDigit()
 {
     lit(9);
     convertDigit();
-    QVERIFY(pullbq(padq) == '9');
+    QVERIFY(pullbq(getPadq()) == '9');
     QVERIFY(ret() == 0);
 
     lit(10);
     convertDigit();
-    QVERIFY(pullbq(padq) == '0');
+    QVERIFY(pullbq(getPadq()) == '0');
     QVERIFY(ret() == 1);
 
     hex();
     lit(9);
     convertDigit();
-    QVERIFY(pullbq(padq) == '9');
+    QVERIFY(pullbq(getPadq()) == '9');
     QVERIFY(ret() == 0);
 
     lit(10);
     convertDigit();
-    QVERIFY(pullbq(padq) == 'A');
+    QVERIFY(pullbq(getPadq()) == 'A');
     QVERIFY(ret() == 0);
 
-    QVERIFY(qbq(padq) == 0);
+    QVERIFY(qbq(getPadq()) == 0);
     QVERIFY(depth() == 0);
 }
 
@@ -188,14 +188,14 @@ void testoutput::TestConvertNumber()
 {
     lit(12345);
     convertNumber();
-    QVERIFY(popbq(padq) == '1');
-    QVERIFY(popbq(padq) == '2');
-    QVERIFY(popbq(padq) == '3');
-    QVERIFY(popbq(padq) == '4');
-    QVERIFY(popbq(padq) == '5');
+    QVERIFY(popbq(getPadq()) == '1');
+    QVERIFY(popbq(getPadq()) == '2');
+    QVERIFY(popbq(getPadq()) == '3');
+    QVERIFY(popbq(getPadq()) == '4');
+    QVERIFY(popbq(getPadq()) == '5');
 
     QVERIFY(ret() == 0);
-    QVERIFY(qbq(padq) == 0);
+    QVERIFY(qbq(getPadq()) == 0);
     QVERIFY(depth() == 0);
 }
 
@@ -204,15 +204,15 @@ void testoutput::TestSign()
     lit(-1);
     lit(0);
     sign();
-    QVERIFY(popbq(padq) == '-');
+    QVERIFY(popbq(getPadq()) == '-');
     QVERIFY(ret() == 0);
-    QVERIFY(qbq(padq) == 0);
+    QVERIFY(qbq(getPadq()) == 0);
 
     lit(0);
     lit(-1);
     sign();
     QVERIFY((Integer)ret() == -1);
-    QVERIFY(qbq(padq) == 0);
+    QVERIFY(qbq(getPadq()) == 0);
     QVERIFY(depth() == 0);
 }
 
@@ -222,7 +222,7 @@ void testoutput::TestEndNumberConversion()
     endNumberConversion();
     QVERIFY(ret() == 0);
     QVERIFY(ret() == padBuffer());
-    QVERIFY(qbq(padq) == 0);
+    QVERIFY(qbq(getPadq()) == 0);
     QVERIFY(depth() == 0);
 }
 
@@ -234,7 +234,7 @@ void testoutput::TestDotr()
     QVERIFY(getEmit() == ' ');
     QVERIFY(getEmit() == '-');
     QVERIFY(getEmit() == '1');
-    QVERIFY(qbq(padq) == 0);
+    QVERIFY(qbq(getPadq()) == 0);
     QVERIFY(depth() == 0);
 }
 
@@ -245,13 +245,13 @@ void testoutput::TestDot()
     QVERIFY(getEmit() == '-');
     QVERIFY(getEmit() == '1');
     QVERIFY(getEmit() == ' ');
-    QVERIFY(qbq(padq) == 0);
+    QVERIFY(qbq(getPadq()) == 0);
     QVERIFY(depth() == 0);
 
     hex();
     lit(-1);
     dot();
-    while(qbq(padq))
+    while(qbq(getPadq()))
         QVERIFY(getEmit() == 'F');
 }
 

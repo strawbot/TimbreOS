@@ -78,7 +78,7 @@ typedef tcbody * tcode; // threaded code
 
 #define Headless(function) \
 	extern void function(void); \
-	tcbody _##function = {.ii = function}
+	static tcbody _##function = {.ii = function}
 
 
 // bit flag generic macros

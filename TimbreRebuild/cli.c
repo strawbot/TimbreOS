@@ -5,14 +5,32 @@
 #include "byteq.h"
 #include "cli.h"
 
-// parameters
-#define DCELLS 30  /* number of data stack cells */
-#define RCELLS 30  /* number of return stack cells */
-#define LINE_LENGTH 80 /* number of characters allowed in tib */
 
 // structures
 static QUEUE(DCELLS, dataStack);
 static QUEUE(RCELLS, returnStack);
+static BQUEUE(EMITQ_SIZE, emitq);
+static BQUEUE(PAD_SIZE, padq); // safe place to format numbers
+static BQUEUE(KEYQ_SIZE, keyq);
+
+static Byte * hp;
+static Byte keyEcho = 0;
+static Byte autoecho = 0; // can be turned off to silently process a line
+static Cell outp=0;
+static Byte base = 10; // command line number radix
+static Byte prompt[10]={PROMPTSTRING};
+static Byte compiling = 0;
+static tcode tick;
+static tcode * ip;
+static Byte interpretError = 0;
+static header * wordlist = NULL; // list of words created from CLI
+
+static struct { // text input buffer for parsing
+	Cell in; // index into buffer
+	Byte buffer[LINE_LENGTH + 1]; // extra room for zero at end
+} tib;
+
+Headless(lii); // for inline interpreters
 
 // data stack
 Cell ret(void)  /* m - */
@@ -208,8 +226,6 @@ void greaterThan(void)  /* n \ m -- flag */
 }
 
 // memory
-static Byte * hp;
-
 void here(void)  /* -- addr */
 {
 	lit((Cell)hp);
@@ -344,12 +360,6 @@ void byteErase(void)  /* addr \ count -- */
 }
 
 // output stream
-#define EMITQ_SIZE 160
-
-static BQUEUE(EMITQ_SIZE, emitq);
-
-static Cell outp=0;
-
 void emptyEmitq(void)
 {
 	zerobq(emitq);
@@ -425,8 +435,6 @@ void spaces(Cell n)
 		emitByte(' ');
 }
 
-static Byte base = 10; // command line number radix
-
 void bin(void)  /* -- */
 {
 	base = 2;
@@ -446,10 +454,6 @@ void hex(void)  /* -- */
 {
 	base = 16;
 }
-
-#define PAD_SIZE 20
-
-BQUEUE(PAD_SIZE, padq); // safe place to format numbers
 
 void hold(void)  /* char -- */
 {
@@ -535,13 +539,6 @@ void dot(void)  /* n -- */
 }
 
 // prompt
-#ifndef PROMPTSTRING  // replace by defining
-#define PROMPTSTRING "\010timbre: "
-#endif
-
-static Byte prompt[10]={PROMPTSTRING};
-static Byte compiling = 0;
-
 void setPrompt(const char *string)
 {
 	Byte length = (Byte)strlen(string);
@@ -561,8 +558,6 @@ void dotPrompt(void)
 }
 
 // compiler
-tcode tick;
-
 void righBracket(void)
 {
 	compiling = 0x80;
@@ -591,8 +586,6 @@ void execute(void) /* a - */
 }
 
 // inner interpreters
-tcode * ip;
-
 void vii()	/* -- ii */ // adddress returner
 {
 	lit((Cell)(tick->list));
@@ -619,8 +612,6 @@ void colonii() // macro threader
 }
 
 // threaded compilers
-Headless(lii);
-
 void literal(Cell n)
 {
 	lit(n);
@@ -631,11 +622,6 @@ void literal(Cell n)
 }
 
 // parsing
-struct {
-	Cell in; // index into buffer
-	Byte buffer[LINE_LENGTH + 1]; // extra room for zero at end
-} tib;
-
 void zeroTib(void)
 {
 	tib.in = 0;
@@ -691,18 +677,6 @@ void comment(void)  /* char -- */ // scan input for end comment or 0
  *
  * Address of II or funci is called the tick. ticks are executed or compiled.
  */
-#define NAME_BITS 0x80
-#define IMMEDIATE_BITS (NAME_BITS | 0x40)
-#define SMUDGE_BITS 0x20
-#define HEADER_BITS (IMMEDIATE_BITS | SMUDGE_BITS)
-
-typedef struct header {
-	struct header * list;
-	Byte name[];
-} header;
-
-static header * wordlist = NULL; // list of words created from CLI
-
 // search CLI list
 void * searchWordlist(Byte * cstring) // TODO: result should be header * which means typedef should be in cli.h
 {
@@ -721,21 +695,6 @@ void * searchWordlist(Byte * cstring) // TODO: result should be header * which m
 }
 
 // search prebuilt word lists
-// Non HARVAARD architectures
-#define PROGMEM const
-#define PGM_P const char *
-#define pgm_read_byte *
-#define strcmp_P(a,b) strcmp((char*)a,(char*)b)
-#define strlen_P(m) strlen(m)
-
-extern vector wordbodies[];
-extern void (*constantbodies[])();
-extern void (*immediatebodies[])();
-// These are character arrays with a zero between strings; C inserts a final string zero - But only if there is a string
-extern PROGMEM char wordnames[];
-extern PROGMEM char constantnames[];
-extern PROGMEM char immediatenames[];
-
 Short searchNames(Byte * cstring, PGM_P dictionary) // return name number or 0 if not found
 {
 	Short index = 1;
@@ -796,8 +755,6 @@ Byte lookup(Byte * cstring, tcode * t)
 }
 
 // Error recovery
-Byte interpretError = 0;
-
 void msg(const char * m) // message in program space
 {
 	while (*m)
@@ -942,10 +899,6 @@ void interpret(void)
 }
 
 // input stream
-BQUEUE(80,keyq);
-Byte keyEcho = 0;
-Byte autoecho = 0; // can be turned off to silently process a line
-
 void emptyKeyq(void)
 {
 	zerobq(keyq);
