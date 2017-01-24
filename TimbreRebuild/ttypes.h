@@ -70,11 +70,19 @@ typedef unsigned char  bool;
 // a C funtion address is a vector
 // a vector followed by pointers to other vectors is a threaded code body
 typedef void (*vector)();
+
+struct tcbody;
+
+typedef union tcode { // threaded code
+	struct tcbody * call; // threaded code body
+	union tcode * branch; // inline branch
+	Cell lit; // literal value
+} tcode;
+
 typedef struct tcbody{ // threaded code body
 	vector ii; // inner interpreter
-	struct tcbody * list[]; // points other body's inner interpreters
+	tcode list[]; // points other body's inner interpreters
 } tcbody;
-typedef tcbody * tcode; // threaded code
 
 #define Headless(function) \
 	extern void function(void); \
@@ -88,11 +96,7 @@ typedef tcbody * tcode; // threaded code
 #define testSetBit(bit,flag,result)	(result = checkBit(bit,flag) ? false : true, setBit(bit,flag))
 
 // for making code safe from other code interrupting it such as flag bits
-#ifdef _MQX_
-	void _int_disable(void);
-	void _int_enable(void);
-	#define safe(atomic)	{_int_disable(); atomic; _int_enable();}
-#else
+#ifndef PREEMPTIVE
 	#define safe(atomic)	atomic
 #endif
 

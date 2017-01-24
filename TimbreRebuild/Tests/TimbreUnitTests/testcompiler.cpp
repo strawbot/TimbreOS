@@ -43,14 +43,14 @@ void testcompiler::testLeftbracket()
 
 void testcompiler::testCompileit()
 {
-    compileIt((tcode)1);
+    compileIt((tcbody *)1);
     QVERIFY(*(Cell *)testMemory == 1);
 }
 
 void testcompiler::testExecuteit()
 {
     QVERIFY(executed == false);
-    executeIt(&func);
+    executeIt((tcbody *)&func);
     QVERIFY(executed == true);
     QVERIFY(getTick() == (Cell)&func);
 }
@@ -67,7 +67,7 @@ void testcompiler::testLii()
 {
     Cell c[] = {(Cell)colonii, getLii(), 0x1234, 0};
 
-    executeIt((tcode)c);
+    executeIt((tcbody *)c);
     QVERIFY(ret() == 0x1234);
 }
 
@@ -75,7 +75,7 @@ void testcompiler::testVii()
 {
     Cell c[] = {(Cell)vii, 0x1234};
 
-    executeIt((tcode)c);
+    executeIt((tcbody *)c);
     QVERIFY(ret() == (Cell)&c[1]);
 }
 
@@ -83,7 +83,7 @@ void testcompiler::testCii()
 {
     Cell c[] = {(Cell)cii, 0x1234};
 
-    executeIt((tcode)c);
+    executeIt((tcbody *)c);
     QVERIFY(ret() == 0x1234);
 }
 
@@ -95,7 +95,7 @@ void testcompiler::testColonii()
     Cell d[] = {(Cell)colonii, (Cell)c, 0};
     Cell e[] = {(Cell)colonii, (Cell)d, (Cell)b, 0};
 
-    executeIt((tcode)e);
+    executeIt((tcbody *)e);
     QVERIFY(ret() == 0x1234);
     QVERIFY(ret() == 0x4321);
 }
@@ -111,6 +111,6 @@ void testcompiler::testLiteral()
     literal(0xabcd);
     lit(0);
     comma();
-    executeIt((tcode)testMemory);
+    executeIt((tcbody *)testMemory);
     QVERIFY(ret() == 0xabcd);
 }

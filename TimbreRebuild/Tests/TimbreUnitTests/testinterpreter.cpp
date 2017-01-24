@@ -65,11 +65,11 @@ void testinterpreter::testSearchdictionaries()
 
     QVERIFY(searchDictionaries(string(""), &t) == 0);
     QVERIFY(searchDictionaries(string("wordname"), &t) == NAME_BITS);
-    QVERIFY(t == (tcode)wordbodies);
+    QVERIFY(t.call == (tcbody *)wordbodies);
     QVERIFY(searchDictionaries(string("immediatename"), &t) == IMMEDIATE_BITS);
-    QVERIFY(t == (tcode)immediatebodies);
+    QVERIFY(t.call == (tcbody *)immediatebodies);
     QVERIFY(searchDictionaries(string("constantname"), &t) == NAME_BITS);
-    QVERIFY(t == (tcode)constantbodies);
+    QVERIFY(t.call == (tcbody *)constantbodies);
 }
 
 extern "C" tcode link2tick(header * link);
@@ -83,7 +83,7 @@ void testinterpreter::testLink2tick()
         Cell value;
     } head = {NULL, {4|NAME_BITS,'n','a','m','e'}, cii, 0x123};
 
-    QVERIFY(link2tick((header *)&head) == (tcode)&head.tick);
+    QVERIFY(link2tick((header *)&head).call->ii == head.tick);
 }
 
 extern "C" Byte lookup(Byte * cstring, tcode * t);
@@ -98,11 +98,11 @@ void testinterpreter::testLookup()
     QVERIFY(lookup(string("Immediate"), &t) == IMMEDIATE_BITS);
     QVERIFY(lookup(string(""), &t) == 0);
     QVERIFY(lookup(string("wordname"), &t) == NAME_BITS);
-    QVERIFY(t == (tcode)wordbodies);
+    QVERIFY(&t.call->ii == wordbodies);
     QVERIFY(lookup(string("immediatename"), &t) == IMMEDIATE_BITS);
-    QVERIFY(t == (tcode)immediatebodies);
+    QVERIFY(&t.call->ii == immediatebodies);
     QVERIFY(lookup(string("constantname"), &t) == NAME_BITS);
-    QVERIFY(t == (tcode)constantbodies);
+    QVERIFY(&t.call->ii == constantbodies);
 }
 
 extern "C" void msg(const char * m);

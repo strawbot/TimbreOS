@@ -20,7 +20,7 @@ static Cell outp=0;
 static Byte base = 10; // command line number radix
 static Byte prompt[10]={PROMPTSTRING};
 static Byte compiling = 0;
-static tcode tick;
+static tcbody * tick;
 static tcode * ip;
 static Byte interpretError = 0;
 static header * wordlist = NULL; // list of words created from CLI
@@ -568,13 +568,13 @@ void leftBracket(void)
 	compiling = 0;
 }
 
-void compileIt(tcode t)
+void compileIt(tcbody * t)
 {
 	lit((Cell)t);
 	comma();
 }
 
-void executeIt(tcode t)
+void executeIt(tcbody * t)
 {
 	tick = t;
 	t->ii();
@@ -582,7 +582,7 @@ void executeIt(tcode t)
 
 void execute(void) /* a - */
 {
-	executeIt((tcode)ret());
+	executeIt((tcbody *)ret());
 }
 
 // inner interpreters
@@ -593,12 +593,12 @@ void vii()	/* -- ii */ // adddress returner
 
 void cii()	/* -- ii */ // constant retreiver
 {
-	lit((Cell)(tick->list[0]));
+	lit(tick->list[0].lit);
 }
 
 void lii(void)  /* -- n */ // inline literals
 {
-	lit((Cell)*ip++);
+	lit(ip++->lit);
 }
 
 void colonii() // macro threader
@@ -606,19 +606,35 @@ void colonii() // macro threader
 	tcode * save = ip;
 
 	ip = tick->list;
-	while((tick = *ip++) != 0)
+	while((tick = ip++->call) != 0)
 		tick->ii();
 	ip = save;
 }
 
-// threaded compilers
-void literal(Cell n)
+void branch(void)  /* -- */
 {
-	lit(n);
-	if (compiling) {
-		compileIt(&_lii);
-		comma();
+	ip = ip->branch;
+}
+
+void zeroBranch(void)  /* f -- */
+{
+	if (ret() == 0)
+		branch();
+	else
+		ip++;
+}
+
+void minusBranch(void)  /* -- */
+{
+	Cell i = pullq(returnStack);
+
+	if(i) {
+		i--;
+		pushq(i, returnStack);
+		branch();
 	}
+	else
+		ip++;
 }
 
 // parsing
@@ -694,7 +710,7 @@ void * searchWordlist(Byte * cstring) // TODO: result should be header * which m
 	return list;
 }
 
-// search prebuilt word lists
+// search prebuilt word lists; use hashed dictionaries to improve speed for large wordsets
 Short searchNames(Byte * cstring, PGM_P dictionary) // return name number or 0 if not found
 {
 	Short index = 1;
@@ -708,40 +724,40 @@ Short searchNames(Byte * cstring, PGM_P dictionary) // return name number or 0 i
 	return 0;
 }
 
-Byte searchDictionaries(Byte * cstring, tcode * t) // look through dictionaries for word
+Byte searchDictionaries(Byte * cstring, tcbody ** t) // look through dictionaries arrays for word
 { // s -- a \ f
 	Short index;
 
 	index = searchNames(cstring, wordnames);
 	if (index != 0) {
-		*t = (tcode)&wordbodies[index-1];
+		*t = (tcbody *)&wordbodies[index-1];
 		return NAME_BITS;
 	}
 
 	index = searchNames(cstring, constantnames);
 	if (index != 0) {
-		*t = (tcode)&constantbodies[2*(index-1)]; // array of two pointers
+		*t = (tcbody *)&constantbodies[2*(index-1)]; // array of two pointers
 		return NAME_BITS;
 	}
 
 	index = searchNames(cstring, immediatenames);
 	if (index != 0) {
-		*t = (tcode)&immediatebodies[index-1];
+		*t = (tcbody *)&immediatebodies[index-1];
 		return IMMEDIATE_BITS;
 	}
 
 	return 0;
 }
 
-tcode link2tick(header * link)
+tcbody * link2tick(header * link)
 {
 	Byte length = link->name[0] & ~HEADER_BITS;
 	Cell t = align((Cell)&link->name[1 + length]);
 
-	return (tcode)t;
+	return (tcbody *)t;
 }
 
-Byte lookup(Byte * cstring, tcode * t)
+Byte lookup(Byte * cstring, tcbody ** t)
 {
 	header * result;
 
@@ -862,6 +878,19 @@ Cell stringNumber(Byte * cstring)
 	return n;
 }
 
+// threaded interpreters
+void literal(Cell n)
+{
+	lit(n);
+	if (compiling) {
+		tcbody * t;
+
+		t = &_lii;
+		compileIt(t);
+		comma();
+	}
+}
+
 // interpreter
 void quit(void)  /* -- */
 {
@@ -878,7 +907,7 @@ void quit(void)  /* -- */
 void interpret(void)
 {
 	while (tib.buffer[tib.in] != 0) {
-		tcode t;
+		tcbody * t;
 		Byte headbits;
 		Byte * cstring;
 
@@ -961,4 +990,4 @@ void collectKeys(void)
 		emitByte(key);
 }
 
-// TODO: make storage local; group by function; factor out magic numbers; improve names; make macro support optional;
+// TODO: group by function; factor out magic numbers; improve names; reduce coupling so CLI can ignore parts; static functions
