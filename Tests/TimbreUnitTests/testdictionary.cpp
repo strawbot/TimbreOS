@@ -90,6 +90,7 @@ void testDictionary::TestFree()
     Cell address;
     void * m = malloc(0);
 
+	(void)m;
     free(m);
 
     qfree(0);

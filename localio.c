@@ -24,10 +24,9 @@ static char space[MSIZE];
 // Text output using queue and blocking if full
 void safe_emit(Byte c) // c -  check queue for overflow
 {
-	static Byte alreadyHere = 0; // prevent overwrites
-
-	if ((sizebq(eq) - qbq(eq)) < 1)
-	{
+	if ((sizebq(eq) - qbq(eq)) < 1) {
+		static Byte alreadyHere = 0; // prevent overwrites
+		
 		if (alreadyHere) // support blocking on first writer
 			return;
 		alreadyHere = 1;

@@ -281,8 +281,7 @@ void dump(void) // ram dump
 	Cell memory = *_DROP_;
 	
 	dotindex((Byte)memory);
-	while (n--)
-	{
+	while (n--) {
 		dotaddr(memory);
 		dotline((Byte *)memory);
 		memory += 16;
@@ -297,7 +296,6 @@ depth dup . ." xxxx" 10 min 0 max >r here r for !+ next cell - r> for @- over . 
 void DOT_S(void)  /* -- */
 {
 	Integer n;
-	Cell d;
 	
 	DEPTH();
 	n = (Integer)*sp;
@@ -305,9 +303,9 @@ void DOT_S(void)  /* -- */
 	msg(" stack items: ");
 	if (n > 10)
 		n = 10;
-	while (n > 0)
-	{
-		d = sp[--n];
+	while (n > 0) {
+		Cell d = sp[--n];
+
 		lit(d);
 		DOT();
 	}
@@ -363,16 +361,12 @@ void search_dictionaries(void) // look through dictionaries for word
 
 void list_dictionaries(void) // list words in dictionaries
 {
-	PGM_P dictionary, *dictionaries[] = {constantnames, wordnames, immediatenames};
-	Byte i, c;
-	
-	for (i=0; i< 3; i++)
-	{
+	for (Byte i=0; i< 3; i++) {
+		PGM_P dictionary, *dictionaries[] = {constantnames, wordnames, immediatenames};
+
 		dictionary = dictionaries[i];
-		while((c = pgm_read_byte(dictionary++)) != 0)
-		{
-			do
-			{
+		while((Byte c = pgm_read_byte(dictionary++)) != 0) {
+			do {
 				lit(c), EMIT();
 			} while ((c = pgm_read_byte(dictionary++)) != 0);
 			lit(2), SPACES();

@@ -68,8 +68,7 @@ void timbreTalk(void)
 
 	if (qbq(eq) != 0) // check output from kernel
 		sendeq();
-	else
-	{
+	else {
 		getInput();
 		if (qbq(kq)) // check input to kernel
 			yellowOn(); // blink yellow LED when processing text
@@ -80,10 +79,10 @@ void timbreTalk(void)
 
 void safe_emit(Byte c) // c -  check queue for overflow
 {
-	static Byte alreadyHere = 0; // prevent overwrites
 
-	if ((sizebq(eq) - qbq(eq)) < 1)
-	{
+	if ((sizebq(eq) - qbq(eq)) < 1) {
+		static Byte alreadyHere = 0; // prevent overwrites
+		
 		if (alreadyHere) // support blocking on first writer
 			return;
 		alreadyHere = 1;
@@ -118,10 +117,8 @@ void getInput(void)  // must fill kq
 
 void sendeq(void)  // must empty eq
 {
-	Byte c;
-	while (qbq(eq))
-    {
-       c = pullbq(eq);
+	while (qbq(eq)) {
+       Byte c = pullbq(eq);
        if (c != 0xD)
         timbrePutChar(c);
     }

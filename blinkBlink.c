@@ -17,10 +17,10 @@ void blink(void)
 		{greenOff,	500 TO_MILLISECONDS, 	1},
 		{greenOn,	500 TO_MILLISECONDS,	0}};
 	static Timeout bto = {0};
-	static int current = 0;
 	
-	if (checkTimeout(&bto))
-	{
+	if (checkTimeout(&bto)) {
+		static int current = 0;
+
 		state[current].action();
 		setTimeout(state[current].time, &bto);
 		current = state[current].next;
@@ -35,10 +35,10 @@ void blinkBlink(void)
 		{greenOff,	100 TO_MILLISECONDS,	3},
 		{greenOn,	100 TO_MILLISECONDS,	0}};
 	static Timeout bto = {0};
-	static int current = 0;
 	
-	if (checkTimeout(&bto))
-	{
+	if (checkTimeout(&bto)) {
+		static int current = 0;
+		
 		state[current].action();
 		setTimeout(state[current].time, &bto);
 		current = state[current].next;
@@ -54,10 +54,10 @@ void blinkBlonk(void)
 		{greenOff,	100 TO_MILLISECONDS,	3},
 		{greenOn,	700 TO_MILLISECONDS,	0}};
 	static Timeout bto = {0};
-	static int current = 0;
 	
-	if (checkTimeout(&bto))
-	{
+	if (checkTimeout(&bto)) {
+		static int current = 0;
+		
 		state[current].action();
 		setTimeout(state[current].time, &bto);
 		current = state[current].next;

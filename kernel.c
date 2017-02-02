@@ -874,10 +874,11 @@ void SCAN(void)  /* char -- */ // scan input for a character or 0
 
 void PARSE(void)  /* char -- */ // parse string till char or 0 from input to here count prefixed
 {
-	Byte b, c = (Byte)*sp++, n=0, *input = (Byte *)(tib_.name8 + in_), *s = (Byte *)dp_;
+	Byte c = (Byte)*sp++, n=0, *input = (Byte *)(tib_.name8 + in_), *s = (Byte *)dp_;
 	
-	while (*input)
-	{
+	while (*input) {
+		Byte b;
+
 		if ((b = *input++) == c)
 			break;
 		s[++n] = b;
