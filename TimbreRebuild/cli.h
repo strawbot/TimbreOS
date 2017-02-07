@@ -145,3 +145,16 @@ void vii(void);
 void word(void);
 void xorOp(void);
 void zeroTib(void);
+
+void compileAhead(void);
+void compileIf(void);
+void compileEndif(void);
+void compileElse(void);
+void compileBegin(void);
+void compileAgain(void);
+void compileWhile(void);
+void compileRepeat(void);
+void compileUntil(void);
+void compileFor(void);
+void compileNext(void);
+void compileExit(void);

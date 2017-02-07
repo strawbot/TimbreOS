@@ -23,6 +23,11 @@ private slots:
     void testCii();
     void testColonii();
     void testLiteral();
+    void testBranch();
+    void testZerobranch();
+    void testMinusbranch();
+    void testElse();
+    void testUntil();
 };
 
 #endif // TESTCOMPILER_H

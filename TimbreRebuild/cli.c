@@ -31,6 +31,10 @@ static struct { // text input buffer for parsing
 } tib;
 
 Headless(lii); // for inline interpreters
+Headless(branch);
+Headless(zeroBranch);
+Headless(minusBranch);
+Headless(tor);
 
 // data stack
 Cell ret(void)  /* m - */
@@ -629,8 +633,7 @@ void minusBranch(void)  /* -- */
 	Cell i = pullq(returnStack);
 
 	if(i) {
-		i--;
-		pushq(i, returnStack);
+		pushq(--i, returnStack);
 		branch();
 	}
 	else
@@ -883,10 +886,7 @@ void literal(Cell n)
 {
 	lit(n);
 	if (compiling) {
-		tcbody * t;
-
-		t = &_lii;
-		compileIt(t);
+		compileIt(&_lii);
 		comma();
 	}
 }
@@ -988,6 +988,87 @@ void collectKeys(void)
 
 	if (keyEcho)
 		emitByte(key);
+}
+
+// control flow
+void compileAhead(void)
+{
+	compileIt(&_branch);
+	here();
+	lit(0);
+	comma();
+}
+
+void compileIf(void)
+{
+	compileIt(&_zeroBranch);
+	here();
+	lit(0);
+	comma();
+}
+
+void compileEndif(void)
+{
+	here();
+	swap();
+	store();
+}
+
+void compileElse(void)
+{
+	compileAhead();
+	swap();
+	compileEndif();
+}
+
+void compileBegin(void)
+{
+	here();
+}
+
+void compileAgain(void)
+{
+	compileIt(&_branch);
+	comma();
+}
+
+void compileWhile(void)
+{
+	compileIf();
+}
+
+void compileRepeat(void)
+{
+	swap();
+	compileAgain();
+	compileEndif();
+}
+
+void compileUntil(void)
+{
+	compileIt(&_zeroBranch);
+	comma();
+}
+
+void compileFor(void)
+{
+	compileIt(&_tor);
+	compileAhead();
+	here();
+}
+
+void compileNext(void)
+{
+	swap();
+	compileEndif();
+	compileIt(&_minusBranch);
+	comma();
+}
+
+void compileExit(void)
+{
+	lit(0);
+	comma();
 }
 
 // TODO: group by function; factor out magic numbers; improve names; reduce coupling so CLI can ignore parts; static functions
