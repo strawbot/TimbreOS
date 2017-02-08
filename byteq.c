@@ -1,6 +1,5 @@
 /* Byte sized queue facility  Rob Chapman  Dec 4, 2009 */
 
-#include "bktypes.h"
 #include "byteq.h"
 
 void zerobq(Byte *q)  // empty the queue
@@ -21,6 +20,15 @@ void pushbq(Byte b, Byte *q) // push an element into the q
 	else
 		q[BQINSERT]--;
 }
+
+Byte popbq(Byte * q) // pop item from queue
+{
+	q[BQINSERT]++;
+	if ( q[BQINSERT] > q[BQEND] )
+		q[BQINSERT] = BQDATA;
+	return q[q[BQINSERT]];
+}
+
 
 Byte pullbq(Byte *q) // pull oldest element from the q
 {

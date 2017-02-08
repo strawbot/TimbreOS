@@ -1,6 +1,5 @@
 /* Cell sized queue facility  Robert Chapman  Mar 30, 2015 */
 
-#include "bktypes.h"
 #include "queue.h"
 
 void zeroq(Cell *q)  // empty the queue

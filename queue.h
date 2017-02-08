@@ -24,7 +24,7 @@
   QOVERHEAD = 4
 */
 
-#include "bktypes.h"
+#include "ttypes.h"
 
 #ifndef _CELLQ_H_
 #define _CELLQ_H_

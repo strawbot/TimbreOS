@@ -1,6 +1,6 @@
 // Header file for timestamp  Rob Chapman  Mar 14, 2011
 
-#include "bktypes.h"
+#include "ttypes.h"
 
 void oneMillisecondTick(void);
 void initTimeStamp(void);

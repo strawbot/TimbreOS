@@ -43,7 +43,7 @@ extern "C" {
 #include "dictionary.c"
 }
 
-dictionary_t testdict = {NULL, NULL, 0, 0, false};
+dictionary_t testdict = {NULL, NULL, 0, 0, false, 0};
 
 testDictionary::testDictionary(QObject *parent) :
     QObject(parent)
@@ -90,7 +90,6 @@ void testDictionary::TestFree()
     Cell address;
     void * m = malloc(0);
 
-	(void)m;
     free(m);
 
     qfree(0);

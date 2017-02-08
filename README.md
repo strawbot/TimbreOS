@@ -1,3 +1,0 @@
-# EmbeddedTimbre
-Embedded Timbre (ET) is an embedded bare metal operating system, development environment and debugger with a command line interface (CLI) that promotes interactive development and testing on the target device. Development takes place by interacting with the embedded program over a serial stream which can be embedded in a protocol such as SFP to allow multiple services to be available including firmware updates. A host program, TimbreTalk, running on Windows, Mac or Linux, is used to run the other end of the SFP link and provide an enhanced command line interface. Commands are typed in on the host, executed on the target and the output is displayed on the host.
-ET resources include: queues, timeouts, machines and an extendable CLI.

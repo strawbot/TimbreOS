@@ -1,8 +1,10 @@
-wordlist.c
-wordlist.txt
-help.c
-*.bak
-kernel.s
+*.d
 *.o
-moc*.cpp
-Tests/build-TimbreUnitTests-Desktop-Debug
+*.a
+*.elf
+*.map
+.qmake.stash
+Makefile
+moc_*.cpp
+*.3-pre1
+*.autosave

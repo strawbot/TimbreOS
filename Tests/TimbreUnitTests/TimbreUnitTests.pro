@@ -16,10 +16,28 @@ TEMPLATE = app
 
 
 SOURCES += tst_timbreunitteststest.cpp \
-    testdictionary.cpp
+    testdictionary.cpp \
+    teststacks.cpp \
+    testoperations.cpp \
+    support.cpp \
+    testmemory.cpp \
+    testoutput.cpp \
+    testcompiler.cpp \
+    testparsing.cpp \
+    testinterpreter.cpp \
+    testinputstream.cpp
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 HEADERS += \
-    testdictionary.h
+    testdictionary.h \
+    teststacks.h \
+    testoperations.h \
+    support.h \
+    testmemory.h \
+    testoutput.h \
+    testcompiler.h \
+    testparsing.h \
+    testinterpreter.h \
+    testinputstream.h
 
 INCLUDEPATH += ../../

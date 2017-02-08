@@ -1,6 +1,5 @@
 // Timeouts  Rob Chapman  Mar 14, 2011
 
-#include "bktypes.h"
 #include "timestamp.h"
 
 #ifndef timeout_h

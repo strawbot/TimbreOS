@@ -24,7 +24,7 @@
   BQOVERHEAD = 4
 */
 
-#include "bktypes.h"
+#include "ttypes.h"
 
 #define BQINSERT	0
 #define BQREMOVE	(BQINSERT + 1)
@@ -66,6 +66,7 @@ void zerobq(Byte *q);
 Byte bq(Byte *q);
 void pushbq(Byte b, Byte *q);
 Byte pullbq(Byte *q);
+Byte popbq(Byte * q);
 Byte qbq(Byte *q);
 Byte sizebq(Byte *q);
 bool fullbq(Byte *q);

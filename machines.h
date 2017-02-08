@@ -1,6 +1,5 @@
 // for machines  Rob Chapman  Jan 22, 2010
 
-#include "bktypes.h"
 #include "queue.h"
 
 void activate(vector machine);

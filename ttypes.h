@@ -1,7 +1,7 @@
 //! \file Types for portability  Robert Chapman III  Feb 14, 2011
 
-#ifndef BK_TYPES
-#define BK_TYPES
+#ifndef _TTYPES_H_
+#define _TTYPES_H_
 
 /* Mostly Byte = 8bit, Word = 16bit, Cell = 32bit */
 // On 64 bit platforms long and pointer are 64 bit while int is 32 bit if it is LP64
@@ -35,7 +35,6 @@ typedef signed long long Sock; // really long and signed
 #define NULL ((void *)0)
 #endif
 
-//#ifndef __MQX__ // check for mqx as it defines boolean as a long!
 #ifndef __PE_Types_H
 #ifndef NO_BOOL
 #if ( defined __STDC__ && defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L ) || (defined __cplusplus)
@@ -68,9 +67,27 @@ typedef unsigned char  bool;
 
 #define u8(n)	((Byte)n)
 
-// a C funtion address is a vector, everything else is a thread or points to
+// a C funtion address is a vector
+// a vector followed by pointers to other vectors is a threaded code body
 typedef void (*vector)();
-typedef void (**thread)();
+
+struct tcbody;
+
+typedef union tcode { // threaded code
+	struct tcbody * call; // threaded code body
+	union tcode * branch; // inline branch
+	Cell lit; // literal value
+} tcode;
+
+typedef struct tcbody{ // threaded code body
+	vector ii; // inner interpreter
+	tcode list[]; // points other body's inner interpreters
+} tcbody;
+
+#define Headless(function) \
+	extern void function(void); \
+	static tcbody _##function = {.ii = function}
+
 
 // bit flag generic macros
 #define clearBit(bit, flags)		flags &= ~(bit)
@@ -79,11 +96,7 @@ typedef void (**thread)();
 #define testSetBit(bit,flag,result)	(result = checkBit(bit,flag) ? false : true, setBit(bit,flag))
 
 // for making code safe from other code interrupting it such as flag bits
-#ifdef _MQX_
-	void _int_disable(void);
-	void _int_enable(void);
-	#define safe(atomic)	{_int_disable(); atomic; _int_enable();}
-#else
+#ifndef PREEMPTIVE
 	#define safe(atomic)	atomic
 #endif
 

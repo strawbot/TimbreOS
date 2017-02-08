@@ -115,6 +115,7 @@ def generateCode(file):
 #define BODIES(functions) const void * const functions[] = {
 #define BODY(f) (void * const)f,
 #define CONSTANTBODY(f)  (void * const)CII,(void * const)&f,
+#define CONSTANTNUMBER(n) (void * const)CII,(void * const)n,
 #define END_BODIES };
 
 void CII(void);
@@ -147,7 +148,7 @@ void CII(void);
 		file.write('END_NAMES\n\n')
 		externs(file, constants)
 		file.write('\nBODIES(constantbodies)\n')
-		bodies(file, constants, 'CONSTANTBODY')
+		bodies(file, constants, 'CONSTANTBODY', 'CONSTANTNUMBER')
 		file.write('END_BODIES\n\n')
 
 	file.close()
@@ -172,15 +173,19 @@ def externs(file,dict):
 	for w in dict:
 		if w[0] in [DIRECTIVE, COMMENT]:
 			file.write(w[1])
-		else:
+		elif w[1][0] not in '0123456789':
 			file.write("extern Byte %s;\n" % w[1])
 
-def bodies(file,dict,prefix):
+def bodies(file,dict,prefix,number=""):
 	for w in dict:
 		if w[0] in [DIRECTIVE, COMMENT]:
 			file.write(w[1])
 		else:
-			file.write("\t%s(%s)\n" % (prefix,w[1]))
+			if number and w[1][0] in '0123456789':
+				file.write("\t%s(%s)\n" % (number,w[1]))
+			else:
+				file.write("\t%s(%s)\n" % (prefix,w[1]))
+
 
 # text generator
 texthelp = ''' [v] for variable
@@ -303,6 +308,7 @@ ctarget = 'wordlist.c'
 txttarget = 'wordlist.txt'
 helptarget = 'help.c'
 txtcore = 'clibindings.txt'
+txtcpld = 'cpldaccess.txt'
 thisfile = 'parsewords.py'
 vanilla = 'Vanilla'
 
@@ -318,6 +324,7 @@ if __name__ == '__main__':
 			open(dir+SEPARATOR+ctarget).close()
 			open(dir+SEPARATOR+ctarget).close()
 			if	fileModTime(txtcore) < fileModTime(dir+SEPARATOR+ctarget) \
+			and fileModTime(txtcpld) < fileModTime(dir+SEPARATOR+ctarget) \
 			and fileModTime(thisfile) < fileModTime(dir+SEPARATOR+ctarget):
 				if fileModTime(bindings) < fileModTime(dir+SEPARATOR+ctarget):
 					continue # don't update this subdirectory
