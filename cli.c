@@ -13,7 +13,7 @@ static BQUEUE(EMITQ_SIZE, emitq);
 static BQUEUE(PAD_SIZE, padq); // safe place to format numbers
 static BQUEUE(KEYQ_SIZE, keyq);
 
-static Byte * hp;
+static Byte * hp = NULL, * hpStart = NULL, * hpEnd = NULL;
 static Byte keyEcho = 0;
 static Byte autoecho = 0; // can be turned off to silently process a line
 static Cell outp=0;
@@ -232,19 +232,31 @@ void greaterThan(void)  /* n \ m -- flag */
 }
 
 // memory
+void error(void);
+
+void hereSay(Byte * space, Cell size)
+{
+	hp = hpStart = space;
+	hpEnd = space + size;
+}
+
 void here(void)  /* -- addr */
 {
 	lit((Cell)hp);
 }
 
-void allot(void)  /* n -- */
+void allot(Cell n)
 {
-	hp += popq(dataStack);
+	if (hp + n + CUSHION < hpEnd)
+		hp += n;
+	else
+		error();
 }
 
 void cComma(void)  /* n -- */
 {
-	*hp++ = (Byte)popq(dataStack);
+	*hp = (Byte)popq(dataStack);
+	allot(1);
 }
 
 Cell align(Cell p)  /* a -- a' */
@@ -266,7 +278,7 @@ void comma(void)  /* n -- */
 	Cell * p = (Cell *)hp;
 	aligned();
 	*p = top;
-	hp += sizeof(Cell);
+	allot(sizeof(Cell));
 }
 
 void fetch(void)  /* a -- n */
@@ -786,7 +798,7 @@ void msg(const char * m) // message in program space
 		emitByte(*m++);
 }
 
-void error(void)  /* -- */
+void error(void)
 {
 	here();
 	count();
@@ -898,7 +910,7 @@ void literal(Cell n)
 }
 
 // interpreter
-void quit(void)  /* -- */
+void quit(void)
 {
 	interpretError = 0;
 	spStore();
@@ -906,6 +918,7 @@ void quit(void)  /* -- */
 	zeroTib();
 	emptyEmitq();
 	leftBracket();
+	keyEcho = 0;
 	cursorReturn();
 	dotPrompt();
 }
@@ -1023,7 +1036,7 @@ void makeString(char c)
 	byteFetch();
 	lit(1);
 	plusOp();
-	allot();
+	allot(ret());
 	aligned();
 }
 
@@ -1110,9 +1123,10 @@ void makeName(void)
 	Byte length = *hp + 1;
 
 	*hp |= NAME_BITS;
-	hp += length;
+	allot(length);
 }
 
+// make header name from null terminated string no header bits, easier searching, count becomes strlen; link;string;->:ii;list ; or string is a pointer to a string and then the header is a fixed size structure;
 void makeHeader(void)
 {
 	aligned();
@@ -1172,4 +1186,14 @@ void variable(void)  /* n -- */
 	comma();
 }
 
+// reset all
+void resetCli(void)
+{
+	hereSay(hpStart, hpEnd - hpStart);
+	wordlist = NULL;
+	decimal();
+	quit();
+}
+
 // TODO: group by function; factor out magic numbers; improve names; reduce coupling so CLI can ignore parts; static functions; float support
+// forget last definition if it encroaches; for bigger test scripts. support test scripting.

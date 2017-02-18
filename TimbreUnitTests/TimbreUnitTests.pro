@@ -40,4 +40,4 @@ HEADERS += \
     testinterpreter.h \
     testinputstream.h
 
-INCLUDEPATH += ../../
+INCLUDEPATH += ../

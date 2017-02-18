@@ -22,7 +22,7 @@ Cell rdepth()
 }
 
 // memory
-Byte testMemory[LINE_LENGTH*2];
+Byte testMemory[LINE_LENGTH*5];
 
 Cell padBuffer()
 {
@@ -31,7 +31,7 @@ Cell padBuffer()
 
 void hpStore()
 {
-    hp = testMemory;
+    hereSay(testMemory, sizeof(testMemory));
 }
 
 // output

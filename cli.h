@@ -9,13 +9,14 @@
 #ifndef CLI_PARAMETERS  // override by defining
 #define CLI_PARAMETERS
 
-#define DCELLS 30  /* number of data stack cells */
-#define RCELLS 30  /* number of return stack cells */
-#define LINE_LENGTH 80 /* number of characters allowed in tib */
+#define DCELLS 30  // number of data stack cells
+#define RCELLS 30  // number of return stack cells
+#define LINE_LENGTH 80 // number of characters allowed in tib
 #define EMITQ_SIZE 160
 #define KEYQ_SIZE 80
 #define PAD_SIZE 20
 #define PROMPTSTRING "\010timbre: "
+#define CUSHION LINE_LENGTH // how much space to maintain for HERE
 
 #endif
 
@@ -60,7 +61,7 @@ extern PROGMEM char immediatenames[];
 
 void absOp(void);
 Cell align(Cell p);
-void allot(void);
+void allot(Cell n);
 void andOp(void);
 void autoEchoOff(void);
 void autoEchoOn(void);
@@ -95,6 +96,7 @@ void executeIt(tcbody * t);
 void fetch(void);
 void greaterThan(void);
 void here(void);
+void hereSay(Byte * space, Cell size);
 void hex(void);
 void hold(void);
 void interpret(void);
@@ -122,6 +124,7 @@ void plusBits(void);
 void plusOp(void);
 void questionDup(void);
 void rat(void);
+void resetCli(void);
 Cell ret(void);
 void rfrom(void);
 void righBracket(void);

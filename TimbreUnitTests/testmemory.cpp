@@ -25,8 +25,7 @@ void testmemory::TestHere()
 
 void testmemory::TestAllot()
 {
-    lit(1);
-    allot();
+    allot(1);
     here();
     QVERIFY(depth() == 1);
     QCOMPARE(ret(), (Cell)testMemory+1);
