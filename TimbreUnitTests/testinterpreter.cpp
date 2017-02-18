@@ -13,15 +13,18 @@ testinterpreter::testinterpreter(QObject *parent) : QObject(parent)
 #define SMUDGE_BITS 0x20
 #define HEADER_BITS (IMMEDIATE_BITS | SMUDGE_BITS)
 
-typedef struct header32 {
-    struct header32 * list;
-    Byte name[32];
-    vector tick;
-} header32;
+#define HEADER(name, length) union { \
+    struct { \
+        void * link; \
+        Byte wordname[length+1]; \
+        vector tick; \
+    }; \
+    header head; \
+} name
 
-header32 name1 = {NULL, {4|NAME_BITS, 'N', 'a', 'm', 'e'}, NULL};
-header32 name2 = {&name1, {6|NAME_BITS|SMUDGE_BITS, 'S', 'm', 'u', 'd', 'g', 'e'}, NULL};
-header32 name3 = {&name2, {9|NAME_BITS|IMMEDIATE_BITS, 'I', 'm', 'm', 'e', 'd', 'i', 'a', 't', 'e'}, NULL};
+HEADER(name1, 4) = {{NULL,  {4|NAME_BITS, 'N', 'a', 'm', 'e'}, NULL}};
+HEADER(name2, 6) = {{&name1, {6|NAME_BITS|SMUDGE_BITS, 'S', 'm', 'u', 'd', 'g', 'e'}, NULL}};
+HEADER(name3, 9) = {{&name2, {9|NAME_BITS|IMMEDIATE_BITS, 'I', 'm', 'm', 'e', 'd', 'i', 'a', 't', 'e'}, NULL}};
 
 Byte * string(const char * s)
 {
@@ -30,7 +33,7 @@ Byte * string(const char * s)
 
 void testinterpreter::init()
 {
-    *(header32 **)getWordlist() = &name3;
+    *getWordlist() = &name3.head;
     zeroEmits();
     hpStore();
     spStore();
@@ -39,10 +42,10 @@ void testinterpreter::init()
 
 void testinterpreter::testWordlist()
 {
-    QVERIFY(searchWordlist(string("")) == NULL);
-    QVERIFY(searchWordlist(string("Name")) == &name1);
-    QVERIFY(searchWordlist(string("Smudge")) == NULL);
-    QVERIFY(searchWordlist(string("Immediate")) == &name3);
+    QVERIFY(searchWordlist(string("")) == (header *)NULL);
+    QVERIFY(searchWordlist(string("Name")) == (header *)&name1);
+    QVERIFY(searchWordlist(string("Smudge")) == (header *)NULL);
+    QVERIFY(searchWordlist(string("Immediate")) == (header *)&name3);
 }
 
 const char names[] = {"name1\000" "name2\000" "name3\000"};

@@ -129,7 +129,7 @@ Cell ret(void);
 void rfrom(void);
 void righBracket(void);
 void safeEmit(Byte c);
-void * searchWordlist(Byte * string);
+header * searchWordlist(Byte * string);
 void setPrompt(const char *string);
 void shiftOp(void);
 void shortFetch(void);
@@ -163,3 +163,9 @@ void compileUntil(void);
 void compileFor(void);
 void compileNext(void);
 void compileExit(void);
+
+void colon(void);
+void semiColon(void);
+void constant(void);
+void variable(void);
+void resetCli(void);

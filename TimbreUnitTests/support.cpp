@@ -101,6 +101,12 @@ Byte * getTib()
     return &tib.buffer[tib.in];
 }
 
+void inputString(const char * string)
+{
+    zeroTib();
+    strcpy((char *)tib.buffer, string);
+}
+
 // dictionaries
 // Words
 NAMES(wordnames)
@@ -127,7 +133,7 @@ BODIES(constantbodies)
     CONSTANTNUMBER(12345)
 END_BODIES
 
-void * getWordlist()
+header ** getWordlist()
 {
     return &wordlist;
 }

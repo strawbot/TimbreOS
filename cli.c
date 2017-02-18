@@ -422,13 +422,13 @@ void emitOp(void)  /* char -- */
 	emitByte((Byte)popq(dataStack));
 }
 
-void cursorReturn(void)  /* -- */
+void cursorReturn(void)
 {
 	emitByte(10);
 	emitByte(13);
 }
 
-void maybeCr(void)  /* -- */
+void maybeCr(void)
 {
 	if(outp != 0)
 		cursorReturn();
@@ -457,22 +457,22 @@ void spaces(Cell n)
 		emitByte(' ');
 }
 
-void bin(void)  /* -- */
+void bin(void)
 {
 	base = 2;
 }
 
-void oct(void)  /* -- */
+void oct(void)
 {
 	base = 8;
 }
 
-void decimal(void)  /* -- */
+void decimal(void)
 {
 	base = 10;
 }
 
-void hex(void)  /* -- */
+void hex(void)
 {
 	base = 16;
 }
@@ -482,7 +482,7 @@ void hold(void)  /* char -- */
 	pushbq((Byte)popq(dataStack), padq);
 }
 
-void startNumberConversion(void)  /* -- */
+void startNumberConversion(void)
 {
 	zerobq(padq);
 }
@@ -633,7 +633,7 @@ void colonii() // macro threader
 	ip = save;
 }
 
-void branch(void)  /* -- */
+void branch(void)
 {
 	ip = ip->branch;
 }
@@ -646,7 +646,7 @@ void zeroBranch(void)  /* f -- */
 		ip++;
 }
 
-void minusBranch(void)  /* -- */
+void minusBranch(void)
 {
 	Cell i = pullq(returnStack);
 
@@ -715,7 +715,7 @@ void comment(void)  /* char -- */ // scan input for end comment or 0
  * Address of II or funci is called the tick. ticks are executed or compiled.
  */
 // search CLI list
-void * searchWordlist(Byte * cstring) // TODO: result should be header * which means typedef should be in cli.h
+header * searchWordlist(Byte * cstring)
 {
 	header * list = wordlist;
 
@@ -782,7 +782,7 @@ Byte lookup(Byte * cstring, tcbody ** t)
 {
 	header * result;
 
-	result = (header *)searchWordlist(cstring);
+	result = searchWordlist(cstring);
 	if (result != 0) {
 		*t = link2tick(result);
 		return result->name[0] & HEADER_BITS;
@@ -1118,16 +1118,8 @@ void collectKeys(void)
 }
 
 // defining words
-void makeName(void)
-{
-	Byte length = *hp + 1;
-
-	*hp |= NAME_BITS;
-	allot(length);
-}
-
 // make header name from null terminated string no header bits, easier searching, count becomes strlen; link;string;->:ii;list ; or string is a pointer to a string and then the header is a fixed size structure;
-void makeHeader(void)
+static void makeHeader(void)
 {
 	aligned();
 	here();
@@ -1135,33 +1127,24 @@ void makeHeader(void)
 	comma();
 	wordlist = (header *)ret();
 	parseWord(SPACE);
-	makeName();
+	*hp |= NAME_BITS;
+	allot((*hp & ~HEADER_BITS) + 1);
 	aligned();
 }
 
-void smudge(void)
-{
-	wordlist->name[0] |= SMUDGE_BITS;
-}
-
-void recursive(void)  /* -- */
-{
-	wordlist->name[0] &= ~SMUDGE_BITS;
-}
-
-void colon(void)  /* -- */
+void colon(void)
 {
 	makeHeader();
-	smudge();
+	wordlist->name[0] |= SMUDGE_BITS;
 	lit((Cell)colonii);
 	comma();
 	righBracket();
 }
 
-void semiColon(void)  /* -- */
+void semiColon(void)
 {
 	compileExit();
-	recursive();
+	wordlist->name[0] &= ~SMUDGE_BITS;
 	leftBracket();
 }
 
@@ -1173,7 +1156,7 @@ void constant(void)  /* n -- */
 	comma();
 }
 
-void create(void)  /* -- */
+void create(void)
 {
 	makeHeader();
 	lit((Cell)vii);

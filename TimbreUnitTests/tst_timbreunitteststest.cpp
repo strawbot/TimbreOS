@@ -14,6 +14,7 @@ extern "C" {
 #include "testparsing.h"
 #include "testinterpreter.h"
 #include "testinputstream.h"
+#include "testdefines.h"
 
 // Note: This is equivalent to QTEST_APPLESS_MAIN for multiple test classes.
 int main(int argc, char** argv)
@@ -62,6 +63,11 @@ int main(int argc, char** argv)
 
     {
         testinputstream tc;
+        status |= QTest::qExec(&tc, argc, argv);
+    }
+
+    {
+        testDefines tc;
         status |= QTest::qExec(&tc, argc, argv);
     }
 

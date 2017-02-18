@@ -9,8 +9,6 @@ class testmemory : public QObject
 public:
     explicit testmemory(QObject *parent = 0);
 
-signals:
-
 private slots:
     void init();
     void TestHere();

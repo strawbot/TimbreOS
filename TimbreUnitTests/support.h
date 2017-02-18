@@ -19,7 +19,8 @@ Cell getTick();
 Cell getLii();
 extern Byte padq[];
 Byte * getTib();
-void * getWordlist();
+void inputString(const char * string);
+header ** getWordlist();
 Byte * getPadq();
 
 void emptyKeyq(void);
