@@ -19,12 +19,12 @@ void testinputstream::init()
     leftBracket();
 }
 
-void testinputstream::testCollectkeys()
+void testinputstream::testCli()
 {
     Byte * input = getTib();
 
     inKey(LFEED);
-    collectKeys();
+    cli();
     QVERIFY(getTib() == input);
     QVERIFY(numEmits() == 0);
     QVERIFY(depth() == 0);
@@ -36,13 +36,13 @@ void testinputstream::testCollectkeys()
     QVERIFY(depth() == 0);
 
     inKey(BSPACE);
-    collectKeys();
+    cli();
     QVERIFY(getTib() == input);
     QVERIFY(numEmits() == 0);
     QVERIFY(depth() == 0);
 
     inKey(CRETURN);
-    collectKeys();
+    cli();
     QVERIFY(getTib() == input);
     QVERIFY(depth() == 0);
 

@@ -33,8 +33,13 @@ private slots:
     void TestEndNumberConversion();
     void TestDotr();
     void TestDot();
+    void TestDotb();
+    void TestDoth();
+    void TestDotd();
+    void TestDots();
     void TestSetPrompt();
     void TestdotPrompt();
+    void TestWords();
 };
 
 #endif // TESTOUTPUT_H

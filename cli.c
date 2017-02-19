@@ -5,25 +5,27 @@
 #include "byteq.h"
 #include "cli.h"
 
+#include <string.h>
 
 // structures
 static QUEUE(DCELLS, dataStack);
 static QUEUE(RCELLS, returnStack);
-static BQUEUE(EMITQ_SIZE, emitq);
 static BQUEUE(PAD_SIZE, padq); // safe place to format numbers
-static BQUEUE(KEYQ_SIZE, keyq);
 
-static Byte * hp = NULL, * hpStart = NULL, * hpEnd = NULL;
-static Byte keyEcho = 0;
-static Byte autoecho = 0; // can be turned off to silently process a line
-static Cell outp=0;
+BQUEUE(EMITQ_SIZE, emitq);
+BQUEUE(KEYQ_SIZE, keyq);
+
+static Byte * hp = (Byte *)NULL, * hpStart = (Byte *)NULL, * hpEnd = (Byte *)NULL;
+static bool keyEcho = false;
+static bool autoecho = false; // can be turned off to silently process a line
+static Cell outp = 0;
 static Byte base = 10; // command line number radix
 static Byte prompt[10]={PROMPTSTRING};
 static Byte compiling = 0;
 static tcbody * tick;
 static tcode * ip;
 static Byte interpretError = 0;
-static header * wordlist = NULL; // list of words created from CLI
+static header * wordlist = (header *)NULL; // list of words created from CLI
 
 static struct { // text input buffer for parsing
 	Cell in; // index into buffer
@@ -47,6 +49,11 @@ Cell ret(void)  /* m - */
 void lit(Cell n)  /* - n */
 {
 	pushq(n, dataStack);
+}
+
+Cell depth()
+{
+	return queryq(dataStack);
 }
 
 void spStore(void) /* ... - */
@@ -141,7 +148,7 @@ void shiftOp(void) /* n m - p */
 	Cell next = popq(dataStack); \
 
 	if ((signed)top < 0)
-		next >>= abs((Integer)top);
+		next >>= -(signed)top;
 	else
 		next <<= top;
 	pushq(next, dataStack);
@@ -396,7 +403,7 @@ void safeEmit(Byte c)
 			return;
 		alreadyHere = true;
 		while (fullbq(emitq))
-			runMachines();  // sit here until sent
+			OUTPUT_BLOCKED;  // sit here until sent
 		alreadyHere = false;
 	}
 	pushbq(c, emitq);
@@ -451,10 +458,10 @@ void type(void)  /* addr \ count -- */
 		emitByte(*a++);
 }
 
-void spaces(Cell n)
+void spaces(int n)
 {
-	while (n--)
-		emitByte(' ');
+	while (n-- > 0)
+		emitByte(SPACE);
 }
 
 void bin(void)
@@ -494,7 +501,7 @@ void convertDigit(void)  /* n -- n */
 
 	if (c > 9)
 		c += 7;
-	c += 48;
+	c += ZERO;
 	pushbq(c, padq);
 
 	n /= base;
@@ -558,6 +565,92 @@ void dot(void)  /* n -- */
 	lit(0);
 	dotr();
 	spaces(1);
+}
+
+void dotb(void)  /* n -- */ // print bits in number
+{
+	Cell n = ret();
+	Cell mask = ~(((Cell)-1)>>1);
+
+	spaces(1);
+	for (Byte i = (sizeof(Cell) - 1)*8; i > 0; i -= 8) {
+		Cell t = 0xff; // assignment makes 0xff long long otherwise shift fails!
+
+		if (((t << i) & n) == 0)
+			mask >>= 8;
+		else // skip upper bytes if all zero
+			break;
+	}
+
+	while (mask) {
+		for (Byte i=8; i; i--) {
+			if (n & mask)
+				emitByte('1');
+			else
+				emitByte('0');
+			mask >>= 1;
+		}
+		spaces(1);
+	}
+}
+
+void dotd(void)  /* n -- */
+{
+	Byte b = base;
+
+	decimal();
+	dot();
+	base = b;
+}
+
+void doth(void)  /* n -- */
+{
+	Byte b = base;
+
+	hex();
+	lit(sizeof(Cell)*2);
+	dotr();
+	spaces(1);
+	base = b;
+}
+
+void msg(const char * m) // message in program space
+{
+	while (*m)
+		emitByte(*m++);
+}
+
+void dots(void)  /* -- */
+{
+	Integer n = depth();
+
+	if (n > DCELLS/2) // consider this as underflow
+		n -= DCELLS + 1;
+	lit(n);
+	dot();
+	msg(" stack items: ");
+	if (n > 10)
+		n = 10;
+
+	for (Byte i=0; i < n; i++)
+		tor();
+
+	while (n-- > 0) {
+		rfrom();
+		dup();
+		dot();
+	}
+}
+
+Byte getBase(void)
+{
+	return base;
+}
+
+void setBase(Byte b)
+{
+	if (b <= 36) // highest base supported
+		base = b;
 }
 
 // prompt
@@ -792,12 +885,6 @@ Byte lookup(Byte * cstring, tcbody ** t)
 }
 
 // Error recovery
-void msg(const char * m) // message in program space
-{
-	while (*m)
-		emitByte(*m++);
-}
-
 void error(void)
 {
 	here();
@@ -830,7 +917,7 @@ bool toDigit(Byte *n) // convert character to number according to base
 	if (c > 9) {
 		c -= 7;
 		if (c > 35)
-			c -= ' ';
+			c -= SPACE;
 		if (c < 10)
 			return false;
 	}
@@ -918,7 +1005,7 @@ void quit(void)
 	zeroTib();
 	emptyEmitq();
 	leftBracket();
-	keyEcho = 0;
+	keyEcho = false;
 	cursorReturn();
 	dotPrompt();
 }
@@ -930,7 +1017,7 @@ void interpret(void)
 		Byte headbits;
 		Byte * cstring;
 
-		cstring = parseWord(' ');
+		cstring = parseWord(SPACE);
 		headbits = lookup(cstring, &t);
 		if (headbits != 0)
 			headbits == compiling ? compileIt(t) : executeIt(t);
@@ -1044,7 +1131,9 @@ void quote(void)
 {
 	if (compiling)
 		compileAhead();
+
 	makeString('"');
+
 	if (compiling) {
 		swap();
 		compileEndif();
@@ -1060,20 +1149,20 @@ void emptyKeyq(void)
 
 void autoEchoOn(void) // echo keys back
 {
-	keyEcho = autoecho = 1;
+	keyEcho = autoecho = true;
 }
 
 void autoEchoOff(void) // don't echo keys back
 {
-	keyEcho = autoecho = 0;
+	keyEcho = autoecho = false;
 }
 
-void collectKeys(void)
+void cli(void)
 {
 	if (qbq(keyq) == 0)
 		return;
 
-	Byte echo = keyEcho;
+	bool echo = keyEcho;
 	Byte key = pullbq(keyq);
 
 	switch (key) {
@@ -1169,6 +1258,40 @@ void variable(void)  /* n -- */
 	comma();
 }
 
+// Tools
+static void list_dictionaries(void) // list words in dictionaries
+{
+	PGM_P dictionary, *dictionaries[] = {constantnames, wordnames, immediatenames};
+	Byte i, c;
+
+	for (i=0; i< 3; i++) {
+		dictionary = dictionaries[i];
+		while((c = pgm_read_byte(dictionary++)) != 0) {
+			do {
+				emitByte(c);
+			} while ((c = pgm_read_byte(dictionary++)) != 0);
+			spaces(2);
+		}
+	}
+}
+
+void words(void) // list user words and system dictionaries
+{
+	header * list = wordlist;
+
+	while (list) {
+		Byte * name = list->name;
+		Byte length = *name++ & ~IMMEDIATE_BITS;
+
+		while(length--)
+			emitByte(*name++);
+
+		spaces(2);
+		list = list->list;
+	}
+	list_dictionaries();
+}
+
 // reset all
 void resetCli(void)
 {
@@ -1180,3 +1303,5 @@ void resetCli(void)
 
 // TODO: group by function; factor out magic numbers; improve names; reduce coupling so CLI can ignore parts; static functions; float support
 // forget last definition if it encroaches; for bigger test scripts. support test scripting.
+// need to test at the functional level with full dictionary
+// need to verify here space overflow protection; perhaps other overflow protections too

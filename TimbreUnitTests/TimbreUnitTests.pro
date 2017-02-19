@@ -43,3 +43,5 @@ HEADERS += \
     testdefines.h
 
 INCLUDEPATH += ../
+
+DEPENDPATH += ../

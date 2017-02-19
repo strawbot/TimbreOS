@@ -29,6 +29,8 @@ void inString(const char * cstring);
 void collector(void);
 Byte getInterpretError();
 void clearInterpretError();
+void compileAhead(void);
+void maybeCr(void);
 
 #ifndef _SUPPORT_H_
 #define _SUPPORT_H_

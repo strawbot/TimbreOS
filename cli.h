@@ -17,7 +17,7 @@
 #define PAD_SIZE 20
 #define PROMPTSTRING "\010timbre: "
 #define CUSHION LINE_LENGTH // how much space to maintain for HERE
-
+#define OUTPUT_BLOCKED runMachines() // deal with by running machines
 #endif
 
 // stream tokens
@@ -28,6 +28,7 @@
 #define ESCAPE 27
 #define SPACE 32
 #define QUOTE 34
+#define ZERO 48
 #define DELETE 127
 
 // Header bits
@@ -48,6 +49,8 @@ typedef struct header {
 #define strcmp_P(a,b) strcmp((char*)a,(char*)b)
 #define strlen_P(m) strlen(m)
 
+#endif
+
 extern vector wordbodies[];
 extern void (*constantbodies[])();
 extern void (*immediatebodies[])();
@@ -57,7 +60,9 @@ extern PROGMEM char wordnames[];
 extern PROGMEM char constantnames[];
 extern PROGMEM char immediatenames[];
 
-#endif
+// API
+extern Byte emitq[];
+extern Byte keyq[];
 
 void absOp(void);
 Cell align(Cell p);
@@ -73,7 +78,7 @@ void byteMove(void);
 void byteStore(void);
 void cComma(void);
 void cii(void);
-void collectKeys(void);
+void cli(void);
 void colonii(void);
 void comma(void);
 void comment(void);
@@ -84,6 +89,10 @@ void count(void);
 void cursorReturn(void);
 void decimal(void);
 void dot(void);
+void dotb(void);
+void dots(void);
+void doth(void);
+void dotd(void);
 void dotPrompt(void);
 void dotr(void);
 void dup(void);
@@ -94,6 +103,7 @@ void equals(void);
 void execute(void);
 void executeIt(tcbody * t);
 void fetch(void);
+Byte getBase(void);
 void greaterThan(void);
 void here(void);
 void hereSay(Byte * space, Cell size);
@@ -108,11 +118,11 @@ void literal(Cell n);
 void longFetch(void);
 void longStore(void);
 void maxOp(void);
-void maybeCr(void);
 void minOp(void);
 void minusBits(void);
 void minusOp(void);
 void modOp(void);
+void msg(const char * m);
 void negateOp(void);
 void notOp(void);
 void oct(void);
@@ -130,6 +140,7 @@ void rfrom(void);
 void righBracket(void);
 void safeEmit(Byte c);
 header * searchWordlist(Byte * string);
+void setBase(Byte b);
 void setPrompt(const char *string);
 void shiftOp(void);
 void shortFetch(void);
@@ -138,7 +149,7 @@ void sign(void);
 void skip(Byte c);
 void slashModOp(void);
 void slashOp(void);
-void spaces(Cell n);
+void spaces(int n);
 void spStore(void);
 void starOp(void);
 void startNumberConversion(void);
@@ -148,10 +159,10 @@ void tor(void);
 void type(void);
 void vii(void);
 void word(void);
+void words(void);
 void xorOp(void);
 void zeroTib(void);
 
-void compileAhead(void);
 void compileIf(void);
 void compileEndif(void);
 void compileElse(void);

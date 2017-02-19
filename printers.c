@@ -1,11 +1,24 @@
 // Printer support using Timbre  Robert Chapman III  June 14, 2012
 
-#include "botkernl.h"
-#include "kernel.h"
-#include "library.h"
-#include "printers.h"
-extern Byte base_;
+#include "cli.h"
+
 void sendeq(void);
+
+void dotnb(Byte field, Byte digits, Cell n, Byte radix)
+{
+	Byte b = getBase();
+
+	setBase(radix);
+	spaces(field - digits);
+	lit(n), startNumberConversion();
+	if (field) // if field is not zero print specific number of digits
+		while(digits--)
+			convertDigit();
+	else
+		convertNumber();
+	endNumberConversion(), type();
+	setBase(b);
+}
 
 void print(const char *message)
 {
@@ -14,35 +27,27 @@ void print(const char *message)
 
 void printHex(unsigned int hex)
 {
-	lit(hex), DOT_H();
+	lit(hex), doth();
 }
 
-void printnHex(unsigned int n, unsigned int hex)
+void printnHex(unsigned int digits, unsigned int n)
 {
-	if (n)
-		dotnb((Byte)n, (Byte)n, hex, 16);
-	else
-	{
-		Byte b = base_;
-		HEX();
-		lit(hex), lit(0), DOT_R();
-		base_ = b;
-	}
+	dotnb((Byte)digits, (Byte)digits, n, 16);
 }
 
 void printnDec(unsigned int n, unsigned int dec)
 {
-	lit(dec), lit(n), DOT_R();
+	dotnb(n, n, dec, 10);
 }
 
 void printDec(unsigned int dec)
 {
-	lit(dec), DOT();
+	lit(dec), dot();
 }
 
 void printDec0(unsigned int dec)
 {
-	lit(dec), lit(0), DOT_R();
+	printnDec(0, dec);
 }
 
 void printFloat(float f, int n)
@@ -58,12 +63,12 @@ void printFloat(float f, int n)
 			
 void printBin(unsigned int bin)
 {
-	lit(bin), DOT_B();
+	lit(bin), dotb();
 }
 
 void printChar(unsigned char ch)
 {
-	lit(ch), EMIT();
+	emitByte(ch);
 }
 
 void printHex2(unsigned int hex)
@@ -73,7 +78,9 @@ void printHex2(unsigned int hex)
 
 void flush(void)
 {
-	sendeq();
+	while (qbq(emitq))
+		OUTPUT_BLOCKED;  // sit here until empty
+
 }
 
 void pdump(unsigned char * a, unsigned int lines)
@@ -87,4 +94,14 @@ void pdump(unsigned char * a, unsigned int lines)
 		for (int i=0; i<16; i++) printChar(a[i]>31 && a[i]<128 ? a[i] : '.');
 		a += 16;
 	}
+}
+
+void dump(void) // command line dump
+{
+	Byte * a;
+	Cell lines;
+	
+	lines = ret();
+	a = (Byte *)ret();
+	pdump(a, lines);
 }

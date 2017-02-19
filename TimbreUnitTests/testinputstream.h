@@ -13,7 +13,7 @@ signals:
 
 private slots:
     void init();
-    void testCollectkeys();
+    void testCli();
 };
 
 #endif // TESTINPUTSTREAM_H

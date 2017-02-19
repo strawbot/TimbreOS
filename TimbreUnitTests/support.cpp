@@ -9,11 +9,6 @@ extern "C" {
 #include "support.h"
 
 // stacks
-Cell depth()
-{
-    return queryq(dataStack);
-}
-
 Cell rdepth()
 {
     return queryq(returnStack);
@@ -62,11 +57,6 @@ void runMachines()
 Cell outs()
 {
     return outp;
-}
-
-Byte getBase()
-{
-    return base;
 }
 
 Byte * getPrompt()
@@ -152,7 +142,7 @@ void inString(const char * cstring)
 void collector(void)
 {
     while (qbq(keyq))
-        collectKeys();
+        cli();
 }
 
 Byte getInterpretError()

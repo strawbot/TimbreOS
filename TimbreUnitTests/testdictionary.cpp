@@ -88,7 +88,7 @@ void testDictionary::init()
 void testDictionary::TestFree()
 {
     Cell address;
-    void * m = malloc(0);
+    void * m = NULL;
 
     free(m);
 
@@ -204,7 +204,6 @@ void testDictionary::TestRehash()
 {
     Short index = hash(s, &testdict);
     QVERIFY(index != rehash(s, index, &testdict));
-    index = testdict.capacity;
     for (Short i=0; i<testdict.capacity*10; i++) {
         index = rehash(randomString(), testdict.capacity, &testdict);
         QVERIFY(index <= testdict.capacity);
@@ -331,8 +330,8 @@ void testDictionary::TestAdjunct()
 
         if (used(string)) {
             string2 = (char *)*dictAdjunct(string, &testdict);
-            QVERIFY(0 != string2);
-            QVERIFY(0 == strcmp(string, (char *)string2));
+            QVERIFY(NULL != string2);
+            QVERIFY(0 == strcmp(string, string2));
         }
     }
 }

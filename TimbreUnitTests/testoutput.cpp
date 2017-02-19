@@ -255,6 +255,67 @@ void testoutput::TestDot()
         QVERIFY(getEmit() == 'F');
 }
 
+void testoutput::TestDotb()
+{
+    lit(0xFFFFFFFF);
+    dotb();
+    for (int i=0; i<4; i++) {
+        QVERIFY(getEmit() == ' ');
+        for (int j=0; j<8; j++)
+            QVERIFY(getEmit() == '1');
+    }
+    zeroEmits();
+    lit(0xFF00);
+    dotb();
+    QVERIFY(getEmit() == ' ');
+    for (int j=0; j<8; j++)
+        QVERIFY(getEmit() == '1');
+    QVERIFY(getEmit() == ' ');
+    for (int j=0; j<8; j++)
+        QVERIFY(getEmit() == '0');
+ }
+
+void testoutput::TestDoth()
+{
+    lit(0xFFFFFFFF);
+    doth();
+    while (getEmit() != 'F')
+        ;
+    for (int i=0; i<7; i++)
+        QVERIFY(getEmit() == 'F');
+}
+
+void testoutput::TestDotd()
+{
+    hex();
+    lit(10);
+    dotd();
+    QVERIFY(getEmit() == '1');
+    QVERIFY(getEmit() == '0');
+    QVERIFY(getEmit() == ' ');
+}
+
+void testoutput::TestDots()
+{
+    lit(7);
+    lit(8);
+    lit(9);
+    dots();
+    QVERIFY(getEmit() == '3');
+    while (getEmit() != '7')
+        ;
+    QVERIFY(getEmit() == ' ');
+    QVERIFY(getEmit() == '8');
+    QVERIFY(getEmit() == ' ');
+    QVERIFY(getEmit() == '9');
+    zeroEmits();
+    spStore();
+    ret();
+    dots();
+    QVERIFY(getEmit() == '-');
+    QVERIFY(getEmit() == '1');
+}
+
 void testoutput::TestSetPrompt()
 {
     setPrompt("");
@@ -279,4 +340,18 @@ void testoutput::TestdotPrompt()
     QVERIFY(getEmit() == 13);
     QVERIFY(getEmit() == ']');
     QVERIFY(getEmit() == ' ');
+}
+
+void testoutput::TestWords()
+{
+    const char * expect = "test  constantname  wordname  immediatename  ";
+
+    inputString("test");
+    colon();
+    interpret();
+    semiColon();
+
+    words();
+    for (int i = numEmits(); i; i--)
+        QVERIFY(getEmit() == *expect++);
 }
