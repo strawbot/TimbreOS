@@ -26,7 +26,8 @@ SOURCES += tst_timbreunitteststest.cpp \
     testparsing.cpp \
     testinterpreter.cpp \
     testinputstream.cpp \
-    testdefines.cpp
+    testdefines.cpp \
+    testprinters.cpp
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 HEADERS += \
@@ -40,7 +41,8 @@ HEADERS += \
     testparsing.h \
     testinterpreter.h \
     testinputstream.h \
-    testdefines.h
+    testdefines.h \
+    testprinters.h
 
 INCLUDEPATH += ../
 

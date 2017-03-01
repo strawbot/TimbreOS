@@ -8,6 +8,7 @@
 // add protection to runMachines so it can tell if it is recursive
 
 #include "machines.h"
+#include "cli.h"
 
 QUEUE(MACHINES, machineq);
 Byte mmoverflow = 0, mmunderflow = 0;
@@ -138,7 +139,7 @@ void listMachines(void)
 		print("\nmunderflows: "), printDec(mmunderflow);
 	if (mmoverflow)
 		print("\nmoverflows: "), printDec(mmoverflow);
-	DOT_PROMPT();
+	dotPrompt();
 }
 
 void listm(void) // list machine statuses

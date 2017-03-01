@@ -10,6 +10,7 @@ extern "C" {
 #include "testoperations.h"
 #include "testmemory.h"
 #include "testoutput.h"
+#include "testprinters.h"
 #include "testcompiler.h"
 #include "testparsing.h"
 #include "testinterpreter.h"
@@ -41,8 +42,13 @@ int main(int argc, char** argv)
 //        status |= QTest::qExec(&tc, argc, argv);
 //    }
 
+//    {
+//        testoutput tc;
+//        status |= QTest::qExec(&tc, argc, argv);
+//    }
+
     {
-        testoutput tc;
+        testPrinters tc;
         status |= QTest::qExec(&tc, argc, argv);
     }
 

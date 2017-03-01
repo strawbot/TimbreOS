@@ -15,7 +15,8 @@ static BQUEUE(PAD_SIZE, padq); // safe place to format numbers
 BQUEUE(EMITQ_SIZE, emitq);
 BQUEUE(KEYQ_SIZE, keyq);
 
-static Byte * hp = (Byte *)NULL, * hpStart = (Byte *)NULL, * hpEnd = (Byte *)NULL;
+static Byte hereSpace[HERE_SPACE];
+static Byte * hp = (Byte *)NULL, * hpStart = hereSpace, * hpEnd = &hereSpace[HERE_SPACE-1];
 static bool keyEcho = false;
 static bool autoecho = false; // can be turned off to silently process a line
 static Cell outp = 0;
