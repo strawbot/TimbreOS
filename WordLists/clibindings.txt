@@ -1,12 +1,113 @@
 // Names and function binding for words, constants and immediates
 
+Constants
+End
+
 Words
 	help	help  // print words with one line help; allow wild card filtering
 	words	words // list all words in dictionary
 End
 
-Immediates
+Words  // stack
+	dup		dup // ( n - n n ) make a copy of the top data stack item
+	drop	ret // ( n - ) throw away the top data stack item
+	swap	swap // ( n m - m n ) swap top two items on the data stack
+	over	over // ( n m - n m n ) copy 2nd data stack item to top of data stack
+	?dup	QUESTION_DUP // ( n - n n | - 0 ) duplicate top data stack item if not 0
+	sp!		spStore // ( ... - ) empty the data stack
+	>r		tor // ( n - ) (R - n ) push the top item of the data stack onto the return stack
+	r		rat // ( - n ) (R n - n ) copy the top item of the return stack onto the data stack
+	r>		rfrom //  ( - n ) (R n - ) move top item on return stack to data stack
+	and		andOp // ( n m - p ) bitwise AND top two data stack items and leave on top
+	or		orOp //  ( n m - p ) bitwise OR top two data stack items and leave on top
+	xor		xorOp // ( n m - p ) bitwise XOR top two data stack items and leave on top
+	not		notOp // ( n - n' ) invert all bits on the top data stack item
+	negate	negateOp // ( n - -n ) two's complement of top data stack item
+	abs		absOp // ( n - |n|) top data stack item is made positive
+	shift	shiftOp // ( n m - p ) shift n by m bit left for minus and right for positive
+	+		plusOp // ( n m - p ) add top two data stack items and leave on top
+	-		minusOp // ( n m - p ) subtract top data stack item from next item and leave on top
+	*		starOp // ( n m - p ) multiply next data stack item by top and leave on top
+	/		slashOp // ( n m - q ) divide next data stack item by top and leave on top
+	mod		modOp // ( n m - r ) modulus next data stack item by top and leave on top
+	/mod	slashModOp // ( n m - q r ) return divide and modulus from top item into next item
+	=		equals // ( n m - f ) leave a boolean on stack after equating top two data stack items
+	<		lessThan // ( n m - f ) leave a boolean on stack indicating if next is less than top
+	>		greaterThan // ( n m - f ) leave a boolean on stack indicating if next is greater than top
+	min		minOp //  ( n m - n|m) leave minimum of top two stack items
+	max		maxOp // ( n m - n|m) leave maximum of top two stack items
+	execute	execute // ( a - ) use the top data stack item as a function call
 End
 
-Constants
+Words // memory
+	@		fetch // ( a - n ) return contents of memory using top stack item as the address (processor sized)
+	!		store // ( n a - ) store next into memory using top as address (processor sized)
+	c@		byteFetch // ( a - c ) return contents of memory using top stack item as the address (8 bit)
+	c!		byteStore // ( c a - ) store next into memory using top as address (8 bit)
+	s@		shortFetch // ( a - h ) return contents of memory using top stack item as the address (16 bit)
+	s!		shortStore // ( h a - ) store next into memory using top as address (16 bit)
+	l@		longFetch // ( a - n )return contents of memory using top stack item as the address (32 bit)
+	l! 		longStore // (n a - )store next into memory using top as address (processor sized)
+	+b 		plusBits // ( b a - ) turn on b bits at address a: 0b10001 em +b
+	-b 		minusBits // ( b a - ) turn off b bits at address a: 0b10001 em -b
+	cmove	byteMove // ( s d n - ) move n bytes from s to d
+	fill	byteFill // ( s n x - )fill n bytes from s with x
+	erase	byteErase // ( s n - ) erase n bytes from s
+	here	here // ( - a ) return address of end of dictionary
+	allot	allot // ( n - ) reserve n bytes after end of dictionary
+	c,		cComma // ( c - ) allocate and 1 byte and put value in it
+	,		comma // ( n - ) allocate 1 cell and put n into it
+End
+
+Words // IO
+	koff	autoEchoOff // turn off automatic key echo
+	kon		autoEchoOn // turn on automatic key echo
+	emit	emitOp // ( c - ) send c to output device
+	cr		cursorReturn // send end of line to output device
+	count	count // ( a - a' c ) leave first character and incremented address on stack
+	type	type // ( a n - ) output n characters starting at a
+	hex		hex // interpret all following numbers as hex
+	decimal	decimal // interpret all subsequent numbers as decimal
+	bin		bin // switch to binary numbers
+	oct		oct // switch to octal numbers
+	hold	hold // ( c - ) hold a character in number sequence
+	<#		startNumberConversion // inititiate a number sequence
+	#		convertDigit // ( n - n' ) convert a digit from n
+	#s		convertNumber // ( n - 0 ) convert all digits in n
+	sign	sign // ( n - ) prepend sign to number sequence if n is negative
+	#>		endNumberConversion // ( n - a c ) finish number sequence and return address and count
+	.		dot // ( n - ) print n in current number base
+	.r		dotr // ( m n - ) print m in right field of n digits
+	.b		dotb // ( n - ) print number in binary
+	.d		dotd // ( n - ) print number in decimal
+	.h		doth // ( n - ) print number in hex
+	.s		dots // print number of items on data stack and items
+	word	word // ( c - ) parse characters up to c from input to here
+	dump	dump // ( a n - ) dump n 16-byte rows of memory starting at address a
+	reset	resetCli // reset everything including removing all definitions
+End
+
+Words // definitions
+	words		words // list all words in dictionary
+	:			colon // start a macro definition
+	constant	constant // ( n - ) give n a name
+	variable	variable // ( n - ) give n a place to be stored at a name
+	]			righBracket // enter macro mode
+End
+
+Immediates // compiling
+	[		leftBracket // exit macro mode
+	(		comment // start of comment till end of line or )
+	if		compileIf // ( n - ) execute following code if top of stack is non-zero
+	else	compileElse // otherwise part of an if statement
+	endif	compileEndif // end of else or if statement
+	begin	compileBegin // start of a loop construct
+	again	compileAgain // end of a continuous loop construct
+	while	compileWhile // ( n - ) conditional choice in a loop construct
+	repeat	compileRepeat // go back to the begin part
+	until	compileUntil // ( n - ) go back to the begin statement if stack is zero
+	for		compileFor // ( n - ) start of a loop which runs n times
+	next	compileNext // end of a for loop
+	exit	compileExit // exit macro
+	;		semiColon // end a macro
 End

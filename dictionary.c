@@ -41,7 +41,7 @@ static Short primeSizes[] = {HASH8, HASH9, HASH10, HASH11, HASH12, HASH13, HASH1
 
 static Short hashSize(Short n)  // select table size
 {
-    for (Long i = 0; i < sizeof(primeSizes); i++)
+    for (Long i = 0; i < sizeof(primeSizes)/sizeof(primeSizes[0]); i++)
         if (primeSizes[i]/2 >= n)
             return primeSizes[i];
     return primeSizes[sizeof(primeSizes)/sizeof(primeSizes[0])-1];
