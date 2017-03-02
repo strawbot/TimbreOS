@@ -1,0 +1,12 @@
+// Names and function binding for words, constants and immediates
+
+Words
+	help	help  // print words with one line help; allow wild card filtering
+	words	words // list all words in dictionary
+End
+
+Immediates
+End
+
+Constants
+End

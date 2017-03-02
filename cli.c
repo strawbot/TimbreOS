@@ -17,8 +17,6 @@ BQUEUE(KEYQ_SIZE, keyq);
 
 static Byte hereSpace[HERE_SPACE];
 static Byte * hp = (Byte *)NULL, * hpStart = hereSpace, * hpEnd = &hereSpace[HERE_SPACE-1];
-static bool keyEcho = false;
-static bool autoecho = false; // can be turned off to silently process a line
 static Cell outp = 0;
 static Byte base = 10; // command line number radix
 static Byte prompt[10]={PROMPTSTRING};
@@ -1006,7 +1004,6 @@ void quit(void)
 	zeroTib();
 	emptyEmitq();
 	leftBracket();
-	keyEcho = false;
 	cursorReturn();
 	dotPrompt();
 }
@@ -1148,22 +1145,11 @@ void emptyKeyq(void)
 	zerobq(keyq);
 }
 
-void autoEchoOn(void) // echo keys back
-{
-	keyEcho = autoecho = true;
-}
-
-void autoEchoOff(void) // don't echo keys back
-{
-	keyEcho = autoecho = false;
-}
-
 void cli(void)
 {
 	if (qbq(keyq) == 0)
 		return;
 
-	bool echo = keyEcho;
 	Byte key = pullbq(keyq);
 
 	switch (key) {
@@ -1177,15 +1163,14 @@ void cli(void)
 			key = BEEP;
 		break;
 	case QUOTE:
-
+		quote();
+		break;
 	case CRETURN:
 	case 0:  // a cursor return
-		keyEcho = autoecho;
 		key = 0;
 		tib.buffer[tib.in] = key;
 		outp = 0;
-		if (echo)
-			spaces(1);
+		spaces(1);
 		zeroTib();
 		interpret();
 		zeroTib();
@@ -1202,9 +1187,7 @@ void cli(void)
 		else
 			key = BEEP;
 	}
-
-	if (keyEcho)
-		emitByte(key);
+	emitByte(key);
 }
 
 // defining words
@@ -1280,6 +1263,7 @@ void words(void) // list user words and system dictionaries
 {
 	header * list = wordlist;
 
+	cursorReturn();
 	while (list) {
 		Byte * name = list->name;
 		Byte length = *name++ & ~IMMEDIATE_BITS;

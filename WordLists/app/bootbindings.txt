@@ -1,0 +1,8 @@
+// Names and function binding for words, constants and immediates
+
+Include ../clibindings.txt
+
+Words
+	hi hello // test funciton
+	tx sendLe1 // ( c ) send a character out LEUART 1 port
+End

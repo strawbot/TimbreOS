@@ -106,13 +106,13 @@ def includeFile(line):
 # c code generator
 def generateCode(file):
 	header = '''// names are kept in flash; arrays are used; reduces space requirements
-#include "botkernl.h"
+#include "cli.h"
 
 #define NAMES(name) PROGMEM char name[] = {
 #define NAME(s) s "\\000"
-#define END_NAMES };
+#define END_NAMES ""}; // empty string to cover empty array
 
-#define BODIES(functions) const void * const functions[] = {
+#define BODIES(functions) vector functions[] = {
 #define BODY(f) (void * const)f,
 #define CONSTANTBODY(f)  (void * const)CII,(void * const)&f,
 #define CONSTANTNUMBER(n) (void * const)CII,(void * const)n,
@@ -142,14 +142,13 @@ void CII(void);
 	bodies(file, immediates, 'BODY')
 	file.write('END_BODIES\n\n')
 
-	if len(constants):
-		file.write('// Constants\nNAMES(constantnames)\n')
-		names(file, constants)
-		file.write('END_NAMES\n\n')
-		externs(file, constants)
-		file.write('\nBODIES(constantbodies)\n')
-		bodies(file, constants, 'CONSTANTBODY', 'CONSTANTNUMBER')
-		file.write('END_BODIES\n\n')
+	file.write('// Constants\nNAMES(constantnames)\n')
+	names(file, constants)
+	file.write('END_NAMES\n\n')
+	externs(file, constants)
+	file.write('\nBODIES(constantbodies)\n')
+	bodies(file, constants, 'CONSTANTBODY', 'CONSTANTNUMBER')
+	file.write('END_BODIES\n\n')
 
 	file.close()
 	
@@ -242,10 +241,11 @@ def generateHelp(file): # sorted list of words in a c file
 					entries.append("%s%s %s %s" % (n, group, type, name[2]))
 	
 	wordlist = open(file, 'w')
-	header = '''#include <stdlib.h>
+	header = '''
+#include <stdlib.h>
+#include <string.h>
 #include "printers.h"
-#include "botkernl.h"
-#include "kernel.h"
+#include "cli.h"
 
 void help(void);
 void printif(char *s);
@@ -259,9 +259,10 @@ void printif(char *s)
 }
 
 void help(void) {
-	_CR();
-	BL(), WORD(), HERE();
-	filter = (char *)*sp++;
+	cursorReturn();
+	parse(0);
+	here();
+	filter = (char *)ret();
 	filter[filter[0] + 1] = 0;
 	filter++;
 '''
@@ -272,13 +273,8 @@ void help(void) {
 
 # mobile agent support generator
 def generateAgent(file): # generate mobile agent data
-	header = '''#include <avr/pgmspace.h>
-extern void (*wordbodies[])();
-extern void (*constantbodies[])();
-extern void (*immediatebodies[])();
-extern PROGMEM char wordnames[];
-extern PROGMEM char constantnames[];
-extern PROGMEM char immediatenames[];
+	header = '''
+#include "cli.h"
 
 '''
 	agent = open(file, 'w')
