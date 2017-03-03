@@ -17,6 +17,10 @@ void testPrinters::init()
     spStore();
     decimal();
 }
+void testPrinters::testDotnb(void)
+{
+
+}
 
 void testPrinters::testPrint(void)
 {
@@ -68,3 +72,12 @@ void testPrinters::testPrintFloat(void)
 
 }
 
+void testPrinters::testPdump(void)
+{
+
+}
+
+void testPrinters::testDump(void)
+{
+
+}
