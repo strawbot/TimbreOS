@@ -18,6 +18,7 @@ BQUEUE(KEYQ_SIZE, keyq);
 static Byte hereSpace[HERE_SPACE];
 static Byte * hp = (Byte *)NULL, * hpStart = hereSpace, * hpEnd = &hereSpace[HERE_SPACE-1];
 static Cell outp = 0;
+static bool echo = true;
 static Byte base = 10; // command line number radix
 static Byte prompt[10]={PROMPTSTRING};
 static Byte compiling = 0;
@@ -36,8 +37,6 @@ Headless(branch);
 Headless(zeroBranch);
 Headless(minusBranch);
 Headless(tor);
-Headless(count);
-Headless(type);
 
 // data stack
 Cell ret(void)  /* m - */
@@ -69,6 +68,10 @@ void swap(void)  /* m n - n m */
 	pushq(next, dataStack);
 }
 
+void drop(void) /* n - */
+{
+	popq(dataStack);
+}
 void dup(void)  /* m - m m */
 {
 	pushq(p(dataStack), dataStack);
@@ -259,6 +262,10 @@ void allot(Cell n)
 		error();
 }
 
+void cliAllot(void)
+{
+	allot(ret());
+}
 void cComma(void)  /* n -- */
 {
 	*hp = (Byte)popq(dataStack);
@@ -509,8 +516,9 @@ void convertDigit(void)  /* n -- n */
 
 void convertNumber(void)  /* n -- n */
 {
-	while(p(dataStack) != 0)
-		convertDigit();
+    do {
+        convertDigit();
+    } while(p(dataStack) != 0);
 }
 
 void sign(void)  /* m \ n -- n */
@@ -1140,6 +1148,16 @@ void quote(void)
 }
 
 // input stream
+void autoEchoOn(void)
+{
+    echo = true;
+}
+
+void autoEchoOff()
+{
+    echo = false;
+}
+
 void emptyKeyq(void)
 {
 	zerobq(keyq);
@@ -1170,7 +1188,8 @@ void cli(void)
 		key = 0;
 		tib.buffer[tib.in] = key;
 		outp = 0;
-		spaces(1);
+                if (echo)
+                    spaces(1);
 		zeroTib();
 		interpret();
 		zeroTib();
@@ -1187,7 +1206,8 @@ void cli(void)
 		else
 			key = BEEP;
 	}
-	emitByte(key);
+        if (echo)
+            emitByte(key);
 }
 
 // defining words
