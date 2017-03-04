@@ -42,15 +42,15 @@ int main(int argc, char** argv)
 //        status |= QTest::qExec(&tc, argc, argv);
 //    }
 
-//    {
-//        testoutput tc;
-//        status |= QTest::qExec(&tc, argc, argv);
-//    }
-
     {
-        testPrinters tc;
+        testoutput tc;
         status |= QTest::qExec(&tc, argc, argv);
     }
+
+//    {
+//        testPrinters tc;
+//        status |= QTest::qExec(&tc, argc, argv);
+//    }
 
 //    {
 //        testcompiler tc;
