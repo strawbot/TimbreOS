@@ -112,8 +112,9 @@ def generateCode(file):
 #define NAME(s) s "\\000"
 #define END_NAMES ""}; // empty string to cover empty array
 
+#define NOBODIES(functions) vector functions[];
 #define BODIES(functions) vector functions[] = {
-#define BODY(f) (void * const)f,
+#define BODY(f) (vector)f,
 #define CONSTANTBODY(f)  (void * const)CII,(void * const)&f,
 #define CONSTANTNUMBER(n) (void * const)CII,(void * const)n,
 #define END_BODIES };
@@ -145,10 +146,13 @@ void CII(void);
 	file.write('// Constants\nNAMES(constantnames)\n')
 	names(file, constants)
 	file.write('END_NAMES\n\n')
-	externs(file, constants)
-	file.write('\nBODIES(constantbodies)\n')
-	bodies(file, constants, 'CONSTANTBODY', 'CONSTANTNUMBER')
-	file.write('END_BODIES\n\n')
+	if constants:
+		externs(file, constants)
+		file.write('\nBODIES(constantbodies)\n')
+		bodies(file, constants, 'CONSTANTBODY', 'CONSTANTNUMBER')
+		file.write('END_BODIES\n\n')
+	else:
+		file.write('\nNOBODIES(constantbodies)\n')
 
 	file.close()
 	
