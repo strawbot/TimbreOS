@@ -253,6 +253,12 @@ void testoutput::TestDot()
     dot();
     while(qbq(getPadq()))
         QVERIFY(getEmit() == 'F');
+
+    zeroEmits();
+    lit(0);
+    dot();
+    QVERIFY(numEmits() == 2);
+    QVERIFY(getEmit() == '0');
 }
 
 void testoutput::TestDotb()
@@ -350,8 +356,11 @@ void testoutput::TestWords()
     colon();
     interpret();
     semiColon();
-
     words();
-    for (int i = numEmits(); i; i--)
-        QVERIFY(getEmit() == *expect++);
+    for (int i = numEmits(); i; i--) {
+        char c = getEmit();
+        if (c < ' ')
+            continue;
+        QVERIFY(c == *expect++);
+    }
 }
