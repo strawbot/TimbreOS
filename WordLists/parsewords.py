@@ -11,7 +11,8 @@
 #  entry consists of: name function and optionally comment
 #  c code is: either # or //
 
-# specific is in other direcotries
+# specific is in other directories
+# any file of the form: *bindings.txt is checked for updates
 
 #parse file
 # parsing is outer; looking for Words, Immediates, Constants, or //
@@ -30,6 +31,12 @@ abspath = os.path.abspath(__file__)
 dirname = os.path.dirname(abspath)
 os.chdir(dirname)
 
+# platform dependancy
+if sys.platform[:3] == 'win':
+	SEPARATOR = '\\'
+else:
+	SEPARATOR = '/'
+
 # globals
 words = []
 immediates = []
@@ -39,11 +46,62 @@ comments = []
 DIRECTIVE = 'directive' # note: this is somehow getting inserted into the .txt file
 COMMENT = 'comment'
 
+# file headers for: wordlist.c help.c wordlist.txt
+wordlistCheader = ''' \
+// names are kept in flash; arrays are used; reduces space requirements
+#include "cli.h"
+
+#define NAMES(name) PROGMEM char name[] = {
+#define NAME(s) s "\\000"
+#define END_NAMES ""}; // empty string to cover empty array
+
+#define NOBODIES(functions) vector functions[];
+#define BODIES(functions) vector functions[] = {
+#define BODY(f) (vector)f,
+#define CONSTANTBODY(f)  (void * const)CII,(void * const)&f,
+#define CONSTANTNUMBER(n) (void * const)CII,(void * const)n,
+#define END_BODIES };
+
+void CII(void);
+
+'''
+
+helpCheader = '''\
+#include <stdlib.h>
+#include <string.h>
+#include "printers.h"
+#include "cli.h"
+
+void help(void);
+void printif(char *s);
+
+static char *filter;
+
+void printif(char *s)
+{
+	if (strstr(s, filter) != NULL)
+		print(s);
+}
+
+void help(void) {
+	cursorReturn();
+	parse(0);
+	here();
+	filter = (char *)ret()+1;
+'''
+
+texthelp = '''\
+ [v] for variable
+ [i] for compile words
+ ( a - b ) stack before operation 'a' and after operation 'b'; right is top
+
+'''
+
 # parser
 current = None
 parseLine = None
 
-parsers = {
+keywords = {
 	'//':			lambda line: comments.append(line),
 	'Words':		lambda line: setDictionary(words),
 	'Immediates':	lambda line: setDictionary(immediates),
@@ -51,12 +109,10 @@ parsers = {
 	'Include':		lambda line: includeFile(line)
 }
 
-def emptyWords(): # empty out lists
-	global words, immediates, constants, comments
-	del words[:]
-	del immediates[:]
-	del constants[:]
-	del comments[:]
+def parseFile(line): # parse line from file
+	fields = line.split()
+	if fields:
+		keywords.get(fields[0], lambda line: sys.stdout.write('unknown keyword: %s\n'%fields[0]))(line)
 
 def readWordLists(file): # read in word lists
 	global parseLine
@@ -64,11 +120,6 @@ def readWordLists(file): # read in word lists
 	parseLine = parseFile
 	for line in lines:
 		parseLine(line)
-
-def parseFile(line): # parse line from file
-	fields = line.split()
-	if fields:
-		parsers.get(fields[0], lambda line: sys.stdout.write('no parser for %s\n'%fields[0]))(line)
 
 def addEntry(line):
 	global parseLine
@@ -105,43 +156,29 @@ def includeFile(line):
 
 # c code generator
 def generateCode(file):
-	header = '''// names are kept in flash; arrays are used; reduces space requirements
-#include "cli.h"
-
-#define NAMES(name) PROGMEM char name[] = {
-#define NAME(s) s "\\000"
-#define END_NAMES ""}; // empty string to cover empty array
-
-#define NOBODIES(functions) vector functions[];
-#define BODIES(functions) vector functions[] = {
-#define BODY(f) (vector)f,
-#define CONSTANTBODY(f)  (void * const)CII,(void * const)&f,
-#define CONSTANTNUMBER(n) (void * const)CII,(void * const)n,
-#define END_BODIES };
-
-void CII(void);
-
-'''
 	file = open(file, 'w')
-	file.write('// System dictionaries  %s'%genby())
-	file.write(header)
-	map(file.write, comments)
 
 	file.write('\n// Words\nNAMES(wordnames)\n')
 	names(file, words)
 	file.write('END_NAMES\n\n')
-	voids(file, words)
-	file.write('\nBODIES(wordbodies)\n')
-	bodies(file, words, 'BODY')
-	file.write('END_BODIES\n\n')
+	if words:
+		voids(file, words)
+		file.write('\nBODIES(wordbodies)\n')
+		bodies(file, words, 'BODY')
+		file.write('END_BODIES\n\n')
+	else:
+		file.write('NOBODIES(wordbodies)\n')
 
 	file.write('// Immediates\nNAMES(immediatenames)\n')
 	names(file, immediates)
 	file.write('END_NAMES\n\n')
-	voids(file, immediates)
-	file.write('\nBODIES(immediatebodies)\n')
-	bodies(file, immediates, 'BODY')
-	file.write('END_BODIES\n\n')
+	if immediates:
+		voids(file, immediates)
+		file.write('\nBODIES(immediatebodies)\n')
+		bodies(file, immediates, 'BODY')
+		file.write('END_BODIES\n\n')
+	else:
+		file.write('NOBODIES(immediatebodies)\n')
 
 	file.write('// Constants\nNAMES(constantnames)\n')
 	names(file, constants)
@@ -152,7 +189,7 @@ void CII(void);
 		bodies(file, constants, 'CONSTANTBODY', 'CONSTANTNUMBER')
 		file.write('END_BODIES\n\n')
 	else:
-		file.write('\nNOBODIES(constantbodies)\n')
+		file.write('NOBODIES(constantbodies)\n')
 
 	file.close()
 	
@@ -189,13 +226,7 @@ def bodies(file,dict,prefix,number=""):
 			else:
 				file.write("\t%s(%s)\n" % (prefix,w[1]))
 
-
 # text generator
-texthelp = ''' [v] for variable
- [i] for compile words
- ( a - b ) stack before operation 'a' and after operation 'b'; right is top
-
-'''
 def generateText(file): # sorted list of words
 	dict = [['', words],[' [i]',immediates],[' [v]',constants]]
 	entries = []
@@ -215,7 +246,7 @@ def generateText(file): # sorted list of words
 					entries.append("%s%s %s %s" % (n, group, type, name[2]))
 	
 	wordlist = open(file, 'w')
-	wordlist.write('Word list for firmware  %s'%genby())
+	wordlist.write('Word list for firmware  %s'%generatedBy())
 	wordlist.write(texthelp)
 	map(wordlist.write, sorted(entries))	
 	wordlist.close()
@@ -245,94 +276,53 @@ def generateHelp(file): # sorted list of words in a c file
 					entries.append("%s%s %s %s" % (n, group, type, name[2]))
 	
 	wordlist = open(file, 'w')
-	header = '''
-#include <stdlib.h>
-#include <string.h>
-#include "printers.h"
-#include "cli.h"
-
-void help(void);
-void printif(char *s);
-
-static char *filter;
-
-void printif(char *s)
-{
-	if (strstr(s, filter) != NULL)
-		print(s);
-}
-
-void help(void) {
-	cursorReturn();
-	parse(0);
-	here();
-	filter = (char *)ret();
-	filter[filter[0] + 1] = 0;
-	filter++;
-'''
-	wordlist.write(header)
+	wordlist.write(helpCheader)
 	map(wordlist.write, map(printLine, sorted(entries)))	
 	wordlist.write('}\n')
 	wordlist.close()
 
-# mobile agent support generator
-def generateAgent(file): # generate mobile agent data
-	header = '''
-#include "cli.h"
-
-'''
-	agent = open(file, 'w')
-	agent.write('// Word information for mobile agents  %s'%genby())
-	agent.write(header)
-	agent.write('#define numconstants %d\n'%len(constants))
-	agent.write('#define numwords %d\n'%len(words))
-	agent.write('#define numimmediates %d\n'%len(immediates))
-	agent.write('#define numtotal %d\n'%(len(constants)+len(words)+len(immediates)))
-	agent.close
-
 # utilities
-def genby(): # string for heading
+def generatedBy(): # string for heading
 	t = time.strftime('%b %d, %Y  %H:%M:%S',time.localtime())
 	return 'generated by parsewords.py  %s\n\n'%t
 
+def emptyWords(): # empty out lists
+	global words, immediates, constants, comments
+	del words[:]
+	del immediates[:]
+	del constants[:]
+	del comments[:]
+
 # look for subdirectories and concat those to root bindings to generate
 # c files and word lists
-import sys, os, glob
-
-if sys.platform[:3] == 'win':
-	SEPARATOR = '\\'
-else:
-	SEPARATOR = '/'
-
-ctarget = 'wordlist.c'
-txttarget = 'wordlist.txt'
-helptarget = 'help.c'
-txtcore = 'clibindings.txt'
-txtcpld = 'cpldaccess.txt'
-thisfile = 'parsewords.py'
-vanilla = 'Vanilla'
+ctarget		= 'wordlist.c'
+helptarget	= 'help.c'
+txttarget	= 'wordlist.txt'
+txtcore		= 'clibindings.txt'
+thisfile	= 'parsewords.py'
 
 def fileModTime(file): # return file modified date
 	return time.localtime(os.path.getmtime(file))
 
 if __name__ == '__main__':
-	update = 0
-	for bindings in glob.glob('*/*bindings.txt'):
-		dir, file = bindings.split(SEPARATOR)
-		try:
-			open(dir+SEPARATOR+ctarget).close() # test file existence
-			open(dir+SEPARATOR+ctarget).close()
-			open(dir+SEPARATOR+ctarget).close()
-			if	fileModTime(txtcore) < fileModTime(dir+SEPARATOR+ctarget) \
-			and fileModTime(txtcpld) < fileModTime(dir+SEPARATOR+ctarget) \
-			and fileModTime(thisfile) < fileModTime(dir+SEPARATOR+ctarget):
-				if fileModTime(bindings) < fileModTime(dir+SEPARATOR+ctarget):
-					continue # don't update this subdirectory
-			update += 1
-		except:
-			update += 1
+	import glob
+	update = False
+	try:
+		for bindings in glob.glob('*/*bindings.txt'):
+			dir, file = bindings.split(SEPARATOR)
+			open(dir+SEPARATOR+ctarget).close() # test target file existence
+			open(dir+SEPARATOR+helptarget).close()
+			open(dir+SEPARATOR+txttarget).close()
+			fmt = fileModTime(dir+SEPARATOR+ctarget)
+			if	fileModTime(txtcore)  < fmt \
+			and fileModTime(thisfile) < fmt \
+			and fileModTime(bindings) < fmt:
+				continue # don't update this subdirectory
+			update = True
+	except:
+		update = True
 	
-	if update != 0: # update all if one is affected; counter the dependancy bug
+	if update: # update all if one is affected; counter the dependancy bug
 		print 'at least one is out of date; updating all.'
 		for bindings in glob.glob('*/*bindings.txt'):
 			dir, file = bindings.split(SEPARATOR)

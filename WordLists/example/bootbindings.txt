@@ -1,3 +1,0 @@
-// Names and function binding for words, constants and immediates
-
-Include ../clibindings.txt
