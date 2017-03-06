@@ -22,6 +22,7 @@ Byte * getTib();
 void inputString(const char * string);
 header ** getWordlist();
 Byte * getPadq();
+Byte * string(const char * s);
 
 void emptyKeyq(void);
 void inKey(Byte c);

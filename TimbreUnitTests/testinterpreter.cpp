@@ -3,6 +3,24 @@
 #include "support.h"
 #include "testinterpreter.h"
 
+extern "C" vector wordbodies[];
+extern "C" void (*constantbodies[])();
+extern "C" void (*immediatebodies[])();
+extern "C" {
+Short searchNames(Byte * name, const char * dictionary);
+Byte searchDictionaries(Byte * cstring, tcode * t);
+tcode link2tick(header * link);
+Byte lookup(Byte * cstring, tcode * t);
+void msg(const char * m);
+void error(void);
+Byte checkBase(Byte * string);
+bool toDigit(Byte *n);
+Cell signDigits(Byte * string, bool sign);
+Cell stringNumber(Byte * string);
+void quit();
+void interpret();
+}
+
 testinterpreter::testinterpreter(QObject *parent) : QObject(parent)
 {
 
@@ -26,11 +44,6 @@ HEADER(name1, 4) = {{NULL,  {4|NAME_BITS, 'N', 'a', 'm', 'e'}, NULL}};
 HEADER(name2, 6) = {{&name1, {6|NAME_BITS|SMUDGE_BITS, 'S', 'm', 'u', 'd', 'g', 'e'}, NULL}};
 HEADER(name3, 9) = {{&name2, {9|NAME_BITS|IMMEDIATE_BITS, 'I', 'm', 'm', 'e', 'd', 'i', 'a', 't', 'e'}, NULL}};
 
-Byte * string(const char * s)
-{
-    return (Byte *)s;
-}
-
 void testinterpreter::init()
 {
     *getWordlist() = &name3.head;
@@ -49,12 +62,6 @@ void testinterpreter::testWordlist()
 }
 
 const char names[] = {"name1\000" "name2\000" "name3\000"};
-
-extern "C" Short searchNames(Byte * name, const char * dictionary);
-extern "C" Byte searchDictionaries(Byte * cstring, tcode * t);
-extern "C" vector wordbodies[];
-extern "C" void (*constantbodies[])();
-extern "C" void (*immediatebodies[])();
 
 void testinterpreter::testSearchnames()
 {
@@ -75,8 +82,6 @@ void testinterpreter::testSearchdictionaries()
     QVERIFY(t.call == (tcbody *)constantbodies);
 }
 
-extern "C" tcode link2tick(header * link);
-
 void testinterpreter::testLink2tick()
 {
     struct {
@@ -88,8 +93,6 @@ void testinterpreter::testLink2tick()
 
     QVERIFY(link2tick((header *)&head).call->ii == head.tick);
 }
-
-extern "C" Byte lookup(Byte * cstring, tcode * t);
 
 void testinterpreter::testLookup()
 {
@@ -107,9 +110,6 @@ void testinterpreter::testLookup()
     QVERIFY(lookup(string("constantname"), &t) == NAME_BITS);
     QVERIFY(&t.call->ii == constantbodies);
 }
-
-extern "C" void msg(const char * m);
-extern "C" void error(void);
 
 void testinterpreter::testMsg()
 {
@@ -131,13 +131,6 @@ void testinterpreter::testError()
     QVERIFY(getEmit() == '<');
     QVERIFY(numEmits() == 5);
     QVERIFY(getInterpretError() == 1);
-}
-
-extern "C" {
-Byte checkBase(Byte * string);
-bool toDigit(Byte *n);
-Cell signDigits(Byte * string, bool sign);
-Cell stringNumber(Byte * string);
 }
 
 void testinterpreter::testCheckBase()
@@ -202,21 +195,16 @@ void testinterpreter::testSignDigits()
     bin();
     QVERIFY(signDigits(string("0101010101"), false) == 0b0101010101);
     decimal();
-    n = signDigits(string("1.3"), false);
-    QVERIFY(fabs(*(float *)&n - 1.3) < .01);
-    n = signDigits(string("1.3"), true);
-    QVERIFY(fabs(*(float *)&n + 1.3) < .01);
+    n = signDigits(string("1234.5"), false);
+    QCOMPARE(*(float *)&n, 1234.5);
+    n = signDigits(string("1234.5"), true);
+    QCOMPARE(*(float *)&n, -1234.5);
 }
 
 void testinterpreter::testStringNumber()
 {
     QVERIFY(stringNumber(string("12345")) == 12345);
     QVERIFY((Integer)stringNumber(string("-12345")) == -12345);
-}
-
-extern "C" {
-void quit();
-void interpret();
 }
 
 void testinterpreter::testQuit()

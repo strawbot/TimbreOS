@@ -14,6 +14,7 @@ extern "C" {
 #include "testcompiler.h"
 #include "testparsing.h"
 #include "testinterpreter.h"
+#include "testfloat.h"
 #include "testinputstream.h"
 #include "testdefines.h"
 
@@ -64,6 +65,11 @@ int main(int argc, char** argv)
 
     {
         testinterpreter tc;
+        status |= QTest::qExec(&tc, argc, argv);
+    }
+
+    {
+        testFloat tc;
         status |= QTest::qExec(&tc, argc, argv);
     }
 

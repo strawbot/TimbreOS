@@ -154,3 +154,8 @@ void clearInterpretError()
 {
     interpretError = 0;
 }
+
+Byte * string(const char * s)
+{
+    return (Byte *)s;
+}
