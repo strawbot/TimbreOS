@@ -1010,10 +1010,8 @@ void quit(void)
 	spStore();
 	rpStore();
 	zeroTib();
-	emptyEmitq();
 	leftBracket();
 	cursorReturn();
-	dotPrompt();
 }
 
 void interpret(void)
@@ -1304,6 +1302,7 @@ void resetCli(void)
 	wordlist = NULL;
 	decimal();
 	quit();
+	dotPrompt();
 }
 
 // TODO: group by function; factor out magic numbers; improve names; reduce coupling so CLI can ignore parts; static functions; float support

@@ -158,6 +158,7 @@ def includeFile(line):
 def generateCode(file):
 	file = open(file, 'w')
 
+	file.write(wordlistCheader)
 	file.write('\n// Words\nNAMES(wordnames)\n')
 	names(file, words)
 	file.write('END_NAMES\n\n')
