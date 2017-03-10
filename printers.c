@@ -1,28 +1,38 @@
 // Printer support using Timbre  Robert Chapman III  June 14, 2012
 
 #include "cli.h"
+#include "byteq.h"
+#include "machines.h"
 
 void sendeq(void);
 
-void dotnb(Byte field, Byte digits, Cell n, Byte radix)
+void print(const char *message)
+{
+	msg((char *)message);
+}
+
+char * numString(Byte field, Byte digits, Cell n, Byte radix)
 {
 	Byte b = getBase();
-
 	setBase(radix);
-	spaces(field - digits);
 	lit(n), startNumberConversion();
 	if (field) // if field is not zero print specific number of digits
 		while(digits--)
 			convertDigit();
 	else
 		convertNumber();
-	endNumberConversion(), type();
+	endNumberConversion();
 	setBase(b);
+	ret();
+	return (char *)ret();
 }
 
-void print(const char *message)
+void dotnb(Byte field, Byte digits, Cell n, Byte radix)
 {
-	msg((char *)message);
+
+	for (int i = field - digits; i > 0; i--)
+		print(" ");
+	print(numString(field, digits, n, radix));
 }
 
 void printHex(unsigned int hex)
