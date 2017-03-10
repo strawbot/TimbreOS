@@ -52,7 +52,7 @@ Byte pullbq(Cell *q) // pull oldest element from the q
 Cell sizebq(Cell *q) // return size of q
 {
     byteq * bq = (byteq *)q;
-    return (Byte)(bq->end - (Byte)BQDATA);
+    return (bq->end - (Byte)BQDATA);
 }
 
 Cell qbq(Cell *q) // query #elements in q
@@ -60,10 +60,10 @@ Cell qbq(Cell *q) // query #elements in q
     byteq * bq = (byteq *)q;
     if (bq->insert <= bq->remove)
         return (Byte)(bq->remove - bq->insert);
-    return (Byte)(bq->remove + sizebq(q) + 1 - bq->insert);
+    return (bq->remove + sizebq(q) + 1 - bq->insert);
 }
 
 bool fullbq(Cell *q) // true if q is full
 {
-    return (Byte)(qbq(q) == sizebq(q));
+    return (qbq(q) == sizebq(q));
 }
