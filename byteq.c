@@ -1,59 +1,69 @@
-/* Byte sized queue facility  Rob Chapman  Dec 4, 2009 */
+// Byte queues with big pointers  Robert Chapman III  Mar 10, 2017
 
 #include "byteq.h"
 
-void zerobq(Byte *q)  // empty the queue
+void zerobq(Cell *q)  // empty the queue
 {
-	q[BQINSERT] = q[BQREMOVE] = q[BQEND];
+    byteq * bq = (byteq *)q;
+
+    bq->insert = bq->remove = bq->end;
 }
 
-Byte bq(Byte *q) // return copy of oldest element
+Byte bq(Cell *q) // return copy of oldest element
 {
-	return (q[q[BQREMOVE]]);
+    byteq * bq = (byteq *)q;
+
+    return bq->q[bq->remove];
 }
 
-void pushbq(Byte b, Byte *q) // push an element into the q
+void pushbq(Byte b, Cell *q) // push an element into the q
 {
-	q[q[BQINSERT]] = b;
-	if (q[BQINSERT] == BQDATA)
-		q[BQINSERT] = q[BQEND];
-	else
-		q[BQINSERT]--;
+    byteq * bq = (byteq *)q;
+
+    bq->q[bq->insert] = b;
+    if (bq->insert == BQDATA)
+        bq->insert = bq->end;
+    else
+        bq->insert--;
 }
 
-Byte popbq(Byte * q) // pop item from queue
+Byte popbq(Cell * q) // pop item from queue
 {
-	q[BQINSERT]++;
-	if ( q[BQINSERT] > q[BQEND] )
-		q[BQINSERT] = BQDATA;
-	return q[q[BQINSERT]];
+    byteq * bq = (byteq *)q;
+
+    bq->insert++;
+    if ( bq->insert > bq->end )
+            bq->insert = BQDATA;
+    return bq->q[bq->insert];
 }
 
-
-Byte pullbq(Byte *q) // pull oldest element from the q
+Byte pullbq(Cell *q) // pull oldest element from the q
 {
-	Byte b = q[q[BQREMOVE]];
-	
-	if (q[BQREMOVE] == BQDATA)
-		q[BQREMOVE] = q[BQEND];
-	else
-		q[BQREMOVE]--;
-	return b;
+    byteq * bq = (byteq *)q;
+    Byte b = bq->q[bq->remove];
+
+    if (bq->remove == BQDATA)
+        bq->remove = bq->end;
+    else
+        bq->remove--;
+    return b;
 }
 
-Byte sizebq(Byte *q) // return size of q
+Cell sizebq(Cell *q) // return size of q
 {
-	return (Byte)(q[BQEND] - (Byte)BQDATA);
+    byteq * bq = (byteq *)q;
+    return (Byte)(bq->end - (Byte)BQDATA);
 }
 
-Byte qbq(Byte *q) // query #elements in q
+Cell qbq(Cell *q) // query #elements in q
 {
-	if (q[BQINSERT] <= q[BQREMOVE])
-		return (Byte)(q[BQREMOVE] - q[BQINSERT]);
-	return (Byte)(q[BQREMOVE] + sizebq(q) + 1 - q[BQINSERT]);
+    byteq * bq = (byteq *)q;
+    if (bq->insert <= bq->remove)
+        return (Byte)(bq->remove - bq->insert);
+    return (Byte)(bq->remove + sizebq(q) + 1 - bq->insert);
 }
 
-bool fullbq(Byte *q) // true if q is full
+bool fullbq(Cell *q) // true if q is full
 {
-	return (Byte)(qbq(q) == sizebq(q));
+    return (Byte)(qbq(q) == sizebq(q));
 }

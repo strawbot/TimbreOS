@@ -62,8 +62,8 @@ extern PROGMEM char constantnames[];
 extern PROGMEM char immediatenames[];
 
 // API
-extern Byte emitq[];
-extern Byte keyq[];
+extern Cell emitq[];
+extern Cell keyq[];
 
 void absOp(void);
 Cell align(Cell p);
