@@ -542,6 +542,7 @@ void endNumberConversion(void)  /* n -- addr \ count */
 
 	while (qbq(padq))
 		*a++ = popbq(padq);
+	*a = 0; // add null terminator for use as a C string
 }
 
 void dotr(void)  /* n \ m -- */
