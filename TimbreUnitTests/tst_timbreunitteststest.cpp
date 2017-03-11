@@ -5,6 +5,7 @@ extern "C" {
 #include "support.cpp"
 }
 
+#include "testbyteq.h"
 #include "testdictionary.h"
 #include "teststacks.h"
 #include "testoperations.h"
@@ -22,6 +23,11 @@ extern "C" {
 int main(int argc, char** argv)
 {
     int status = 0;
+
+    {
+        testbyteq tc;
+        status |= QTest::qExec(&tc, argc, argv);
+    }
 
     {
         testDictionary tc;
