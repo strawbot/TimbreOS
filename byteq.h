@@ -26,7 +26,10 @@
 #include "ttypes.h"
 #include "queue.h"
 
-typedef struct {
+#ifndef _BYTEQ_
+#define _BYTEQ_
+
+typedef struct byteq {
     Cell insert;
     Cell remove;
     Cell end;
@@ -35,28 +38,21 @@ typedef struct {
 
 #define BQDATA		0
 
-// for use in structures and enabled in init code later
-// by using a Cell array, the initial size of the byte array is lost as it is rounded up
-// to be a multiple of a Cell. This will cause a problem with INIT_BQ as it assumes
-// the byte array size is a function of the size of the data structure. When this could
-// be off by up to sizeof(Cell)-1 bytes. To make it work the structure would have to be used
-// with bytes as the array but then it could no longer be passed by name like an array
-// unless the structure itself was an array of 1. Or it could just be noted that the
-// byte array is always rounded up and let it be. The question is what to do with BQEND when
-// initialized later.
-//#define SET_BQSIZE(size, bq) {(bq)[BQEND] = (Byte)(BQDATA+(size)); (bq)[BQINSERT] = (bq)[BQREMOVE] = BQDATA; }
-//#define INIT_BQ(bq)	{(bq)[BQEND] = (Byte)(sizeof(bq)) - 1; (bq)[BQINSERT] = (bq)[BQREMOVE] = BQDATA;}
-#define NEW_BQ(size, name)	Cell name[sizeof(byteq) + (size + sizeof(Cell))/sizeof(Cell)]
+#define BQUEUE(size, name) NEW_BQ(size, name) = {BQDATA,BQDATA,BQDATA+(size)}
 
+// for use in structures and enabled in init code later
+#define NEW_BQ(size, name)	Cell name[sizeof(byteq) + (size + sizeof(Cell))/sizeof(Cell)]
 /*
 	struct {
 		...
 		NEW_BQ(10, newbq);
 	} s;
 	
-	SET_BQSIZE(10, &s.newbq[0]);
+	sizebq(10, s.newbq);
 */
-#define BQUEUE(size, name) NEW_BQ(size, name) = {BQDATA,BQDATA,BQDATA+(size)}
+#define leftbq(q)	 (sizebq(q) - qbq(q)) // how much is left
+
+#endif
 
 void zerobq(Cell *q);
 Byte bq(Cell *q);
@@ -66,6 +62,6 @@ Byte popbq(Cell *q);
 Cell qbq(Cell *q);
 Cell sizebq(Cell *q);
 bool fullbq(Cell *q);
+void setsizebq(Cell size, Cell * q);
+void wrappedbq(Cell * q);
 
-#define leftbq(q)	 (sizebq(q) - qbq(q)) // how much is left
-#define wrappedbq(q)	q[QREMOVE] = q[QINSERT]; // align removal pointer with insert

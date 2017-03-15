@@ -28,7 +28,8 @@ SOURCES += tst_timbreunitteststest.cpp \
     testinputstream.cpp \
     testdefines.cpp \
     testprinters.cpp \
-    testfloat.cpp
+    testfloat.cpp \
+    testbyteq.cpp
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 HEADERS += \
@@ -44,7 +45,8 @@ HEADERS += \
     testinputstream.h \
     testdefines.h \
     testprinters.h \
-    testfloat.h
+    testfloat.h \
+    testbyteq.h
 
 INCLUDEPATH += ../
 

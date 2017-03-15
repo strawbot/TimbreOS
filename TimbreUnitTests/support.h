@@ -17,11 +17,11 @@ Byte * getPrompt();
 Byte getCompile();
 Cell getTick();
 Cell getLii();
-extern Byte padq[];
+extern Cell padq[];
 Byte * getTib();
 void inputString(const char * string);
 header ** getWordlist();
-Byte * getPadq();
+Cell * getPadq();
 Byte * string(const char * s);
 
 void emptyKeyq(void);

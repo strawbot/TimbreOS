@@ -64,7 +64,7 @@ Byte * getPrompt()
     return prompt;
 }
 
-Byte * getPadq()
+Cell * getPadq()
 {
     return padq;
 }
