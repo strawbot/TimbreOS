@@ -48,7 +48,7 @@ typedef struct byteq {
 		NEW_BQ(10, newbq);
 	} s;
 	
-	sizebq(10, s.newbq);
+	setsizebq(10, s.newbq);
 */
 #define leftbq(q)	 (sizebq(q) - qbq(q)) // how much is left
 
