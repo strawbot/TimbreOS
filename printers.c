@@ -62,6 +62,10 @@ void printDec0(unsigned int dec)
 
 void printFloat(float f, int n)
 {
+	if (f < 0.0) {
+		print("-");
+		f = -f;
+	}
 	printDec0((int)f);
 	print(".");
 	while (n--) {
