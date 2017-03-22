@@ -58,11 +58,11 @@ wordlistCheader = ''' \
 #define NOBODIES(functions) vector functions[];
 #define BODIES(functions) vector functions[] = {
 #define BODY(f) (vector)f,
-#define CONSTANTBODY(f)  (void * const)CII,(void * const)&f,
-#define CONSTANTNUMBER(n) (void * const)CII,(void * const)n,
+#define CONSTANTBODY(f)  (void * const)cii,(void * const)&f,
+#define CONSTANTNUMBER(n) (void * const)cii,(void * const)n,
 #define END_BODIES };
 
-void CII(void);
+void cii(void);
 
 '''
 
