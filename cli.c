@@ -1137,7 +1137,7 @@ void quote(void)
 	if (compiling)
 		compileAhead();
 
-	makeString('"');
+	makeString(QUOTE);
 
 	if (compiling) {
 		swap();
