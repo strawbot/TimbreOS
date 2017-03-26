@@ -40,4 +40,5 @@ void testbyteq::testbq()
         }
         n--;
     }
+    QVERIFY(sizeof(tq) <= (3*sizeof(Cell) + tsize + 1 + sizeof(Cell)));
 }

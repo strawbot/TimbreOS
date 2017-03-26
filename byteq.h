@@ -41,7 +41,7 @@ typedef struct byteq {
 #define BQUEUE(size, name) NEW_BQ(size, name) = {BQDATA,BQDATA,BQDATA+(size)}
 
 // for use in structures and enabled in init code later
-#define NEW_BQ(size, name)	Cell name[sizeof(byteq) + (size + sizeof(Cell))/sizeof(Cell)]
+#define NEW_BQ(size, name)	Cell name[(sizeof(byteq) + size + sizeof(Cell))/sizeof(Cell)]
 /*
 	struct {
 		...
