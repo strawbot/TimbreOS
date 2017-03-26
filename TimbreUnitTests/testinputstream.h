@@ -14,6 +14,7 @@ signals:
 private slots:
     void init();
     void testCli();
+    void testQuote();
 };
 
 #endif // TESTINPUTSTREAM_H

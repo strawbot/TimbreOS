@@ -63,3 +63,26 @@ void testinputstream::testCli()
     collector();
     QVERIFY(getEmit() == BEEP);
 }
+
+void testinputstream::testQuote()
+{
+    Byte * input = getTib();
+
+    inKey(QUOTE);
+    cli();
+    QVERIFY(getTib() == input+1);
+    inKey(BSPACE);
+    cli();
+    QVERIFY(getTib() == input);
+
+    inKey(QUOTE);
+    inString("blah");
+    inKey(QUOTE);
+    inKey(0);
+
+    collector();
+    QVERIFY(depth() == 1);
+    count();
+    QVERIFY(ret() == 4);
+    QVERIFY(0 == strcmp((char *)ret(), "blah"));
+}

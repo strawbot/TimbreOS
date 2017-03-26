@@ -266,6 +266,7 @@ void cliAllot(void)
 {
 	allot(ret());
 }
+
 void cComma(void)  /* n -- */
 {
 	*hp = (Byte)popq(dataStack);
@@ -765,9 +766,14 @@ void zeroTib(void)
 	tib.in = 0;
 }
 
+Byte peek(void)
+{
+	return tib.buffer[tib.in];
+}
+
 void skip(Byte c) // skip c in input
 {
-	while (tib.buffer[tib.in] != 0 && tib.buffer[tib.in] == c)
+	while (peek() != 0 && peek() == c)
 		tib.in++;
 }
 
@@ -994,50 +1000,6 @@ Cell stringNumber(Byte * cstring)
 	return n;
 }
 
-// threaded interpreters
-void literal(Cell n)
-{
-	lit(n);
-	if (compiling) {
-		compileIt(&_lii);
-		comma();
-	}
-}
-
-// interpreter
-void quit(void)
-{
-	interpretError = 0;
-	spStore();
-	rpStore();
-	zeroTib();
-	leftBracket();
-	cursorReturn();
-}
-
-void interpret(void)
-{
-	while (tib.buffer[tib.in] != 0) {
-		tcbody * t;
-		Byte headbits;
-		Byte * cstring;
-
-		cstring = parseWord(SPACE);
-		headbits = lookup(cstring, &t);
-		if (headbits != 0)
-			headbits == compiling ? compileIt(t) : executeIt(t);
-		else {
-			Cell n = stringNumber(cstring);
-
-			if (interpretError) {
-				quit();
-				break;
-			}
-			literal(n);
-		}
-	}
-}
-
 // control flow
 void compileAhead(void)
 {
@@ -1119,9 +1081,19 @@ void compileExit(void)
 	comma();
 }
 
+void literal(Cell n)
+{
+	lit(n);
+	if (compiling) {
+		compileIt(&_lii);
+		comma();
+	}
+}
+
 // strings
 void makeString(char c)
 {
+	tib.in +=1;
 	parse(c);
 	here();
 	dup();
@@ -1143,6 +1115,45 @@ void quote(void)
 		swap();
 		compileEndif();
 		literal(ret());
+	}
+}
+
+// interpreter
+void quit(void)
+{
+	interpretError = 0;
+	spStore();
+	rpStore();
+	zeroTib();
+	leftBracket();
+	cursorReturn();
+}
+
+void interpret(void)
+{
+	while (peek() != 0) {
+		tcbody * t;
+		Byte headbits;
+		Byte * cstring;
+
+		skip(SPACE);
+		if (peek() == QUOTE) {
+			quote();
+			continue;
+		}
+		cstring = parseWord(SPACE);
+		headbits = lookup(cstring, &t);
+		if (headbits != 0)
+			headbits == compiling ? compileIt(t) : executeIt(t);
+		else {
+			Cell n = stringNumber(cstring);
+
+			if (interpretError) {
+				quit();
+				break;
+			}
+			literal(n);
+		}
 	}
 }
 
@@ -1179,16 +1190,13 @@ void cli(void)
 		else
 			key = BEEP;
 		break;
-	case QUOTE:
-		quote();
-		break;
 	case CRETURN:
 	case 0:  // a cursor return
 		key = 0;
 		tib.buffer[tib.in] = key;
 		outp = 0;
-                if (echo)
-                    spaces(1);
+		if (echo)
+			spaces(1);
 		zeroTib();
 		interpret();
 		zeroTib();
