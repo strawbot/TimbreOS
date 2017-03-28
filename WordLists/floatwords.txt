@@ -8,7 +8,7 @@ Words
 	fexp	cliExp  // ( n - n  )
 	flog	cliLog  // ( n - n  )
 	fpow	cliPow  // ( n m - n  )
-	fneg	cliFnet  // ( n - n  )
+	fneg	cliFneg  // ( n - n  )
 	f>		cliFgreater  // ( n m - flag  )
 	fsqrt	cliSqrt  // ( n - n  )
 	f+		cliFplus  // ( n m - n  )
