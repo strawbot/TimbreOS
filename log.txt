@@ -83,6 +83,11 @@ Issues:
     shortest timeout. This might work better with C++ where instances of time machines
     woudl exist. The user would be aware in the programming of using time machines, state
     machines and perpetual machines.
+16. Optionally include a name after Words in the word list file which can be used to sort
+    words in to separate lists. Then when printed, instead of one list, there would be words
+    grouped. This would make it easier to find words. This would apply to help and to
+    words.
+17. Detect stack underflow and issue a message and correct.
 
 Updates:
  4.  [4.] Should move from botkernel to timbre. bktypes -> ttypes, botkernl -> timbre etc

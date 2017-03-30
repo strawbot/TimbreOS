@@ -1185,10 +1185,9 @@ void cli(void)
 		return;
 	case BSPACE:
 	case DELETE: // backspace or delete
-		if (tib.in != 0)
-			tib.in -= 1;
-		else
-			key = BEEP;
+		if (tib.in == 0)
+			return;
+		tib.in -= 1;
 		break;
 	case CRETURN:
 	case 0:  // a cursor return
@@ -1213,8 +1212,8 @@ void cli(void)
 		else
 			key = BEEP;
 	}
-        if (echo)
-            emitByte(key);
+	if (echo)
+		emitByte(key);
 }
 
 // defining words
