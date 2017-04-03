@@ -99,6 +99,11 @@ void inputString(const char * string)
     strcpy((char *)tib.buffer, string);
 }
 
+void restartTib()
+{
+    tib.in = 0;
+}
+
 // dictionaries
 // Words
 NAMES(wordnames)

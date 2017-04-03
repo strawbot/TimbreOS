@@ -20,6 +20,7 @@ Cell getLii();
 extern Cell padq[];
 Byte * getTib();
 void inputString(const char * string);
+void restartTib();
 header ** getWordlist();
 Cell * getPadq();
 Byte * string(const char * s);

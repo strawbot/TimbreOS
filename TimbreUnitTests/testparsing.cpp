@@ -12,13 +12,13 @@ void testparsing::init()
 {
     Byte * p;
 
-    zeroTib();
+    restartTib();
     p = getTib();
     *p++ = ' ';
     *p++ = ' ';
     *p++ = 'a';
     *p++ = 0;
-    zeroTib();
+    restartTib();
     hpStore();
 }
 

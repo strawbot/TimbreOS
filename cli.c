@@ -764,6 +764,7 @@ void minusBranch(void)
 void zeroTib(void)
 {
 	tib.in = 0;
+	tib.buffer[tib.in] = 0;
 }
 
 Byte peek(void)
@@ -1196,10 +1197,9 @@ void cli(void)
 		outp = 0;
 		if (echo)
 			spaces(1);
-		zeroTib();
+		tib.in = 0;
 		interpret();
 		zeroTib();
-		tib.buffer[tib.in] = 0;
 		dotPrompt();
 		return;
 	default:
@@ -1310,7 +1310,6 @@ void resetCli(void)
 	wordlist = NULL;
 	decimal();
 	quit();
-	dotPrompt();
 }
 
 // TODO: group by function; factor out magic numbers; improve names; reduce coupling so CLI can ignore parts; static functions; float support
