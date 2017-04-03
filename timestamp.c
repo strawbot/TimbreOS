@@ -6,23 +6,22 @@
 */
 
 #include "timestamp.h"
-//#include "timeout.h"
 
-static Long localtime; // local time is time since startup
+static Long uptime; // local time is time since startup
 
 void oneMillisecondTick(void)
 {
-	localtime += LOCALTIME_TICK;
+	uptime += LOCALTIME_TICK;
 	ACKNOWLEDGE_TICK;
 }
 
 void initTimeStamp(void)
 {
-	localtime = 0;
+	uptime = 0;
 }
 
 // reading time
 Long getTime(void)
 {
-	return localtime;
+	return uptime;
 }

@@ -110,12 +110,11 @@ void pdump(unsigned char * a, unsigned int lines)
 	}
 }
 
-void dump(void) // command line dump
+// CLI
+void dump(void) // ( a n ) command line dump
 {
-	Byte * a;
-	Cell lines;
-	
-	lines = ret();
-	a = (Byte *)ret();
+	Cell lines = ret();
+	Byte * a = (Byte *)ret();
+
 	pdump(a, lines);
 }

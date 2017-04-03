@@ -42,8 +42,10 @@ typedef struct {
 	Byte off;		// set to true to turn off timeout - reset by setting
 } Timeout;
 
+#define NEW_TO(name) Timeout name[1] /* use timeouts without & */
+
 // Timeout support
-// Timeout xto
+// MEW_TO(xto);
 // if (checkTimeout(xto)
 // setTimeout(4 SECONDS, xto)
 // sinceTimeout(xto)

@@ -6,6 +6,8 @@ extern "C" {
 #include "queue.c"
 #include "byteq.c"
 #include "cli.c"
+#include "timestamp.c"
+#include "timeout.c"
 #include "support.h"
 
 // stacks
@@ -158,4 +160,10 @@ void clearInterpretError()
 Byte * string(const char * s)
 {
     return (Byte *)s;
+}
+
+// time
+void setTime(Cell t)
+{
+    uptime = t;
 }

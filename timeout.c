@@ -7,7 +7,7 @@ bool checkTimeout(Timeout *timer) // see if it has timed out
 {
 	if (timer->off == true) // see if it is enalbed
 		return false;
-	return (bool)((getTime() - timer->timeset) > timer->timeout);
+	return (bool)((getTime() - timer->timeset) >= timer->timeout);
 }
 
 void setTimeout(Cell time, Timeout *timer) // set the timeout time and turn on the timeout
@@ -46,10 +46,10 @@ void restartTimeout(Timeout *timer) // restart the timeout from right now
 
 void timeoutWait(Cell time) // timed delay loop
 {
-	Timeout timer;
+	NEW_TO(timer);
 
-	setTimeout(time, &timer);
-	while (!checkTimeout(&timer))
+	setTimeout(time, timer);
+	while (!checkTimeout(timer))
 		;
 }
 

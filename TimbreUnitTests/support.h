@@ -32,6 +32,7 @@ Byte getInterpretError();
 void clearInterpretError();
 void compileAhead(void);
 void maybeCr(void);
+void setTime(Cell t);
 
 #ifndef _SUPPORT_H_
 #define _SUPPORT_H_
