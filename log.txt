@@ -88,6 +88,7 @@ Issues:
     grouped. This would make it easier to find words. This would apply to help and to
     words.
 17. Detect stack underflow and issue a message and correct.
+18. Change quotes to use C-strings.
 
 Updates:
  4.  [4.] Should move from botkernel to timbre. bktypes -> ttypes, botkernl -> timbre etc
