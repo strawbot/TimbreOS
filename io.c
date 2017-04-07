@@ -5,15 +5,27 @@
 #include "printers.h"
 #include "machines.h"
 
-﻿// platform specific io
+// cli io
+byteq_t * inputq = keyq;
+byteq_t * outputq = emitq;
+
+void setInputq(byteq_t * q) {
+	inputq = q;
+}
+
+void setOutputq(byteq_t * q) {
+	outputq = q;
+}
+
 void output() {
-    if (qbq(emitq) && (USART_StatusGet(UART1) & USART_STATUS_TXBL))
-        USART_Tx(UART1, pullbq(emitq));
+	if (qbq(outputq) && (USART_StatusGet(UART1) & USART_STATUS_TXBL))
+		USART_Tx(UART1, pullbq(outputq));
+	activate(output);
 }
 
 void input() {
-    if (USART_StatusGet(UART1) & USART_STATUS_RXDATAV)
-        pushbq(USART_RxDataGet(UART1), keyq);
+	if (USART_StatusGet(UART1) & USART_STATUS_RXDATAV)
+		pushbq(USART_RxDataGet(UART1), inputq);
 }
 
 // machinery
@@ -33,7 +45,7 @@ void cliMachine() {
 }
 
 void initIo() { // call to set up and run ios
-﻿	initMachines();
+	initMachines();
     resetCli();
     print("Timbre CLI");
     dotPrompt();
