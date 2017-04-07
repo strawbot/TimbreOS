@@ -18,7 +18,8 @@ BQUEUE(KEYQ_SIZE, keyq);
 static Byte hereSpace[HERE_SPACE];
 static Byte * hp = (Byte *)NULL, * hpStart = hereSpace, * hpEnd = &hereSpace[HERE_SPACE-1];
 static Cell outp = 0;
-static bool echo = true;
+static bool keyEcho = true; // echo keys typed in
+static bool lineEcho = true; // used to turn off echo for a line; reset after every line
 static Byte base = 10; // command line number radix
 static Byte prompt[10]={PROMPTSTRING};
 static Byte compiling = 0;
@@ -1159,19 +1160,14 @@ void interpret(void)
 }
 
 // input stream
-void autoEchoOn(void)
-{
-    echo = true;
-}
-
-void autoEchoOff()
-{
-    echo = false;
-}
-
 void emptyKeyq(void)
 {
 	zerobq(keyq);
+}
+
+void keyIn(Byte c)
+{
+	pushbq(c, keyq);
 }
 
 void cli(void)
@@ -1195,9 +1191,10 @@ void cli(void)
 		key = 0;
 		tib.buffer[tib.in] = key;
 		outp = 0;
-		if (echo)
+		if (lineEcho)
 			spaces(1);
 		tib.in = 0;
+		lineEcho = keyEcho; // restore key echoing at end of each line
 		interpret();
 		zeroTib();
 		dotPrompt();
@@ -1212,8 +1209,19 @@ void cli(void)
 		else
 			key = BEEP;
 	}
-	if (echo)
+	if (lineEcho)
 		emitByte(key);
+}
+
+void evaluate(Byte *string)
+{
+	Byte length	= (Byte)strlen((char *)string) + 1; // also key in zero from end of line
+
+	zeroTib(); // clear out any network debris - assure command execution
+	emptyKeyq();
+	while (length--)
+		keyIn(*string++);
+	lineEcho = false; // keep line echo quiet
 }
 
 // defining words

@@ -36,6 +36,8 @@ typedef struct byteq {
     Byte q[]; // could we use a union for byte array and cell array? Combine bq and q.
 }byteq;
 
+#define byteq_t Cell
+
 #define BQDATA		0
 
 #define BQUEUE(size, name) NEW_BQ(size, name) = {BQDATA,BQDATA,BQDATA+(size)}
