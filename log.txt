@@ -54,8 +54,6 @@ Issues:
 	their name can be associated with an address. Kind of like ActivateOnce but 
 	separate from activation; just declaration.
 	This should be part of C++ version of machines.
- 2. timeouts should be like queues and not require an & in front of them to reference
-    them.
  3. It would be nice to have an unsigned decimal printout in printers.c but as one
     adds more features the API starts to expand quickly. Perhaps options that are
     selectable that are themselves part of the API such as unsigned(void) that apply
@@ -88,7 +86,6 @@ Issues:
     grouped. This would make it easier to find words. This would apply to help and to
     words.
 17. Detect stack underflow and issue a message and correct.
-18. Change quotes to use C-strings.
 
 Updates:
  4.  [4.] Should move from botkernel to timbre. bktypes -> ttypes, botkernl -> timbre etc
@@ -101,3 +98,10 @@ Updates:
      cleaned up. Adding to issue 4, the whole cli should be refactored, cleaned up and
      unit tested. The standard 95 words in clibindings should be the basis for the
      word set.
+ 5. [2.] timeouts should be like queues and not require an & in front of them to reference
+    them.
+    Done. Old interface still works but new with NEW_TO() no & is required. This is done
+    by making an array of 1 timeout.
+ 6. [18.] Change quotes to use C-strings.
+    partially done. Quotes return null terminated strings but count cannot be used with
+    them yet.
