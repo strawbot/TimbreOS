@@ -61,8 +61,8 @@ End
 
 Words // IO
 	emit	emitOp // ( c - ) send c to output device
+    strlen  stringLength // ( a - c ) return length of a string
 	cr		cursorReturn // send end of line to output device
-	count	count // ( a - a' c ) leave first character and incremented address on stack
 	type	type // ( a n - ) output n characters starting at a
 	hex		hex // interpret all following numbers as hex
 	decimal	decimal // interpret all subsequent numbers as decimal

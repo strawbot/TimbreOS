@@ -449,12 +449,10 @@ void maybeCr(void)
 		cursorReturn();
 }
 
-void count(void)  /* addr -- addr' \ count */
+void msg(const char * m) // message in program space
 {
-	Byte * a = (Byte *)popq(dataStack);
-	
-	pushq((Cell)&a[1], dataStack);
-	pushq((Cell)*a, dataStack);
+	while (*m)
+		emitByte(*m++);
 }
 
 void type(void)  /* addr \ count -- */
@@ -464,6 +462,11 @@ void type(void)  /* addr \ count -- */
 	
 	while (n--)
 		emitByte(*a++);
+}
+
+void stringLength(void) /* a - c */
+{
+    lit(strlen((char *)ret()));
 }
 
 void spaces(int n)
@@ -624,12 +627,6 @@ void doth(void)  /* n -- */
 	base = b;
 }
 
-void msg(const char * m) // message in program space
-{
-	while (*m)
-		emitByte(*m++);
-}
-
 void dots(void)  /* -- */
 {
 	Integer n = depth();
@@ -666,20 +663,13 @@ void setBase(Byte b)
 // prompt
 void setPrompt(const char *string)
 {
-	Byte length = (Byte)strlen(string);
-
-	if (length > sizeof(prompt) + 1)
-		length = sizeof(prompt) - 1;
-	prompt[0] = length;
-	memcpy(&prompt[1], string, length);
+    strncpy((char *)prompt, string, sizeof(prompt)-1);
 }
 
 void dotPrompt(void)
 {
 	maybeCr();
-	compiling ?	lit((Cell)"\002] ") : lit((Cell)prompt);
-	count();
-	type();
+	compiling ?	msg("] ") : msg((char *)prompt);
 }
 
 // compiler
@@ -903,9 +893,7 @@ Byte lookup(Byte * cstring, tcbody ** t)
 // Error recovery
 void error(void)
 {
-	here();
-	count();
-	type();
+    msg((char *)&hp[1]);
 	msg("<- eh?");
 	interpretError = 1;
 }
@@ -1093,15 +1081,15 @@ void literal(Cell n)
 }
 
 // strings
-void makeString(char c)
+void makeString(char c) // ( - a )
 {
-	tib.in +=1;
+	char * string = (char *)hp;
+
+	tib.in +=1; // skip leading "
 	parse(c);
-	here();
-	count();
-	lit(1);
-	plusOp();
-	allot(ret());
+    strcpy(string, &string[1]); // remove leading count
+    lit((Cell)hp);
+	allot(strlen(string)+1); // account for null terminator
 	aligned();
 }
 

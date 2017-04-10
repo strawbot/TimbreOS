@@ -15,7 +15,7 @@
 #define EMITQ_SIZE 160
 #define KEYQ_SIZE 80
 #define PAD_SIZE 20
-#define PROMPTSTRING "\010timbre: "
+#define PROMPTSTRING "timbre: "
 #define CUSHION LINE_LENGTH // how much space to maintain for HERE
 #define HERE_SPACE 1024 // small here space
 #define OUTPUT_BLOCKED runMachines() // deal with by running machines
