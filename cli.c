@@ -1098,8 +1098,7 @@ void makeString(char c)
 	tib.in +=1;
 	parse(c);
 	here();
-	dup();
-	byteFetch();
+	count();
 	lit(1);
 	plusOp();
 	allot(ret());
