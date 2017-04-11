@@ -29,23 +29,27 @@ void testinputstream::testCli()
     QVERIFY(numEmits() == 0);
     QVERIFY(depth() == 0);
 
+    zeroEmits();
     inString("a");
     collector();
     QVERIFY(getTib() == input+1);
-    QVERIFY(numEmits() == 0);
+    QCOMPARE(numEmits(), (Cell)1);
     QVERIFY(depth() == 0);
 
+    zeroEmits();
     inKey(BSPACE);
     cli();
     QVERIFY(getTib() == input);
-    QVERIFY(numEmits() == 0);
+    QCOMPARE(numEmits(), (Cell)1);
     QVERIFY(depth() == 0);
 
+    zeroEmits();
     inKey(CRETURN);
     cli();
     QVERIFY(getTib() == input);
     QVERIFY(depth() == 0);
 
+    zeroEmits();
     inString("constantname");
     inKey(0);
     collector();
@@ -59,9 +63,14 @@ void testinputstream::testCli()
     QVERIFY(numEmits() == 0);
 
     autoEchoOn();
+    inKey(0);
+    collector();
+    zeroEmits();
+    zeroTib();
     inKey(1);
     collector();
-    QVERIFY(getEmit() == BEEP);
+    QVERIFY(numEmits() == 1);
+    QCOMPARE(getEmit(), (Byte)BEEP);
 }
 
 void testinputstream::testQuote()
@@ -82,7 +91,8 @@ void testinputstream::testQuote()
 
     collector();
     QVERIFY(depth() == 1);
-    count();
+    dup();
+    stringLength();
     QVERIFY(ret() == 4);
     QVERIFY(0 == strcmp((char *)ret(), "blah"));
 }

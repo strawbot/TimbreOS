@@ -80,23 +80,23 @@ void testoutput::TestMaybeCr()
     QCOMPARE(numEmits(), (Cell)3);
 }
 
-void testoutput::TestCount()
+void testoutput::TestLength()
 {
-    Byte array[] = {6};
+    Byte array[] = {6,0};
 
     lit((Cell)array);
-    count();
-    QCOMPARE(ret(), (Cell)6);
-    QCOMPARE(ret(), (Cell)array+1);
+    stringLength();
+    QCOMPARE(ret(), (Cell)1);
     QVERIFY(depth() == 0);
 }
 
 void testoutput::TestType()
 {
-    Byte array[] = {2,'a','b'};
+    Byte array[] = {'a','b',0};
 
     lit((Cell)array);
-    count();
+    dup();
+    stringLength();
     type();
     QCOMPARE(numEmits(), (Cell)2);
     QVERIFY(getEmit() == 'a');
@@ -327,9 +327,9 @@ void testoutput::TestSetPrompt()
     setPrompt("");
     QVERIFY(*getPrompt() == 0);
     setPrompt("very long prompt");
-    QVERIFY(*getPrompt() < sizeof("very long prompt"));
+    QVERIFY(strlen((char *)getPrompt()) < sizeof("very long prompt"));
     setPrompt("x");
-    QVERIFY(getPrompt()[1] == 'x');
+    QVERIFY(getPrompt()[0] == 'x');
 }
 
 void testoutput::TestdotPrompt()

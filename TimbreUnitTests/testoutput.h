@@ -18,7 +18,7 @@ private slots:
     void TestEmitOp();
     void TestCursorReturn();
     void TestMaybeCr();
-    void TestCount();
+    void TestLength();
     void TestType();
     void TestSpaces();
     void TestBin();

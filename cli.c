@@ -1147,6 +1147,16 @@ void interpret(void)
 }
 
 // input stream
+void autoEchoOn()
+{
+	keyEcho = true;
+}
+
+void autoEchoOff()
+{
+	keyEcho = false;
+}
+
 void emptyKeyq(void)
 {
 	zerobq(keyq);
