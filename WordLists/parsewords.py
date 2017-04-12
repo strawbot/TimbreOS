@@ -301,38 +301,76 @@ helptarget	= 'help.c'
 txttarget	= 'wordlist.txt'
 txtcore		= 'clibindings.txt'
 thisfile	= 'parsewords.py'
+targetdir	= ''
 
 def fileModTime(file): # return file modified date
 	return time.localtime(os.path.getmtime(file))
 
+def needUpdate(checkfile):
+	dir, file = checkfile.rsplit(SEPARATOR, 1)
+	dir += SEPARATOR
+
+#	print 'checking: ' + checkfile
+
+	# test target file existence
+	open(dir + ctarget).close()
+	open(dir + helptarget).close()
+	open(dir + txttarget).close()
+
+	# check file mod times: clibindings.txt, parsewords.py, bootbindings.txt > wordlist.c
+	fmt = fileModTime(dir + ctarget)
+	if  fileModTime(txtcore) > fmt:
+		print txtcore + ' newer than ' + dir + ctarget
+		return True
+	if fileModTime(thisfile) > fmt:
+		print thisfile + ' newer than ' + dir + ctarget
+		return True
+	if fileModTime(checkfile) > fmt:
+		print thisfile + ' newer than ' + dir + ctarget
+		return True
+	return False
+
+def updateFiles(file):
+	dir, file = file.rsplit(SEPARATOR, 1)
+	emptyWords()
+	print 'changing to directory: ' + dir
+	os.chdir(dir)
+	readWordLists(file)
+	print 'generating %s, %s and %s' % (ctarget, txttarget, helptarget)
+	generateCode(targetdir + ctarget)
+	generateText(targetdir + txttarget)
+	generateHelp(targetdir + helptarget)
+	os.chdir('..')
+
 if __name__ == '__main__':
+	arg = sys.argv[-1] # accept a file argument
+	if arg.endswith('bindings.txt') == False:
+		arg = None
+	else:
+		dir, file = arg.rsplit(SEPARATOR, 1)
+		targetdir = dir + SEPARATOR
+
 	import glob
+
 	update = False
 	try:
-		for bindings in glob.glob('*/*bindings.txt'):
-			dir, file = bindings.split(SEPARATOR)
-			open(dir+SEPARATOR+ctarget).close() # test target file existence
-			open(dir+SEPARATOR+helptarget).close()
-			open(dir+SEPARATOR+txttarget).close()
-			fmt = fileModTime(dir+SEPARATOR+ctarget)
-			if	fileModTime(txtcore)  < fmt \
-			and fileModTime(thisfile) < fmt \
-			and fileModTime(bindings) < fmt:
-				continue # don't update this subdirectory
-			update = True
+		if arg:
+			if needUpdate(arg):
+				update = True
+		else:
+			for file in glob.glob('*/*bindings.txt'):
+				if needUpdate(file):
+					update = True
+					break
 	except:
-		update = True
+		traceback.print_exc(file=sys.stderr)
+		print 'triggered by target file not existing'
+		update = True # triggered by target files not existing
 	
 	if update: # update all if one is affected; counter the dependancy bug
-		print 'at least one is out of date; updating all.'
-		for bindings in glob.glob('*/*bindings.txt'):
-			dir, file = bindings.split(SEPARATOR)
-			emptyWords()
-			print 'changing to directory: '+dir
-			os.chdir(dir)
-			readWordLists(file)
-			print 'generating %s, %s and %s'%(ctarget, txttarget, helptarget)
-			generateCode(ctarget)
-			generateText(txttarget)
-			generateHelp(helptarget)
-			os.chdir('..')
+		print 'updating all.'
+		if arg:
+			updateFiles(arg)
+		else:
+			for file in glob.glob('*/*bindings.txt'):
+				updateFiles(file)

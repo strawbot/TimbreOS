@@ -73,6 +73,7 @@ void drop(void) /* n - */
 {
 	popq(dataStack);
 }
+
 void dup(void)  /* m - m m */
 {
 	pushq(p(dataStack), dataStack);
