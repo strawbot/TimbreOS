@@ -301,7 +301,6 @@ helptarget	= 'help.c'
 txttarget	= 'wordlist.txt'
 txtcore		= 'clibindings.txt'
 thisfile	= 'parsewords.py'
-targetdir	= ''
 
 def fileModTime(file): # return file modified date
 	return time.localtime(os.path.getmtime(file))
@@ -309,38 +308,48 @@ def fileModTime(file): # return file modified date
 def needUpdate(checkfile):
 	dir, file = checkfile.rsplit(SEPARATOR, 1)
 	dir += SEPARATOR
+	home = os.getcwd()
+	os.chdir(dir)
 
-#	print 'checking: ' + checkfile
+	try:
+	#	print 'checking: ' + checkfile
 
-	# test target file existence
-	open(dir + ctarget).close()
-	open(dir + helptarget).close()
-	open(dir + txttarget).close()
+		# test target file existence
+		open(ctarget).close()
+		open(helptarget).close()
+		open(txttarget).close()
 
-	# check file mod times: clibindings.txt, parsewords.py, bootbindings.txt > wordlist.c
-	fmt = fileModTime(dir + ctarget)
-	if  fileModTime(txtcore) > fmt:
-		print txtcore + ' newer than ' + dir + ctarget
+		# check file mod times: clibindings.txt, parsewords.py, bootbindings.txt > wordlist.c
+		fmt = fileModTime(ctarget)
+		if	fileModTime(home + SEPARATOR + txtcore) > fmt:
+			print txtcore + ' newer than ' + dir + ctarget
+			return True
+		if fileModTime(home + SEPARATOR + thisfile) > fmt:
+			print thisfile + ' newer than ' + dir + ctarget
+			return True
+		if fileModTime(file) > fmt:
+			print file + ' newer than ' + dir + ctarget
+			return True
+		return False
+	except:
+		traceback.print_exc(file=sys.stderr)
+		print 'triggered by %s not existing', file
 		return True
-	if fileModTime(thisfile) > fmt:
-		print thisfile + ' newer than ' + dir + ctarget
-		return True
-	if fileModTime(checkfile) > fmt:
-		print thisfile + ' newer than ' + dir + ctarget
-		return True
-	return False
+	finally:
+		os.chdir(home)
 
 def updateFiles(file):
 	dir, file = file.rsplit(SEPARATOR, 1)
 	emptyWords()
 	print 'changing to directory: ' + dir
+	home = os.getcwd()
 	os.chdir(dir)
 	readWordLists(file)
 	print 'generating %s, %s and %s' % (ctarget, txttarget, helptarget)
-	generateCode(targetdir + ctarget)
-	generateText(targetdir + txttarget)
-	generateHelp(targetdir + helptarget)
-	os.chdir('..')
+	generateCode(ctarget)
+	generateText(txttarget)
+	generateHelp(helptarget)
+	os.chdir(home)
 
 if __name__ == '__main__':
 	arg = sys.argv[-1] # accept a file argument
@@ -348,25 +357,18 @@ if __name__ == '__main__':
 		arg = None
 	else:
 		dir, file = arg.rsplit(SEPARATOR, 1)
-		targetdir = dir + SEPARATOR
 
 	import glob
 
 	update = False
-	try:
-		if arg:
-			if needUpdate(arg):
+	if arg:
+		update = needUpdate(arg)
+	else:
+		for file in glob.glob('*/*bindings.txt'):
+			if needUpdate(file):
 				update = True
-		else:
-			for file in glob.glob('*/*bindings.txt'):
-				if needUpdate(file):
-					update = True
-					break
-	except:
-		traceback.print_exc(file=sys.stderr)
-		print 'triggered by target file not existing'
-		update = True # triggered by target files not existing
-	
+				break
+
 	if update: # update all if one is affected; counter the dependancy bug
 		print 'updating all.'
 		if arg:
