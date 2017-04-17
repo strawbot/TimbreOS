@@ -120,6 +120,7 @@ void literal(Cell n);
 void longFetch(void);
 void longStore(void);
 void maxOp(void);
+void maybeCr(void);
 void minOp(void);
 void minusBits(void);
 void minusOp(void);
