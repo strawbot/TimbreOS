@@ -73,12 +73,12 @@ void sdotms(Long time)
 	printDec0(ms%10);
 }
 
-void startTime(void)
+void cliStartTime(void)
 {
 	startingTime = getTime();
 }
 
-void endTime(void)
+void cliEndTime(void)
 {
 	Long t = getTime() - startingTime;
 	
