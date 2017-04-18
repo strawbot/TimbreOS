@@ -306,7 +306,7 @@ def fileModTime(file): # return file modified date
 	return time.localtime(os.path.getmtime(file))
 
 def needUpdate(checkfile):
-	dir, file = checkfile.rsplit(SEPARATOR, 1)
+	dir, file = os.path.split(checkfile)
 	dir += SEPARATOR
 	home = os.getcwd()
 	os.chdir(dir)
@@ -339,7 +339,7 @@ def needUpdate(checkfile):
 		os.chdir(home)
 
 def updateFiles(file):
-	dir, file = file.rsplit(SEPARATOR, 1)
+	dir, file = os.path.split(file)
 	emptyWords()
 	print 'changing to directory: ' + dir
 	home = os.getcwd()
@@ -356,7 +356,7 @@ if __name__ == '__main__':
 	if arg.endswith('bindings.txt') == False:
 		arg = None
 	else:
-		dir, file = arg.rsplit(SEPARATOR, 1)
+		dir, file = os.path.split(arg)
 
 	import glob
 
