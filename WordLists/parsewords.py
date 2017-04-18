@@ -31,12 +31,6 @@ abspath = os.path.abspath(__file__)
 dirname = os.path.dirname(abspath)
 os.chdir(dirname)
 
-# platform dependancy
-if sys.platform[:3] == 'win':
-	SEPARATOR = '\\'
-else:
-	SEPARATOR = '/'
-
 # globals
 words = []
 immediates = []
@@ -307,7 +301,6 @@ def fileModTime(file): # return file modified date
 
 def needUpdate(checkfile):
 	dir, file = os.path.split(checkfile)
-	dir += SEPARATOR
 	home = os.getcwd()
 	os.chdir(dir)
 
@@ -321,14 +314,14 @@ def needUpdate(checkfile):
 
 		# check file mod times: clibindings.txt, parsewords.py, bootbindings.txt > wordlist.c
 		fmt = fileModTime(ctarget)
-		if	fileModTime(home + SEPARATOR + txtcore) > fmt:
-			print txtcore + ' newer than ' + dir + ctarget
+		if	fileModTime(os.path.join(home,txtcore)) > fmt:
+			print txtcore + ' newer than ' + os.path.join(dir, ctarget)
 			return True
-		if fileModTime(home + SEPARATOR + thisfile) > fmt:
-			print thisfile + ' newer than ' + dir + ctarget
+		if fileModTime(os.path.join(home, thisfile)) > fmt:
+			print thisfile + ' newer than ' + os.path.join(dir, ctarget)
 			return True
 		if fileModTime(checkfile) > fmt:
-			print file + ' newer than ' + dir + ctarget
+			print file + ' newer than ' + os.path.join(dir, ctarget)
 			return True
 		return False
 	except:
@@ -339,10 +332,10 @@ def needUpdate(checkfile):
 		os.chdir(home)
 
 def updateFiles(file):
-	dir, file = os.path.split(file)
-	emptyWords()
-	print 'changing to directory: ' + dir
 	home = os.getcwd()
+	emptyWords()
+	dir, file = os.path.split(file)
+	print 'changing to directory: ' + dir
 	os.chdir(dir)
 	readWordLists(file)
 	print 'generating %s, %s and %s' % (ctarget, txttarget, helptarget)
