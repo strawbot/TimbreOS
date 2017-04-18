@@ -327,7 +327,7 @@ def needUpdate(checkfile):
 		if fileModTime(home + SEPARATOR + thisfile) > fmt:
 			print thisfile + ' newer than ' + dir + ctarget
 			return True
-		if fileModTime(file) > fmt:
+		if fileModTime(checkfile) > fmt:
 			print file + ' newer than ' + dir + ctarget
 			return True
 		return False
