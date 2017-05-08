@@ -26,11 +26,6 @@
 # if a dependant file has changed the includer will not be recompiled
 import os, sys, traceback, time
 
-# make script runable from anywhere from any os
-abspath = os.path.abspath(__file__)
-dirname = os.path.dirname(abspath)
-os.chdir(dirname)
-
 # globals
 words = []
 immediates = []
@@ -39,6 +34,20 @@ comments = []
 
 DIRECTIVE = 'directive' # note: this is somehow getting inserted into the .txt file
 COMMENT = 'comment'
+
+# input files
+parser   = os.path.abspath(__file__)
+dirname  = os.path.dirname(parser)
+txtcore  = os.path.join(dirname,'clibindings.txt')
+txtfloat = os.path.join(dirname,'floatwords.txt')
+inputFiles = [parser, txtcore, txtfloat]
+
+# generated files
+targetDir   = './' # default
+ctarget		= 'wordlist.c'
+helptarget	= 'help.c'
+txttarget	= 'wordlist.txt'
+outputFiles = [ctarget, helptarget, txttarget]
 
 # file headers for: wordlist.c help.c wordlist.txt
 wordlistCheader = ''' \
@@ -110,6 +119,7 @@ def parseFile(line): # parse line from file
 
 def readWordLists(file): # read in word lists
 	global parseLine
+	print "reading: "+file
 	lines = open(file, 'r').readlines()
 	parseLine = parseFile
 	for line in lines:
@@ -288,84 +298,47 @@ def emptyWords(): # empty out lists
 	del constants[:]
 	del comments[:]
 
-# look for subdirectories and concat those to root bindings to generate
-# c files and word lists
-ctarget		= 'wordlist.c'
-helptarget	= 'help.c'
-txttarget	= 'wordlist.txt'
-txtcore		= 'clibindings.txt'
-thisfile	= 'parsewords.py'
-
+# update is require if there is no wordlist.c
+#  or if *bindings.txt, this file, clibindings.txt are newer than wordlist.c
 def fileModTime(file): # return file modified date
 	return time.localtime(os.path.getmtime(file))
 
 def needUpdate(checkfile):
-	dir, file = os.path.split(checkfile)
-	home = os.getcwd()
-	os.chdir(dir)
-
 	try:
-	#	print 'checking: ' + checkfile
-
 		# test target file existence
-		open(ctarget).close()
-		open(helptarget).close()
-		open(txttarget).close()
+		for file in outputFiles:
+			open(file).close()
 
-		# check file mod times: clibindings.txt, parsewords.py, bootbindings.txt > wordlist.c
-		fmt = fileModTime(ctarget)
-		if	fileModTime(os.path.join(home,txtcore)) > fmt:
-			print txtcore + ' newer than ' + os.path.join(dir, ctarget)
-			return True
-		if fileModTime(os.path.join(home, thisfile)) > fmt:
-			print thisfile + ' newer than ' + os.path.join(dir, ctarget)
-			return True
-		if fileModTime(checkfile) > fmt:
-			print file + ' newer than ' + os.path.join(dir, ctarget)
-			return True
+		# check file mod times > wordlist.c
+		modtime = fileModTime(ctarget)
+		for file in inputFiles + [checkfile]:
+			if fileModTime(file) > modtime:
+				print file + ' newer than ' + ctarget
+				return True
 		return False
 	except:
-		traceback.print_exc(file=sys.stderr)
-		print 'triggered by %s not existing', file
+		print 'Updates triggered by "%s" not existing'%file
 		return True
-	finally:
-		os.chdir(home)
 
-def updateFiles(file):
-	home = os.getcwd()
-	emptyWords()
-	dir, file = os.path.split(file)
-	print 'changing to directory: ' + dir
-	os.chdir(dir)
+def generateWordlists(file):
 	readWordLists(file)
 	print 'generating %s, %s and %s' % (ctarget, txttarget, helptarget)
 	generateCode(ctarget)
 	generateText(txttarget)
 	generateHelp(helptarget)
-	os.chdir(home)
-
+	
 if __name__ == '__main__':
 	arg = sys.argv[-1] # accept a file argument
-	if arg.endswith('bindings.txt') == False:
-		arg = None
-	else:
-		dir, file = os.path.split(arg)
-
-	import glob
-
-	update = False
-	if arg:
-		update = needUpdate(arg)
-	else:
-		for file in glob.glob('*/*bindings.txt'):
-			if needUpdate(file):
-				update = True
-				break
-
-	if update: # update all if one is affected; counter the dependancy bug
-		print 'updating all.'
-		if arg:
-			updateFiles(arg)
+	try:
+		if arg.endswith('.txt') == True:
+			# put results in same directory as input file
+			targetDir, file = os.path.split(os.path.abspath(arg))				
+			os.chdir(targetDir)
+			if needUpdate(file): # update all if one is affected
+				generateWordlists(file)
 		else:
-			for file in glob.glob('*/*bindings.txt'):
-				updateFiles(file)
+			print "Error: no '.txt' file specified."
+
+	except Exception as message:
+		print (type(message))    # the exception instance
+		traceback.print_exc(file=sys.stderr)
