@@ -25,13 +25,12 @@ void activate(vector Machine)
 void deactivate(vector machine) // remove a machine from queue
 {
 	Byte n;
-	Cell m;
 
 	ATOMIC_SECTION_ENTER;
 	n = (Byte)queryq(machineq);
 	while(n--)
 	{
-		m = pullq(machineq);
+		Cell m = pullq(machineq);
 		if (m != (Cell)machine)
 			pushq(m, machineq);
 	}
@@ -49,11 +48,11 @@ static Long runDepth = 0;
 void runMachines(void) // run all machines
 {
 	Byte n = (Byte)queryq(machineq);
-	vector machine;
 
 	runDepth++;
 	while(n--)
 	{
+		vector machine;
 		if (queryq(machineq) == 0)
 		{
 			mmunderflow++;
@@ -72,13 +71,13 @@ QUEUE(MACHINES * 2, machinenameq);
 
 void machineName(vector machine, const char * name) // give name to machine
 {
-	Cell m,n,i;
+	Cell i;
 
 	i = queryq(machinenameq)/2U;
 	while(i--)
 	{
-		m = pullq(machinenameq);
-		n = pullq(machinenameq);
+		Cell m = pullq(machinenameq);
+		Cell n = pullq(machinenameq);
 		if (m != (Cell)machine)
 			pushq(m, machinenameq), pushq(n, machinenameq);
 	}
@@ -94,13 +93,13 @@ void activateOnceNamed(vector machine, const char * name)
 
 void showMachineName(Cell x)
 {
-	Cell m,n,i;
+	Cell i;
 
 	print("\n"), printHex(x), print(": ");
 	i = queryq(machinenameq)/2;
 	while(i--) {
-		m = pullq(machinenameq);
-		n = pullq(machinenameq);
+		Cell m = pullq(machinenameq);
+		Cell n = pullq(machinenameq);
 		pushq(m, machinenameq);
 		pushq(n, machinenameq);
 		if (m == x) {
@@ -112,20 +111,20 @@ void showMachineName(Cell x)
 
 void listq(Qtype *q) // list q items
 {
-	Byte n,i;
+	Byte n;
 
 	n = (Byte)queryq(q);
 	{
 		Cell l[MACHINES]; // must be greater than n
 
 		ATOMIC_SECTION_ENTER;
-		for (i=0; i<n; i++)
+		for (Byte i=0; i<n; i++)
 		{
 			l[i] = pullq(q);
 			pushq(l[i], q);
 		}
 		ATOMIC_SECTION_LEAVE;
-		for (i=0; i<n; i++)
+		for (Byte i=0; i<n; i++)
 			showMachineName(l[i]);
 	}
 }
@@ -170,11 +169,11 @@ static void machineMonitor(void);
 //Keeps statistics on minimum and maximum run time for a queue of machines
 static void machineMonitor(void)
 {
-	Long span, thisTime = getTime();
+	Long thisTime = getTime();
 	
 	if (lastTime)
 	{
-		span = thisTime - lastTime;
+		Long span = thisTime - lastTime;
 		
 		if (span < minLoop)
 			minLoop = span;

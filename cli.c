@@ -405,9 +405,8 @@ void emptyEmitq(void)
 
 void safeEmit(Byte c)
 {
-	static bool alreadyHere = false; // prevent overwrites
-
 	if (fullbq(emitq)) {
+		static bool alreadyHere = false; // prevent overwrites
 		if (alreadyHere) // support blocking on first writer but dump after that
 			return;
 		alreadyHere = true;
@@ -1278,9 +1277,9 @@ void variable(void)  /* n -- */
 static void list_dictionaries(void) // list words in dictionaries
 {
 	PGM_P dictionary, *dictionaries[] = {constantnames, wordnames, immediatenames};
-	Byte i, c;
 
-	for (i=0; i< 3; i++) {
+	for (Byte i=0; i< 3; i++) {
+		Byte c;
 		dictionary = dictionaries[i];
 		while((c = pgm_read_byte(dictionary++)) != 0) {
 			do {

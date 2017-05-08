@@ -23,12 +23,12 @@ void printnHex(unsigned int n, unsigned int hex)
 
 void printDec(unsigned int dec)
 {
-	printf("%d ", dec);
+	printf("%d ", (int)dec);
 }
 
 void printDec0(unsigned int dec)
 {
-	printf("%d", dec);
+	printf("%d", (int)dec);
 }
 
 void printBin(unsigned int bin)
