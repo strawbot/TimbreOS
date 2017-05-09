@@ -159,6 +159,7 @@ void startNumberConversion(void);
 void store(void);
 void stringLength(void);
 void swap(void);
+void tabTo(int n);
 void tor(void);
 void type(void);
 void vii(void);

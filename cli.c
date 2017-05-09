@@ -17,7 +17,7 @@ BQUEUE(KEYQ_SIZE, keyq);
 
 static Byte hereSpace[HERE_SPACE];
 static Byte * hp = (Byte *)NULL, * hpStart = hereSpace, * hpEnd = &hereSpace[HERE_SPACE-1];
-static Cell outp = 0;
+static Cell outp = 0; // output characters since CR
 static bool keyEcho = true; // echo keys typed in
 static bool lineEcho = true; // used to turn off echo for a line; reset after every line
 static Byte base = 10; // command line number radix
@@ -405,8 +405,9 @@ void emptyEmitq(void)
 
 void safeEmit(Byte c)
 {
+	static bool alreadyHere = false; // prevent overwrites
+
 	if (fullbq(emitq)) {
-		static bool alreadyHere = false; // prevent overwrites
 		if (alreadyHere) // support blocking on first writer but dump after that
 			return;
 		alreadyHere = true;
@@ -425,7 +426,7 @@ void emitByte(Byte c)
 		else
 			c = BEEP;
 	}
-	else if (c == CRETURN)  /* cursor return? */
+	else if (c == CRETURN || (c == LFEED))  /* cursor return? */
 		outp = 0;
 	else if ((c != LFEED) && (c != BEEP))
 		outp += 1;         /* not line feed, pacing character or bell? */
@@ -473,6 +474,11 @@ void spaces(int n)
 {
 	while (n-- > 0)
 		emitByte(SPACE);
+}
+
+void tabTo(int n)
+{
+    spaces(n - outp);
 }
 
 void bin(void)
@@ -1277,9 +1283,9 @@ void variable(void)  /* n -- */
 static void list_dictionaries(void) // list words in dictionaries
 {
 	PGM_P dictionary, *dictionaries[] = {constantnames, wordnames, immediatenames};
+	Byte i, c;
 
-	for (Byte i=0; i< 3; i++) {
-		Byte c;
+	for (i=0; i< 3; i++) {
 		dictionary = dictionaries[i];
 		while((c = pgm_read_byte(dictionary++)) != 0) {
 			do {
