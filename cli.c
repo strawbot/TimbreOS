@@ -419,7 +419,7 @@ void safeEmit(Byte c)
             OUTPUT_BLOCKED; // sit here until sent
         alreadyHere = false;
     }
-    pushbq(c, emitq);
+    safe(pushbq(c, emitq));
 }
 
 void emitByte(Byte c)

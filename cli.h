@@ -19,7 +19,11 @@
 #define CUSHION LINE_LENGTH // how much space to maintain for HERE
 #define HERE_SPACE 1024 // small here space
 #define OUTPUT_BLOCKED runMachines() // deal with by running machines
+#define safe(atomic)	{protectCli(); atomic; unprotectCli();}
 #endif
+
+void protectCli(void);
+void unprotectCli(void);
 
 // stream tokens
 #define BEEP 7

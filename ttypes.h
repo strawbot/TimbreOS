@@ -88,19 +88,11 @@ typedef struct tcbody{ // threaded code body
 	extern void function(void); \
 	static tcbody _##function = {.ii = function}
 
-
 // bit flag generic macros
 #define clearBit(bit, flags)		flags &= ~(bit)
 #define setBit(bit, flags)			flags |= (bit)
 #define checkBit(bit, flags)		(flags & bit)
 #define testSetBit(bit,flag,result)	(result = checkBit(bit,flag) ? false : true, setBit(bit,flag))
-
-// for making code safe from other code interrupting it such as flag bits
-#ifndef PREEMPTIVE
-	#define safe(atomic)	atomic
-#endif
-
-#define uni(cycle)	safe(cycle)	// smaller synonym and also a prefix!
 
 // for array sizing
 #define elementsof(array)	(sizeof(array)/sizeof(array[0]))
