@@ -4,8 +4,6 @@
 #include "byteq.h"
 #include "machines.h"
 
-void sendeq(void);
-
 void print(const char *message)
 {
 	msg((char *)message);
@@ -94,7 +92,6 @@ void flush(void)
 {
 	while (qbq(emitq))
 		OUTPUT_BLOCKED;  // sit here until empty
-
 }
 
 void pdump(unsigned char * a, unsigned int lines)
