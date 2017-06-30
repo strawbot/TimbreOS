@@ -2,8 +2,11 @@
 
 #include "ttypes.h"
 
+void printCr(void);
+void tabTo(int n);
 void print(const char *message);
 char * numString(Byte field, Byte digits, Cell n, Byte radix);
+void dotnb(Byte field, Byte digits, Cell n, Byte radix);
 void printHex(unsigned int hex);
 void printnHex(unsigned int n, unsigned int hex);
 void printnDec(unsigned int n, unsigned int dec);

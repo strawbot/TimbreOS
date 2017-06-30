@@ -9,6 +9,11 @@ void print(const char *message)
 	msg((char *)message);
 }
 
+void tabTo(int n)
+{
+    spaces(n - getCursor());
+}
+
 char * numString(Byte field, Byte digits, Cell n, Byte radix)
 {
 	Byte b = getBase();

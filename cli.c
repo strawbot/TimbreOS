@@ -17,7 +17,7 @@ BQUEUE(KEYQ_SIZE, keyq);
 
 static Byte hereSpace[HERE_SPACE];
 static Byte *hp = (Byte*)NULL, *hpStart = hereSpace, *hpEnd = &hereSpace[HERE_SPACE - 1];
-static Cell outp = 0; // output characters since CR
+static int outp = 0; // output characters since CR
 static bool keyEcho = true; // echo keys typed in
 static bool lineEcho = true; // used to turn off echo for a line; reset after every line
 static Byte base = 10; // command line number radix
@@ -453,6 +453,11 @@ void maybeCr(void)
         cursorReturn();
 }
 
+int getCursor(void)
+{
+    return outp;
+}
+
 void msg(const char* m) // message in program space
 {
     while (*m)
@@ -477,11 +482,6 @@ void spaces(int n)
 {
     while (n-- > 0)
         emitByte(SPACE);
-}
-
-void tabTo(int n)
-{
-    spaces(n - outp);
 }
 
 void bin(void)
