@@ -14,6 +14,7 @@ signals:
 private slots:
     void init();
     void TestSafeEmit();
+    void TestSafeEmitNest();
     void TestEmitByte();
     void TestEmitOp();
     void TestCursorReturn();

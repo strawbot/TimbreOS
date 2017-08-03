@@ -29,6 +29,21 @@ void testoutput::TestSafeEmit()
     QVERIFY(outs() == 0);
 }
 
+void testoutput::TestSafeEmitNest()
+{
+    while (qbq(emitq) < sizebq(emitq))
+        pushbq(1, emitq);
+    safeEmit(3);
+    while(qbq(emitq)) {
+        switch(popbq(emitq)) {
+        case 1: break;
+        case 3: QVERIFY(qbq(emitq) == 0); return;
+        default: QFAIL("should not get here!"); return;
+        }
+    }
+    QFAIL("right character not inserted");
+}
+
 void testoutput::TestEmitByte()
 {
     emitByte('a');

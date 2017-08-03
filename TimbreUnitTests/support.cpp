@@ -172,3 +172,7 @@ void setTime(Cell t)
 {
     uptime = t;
 }
+
+// safe
+void protectCli(void) { }
+void unprotectCli(void) { }
