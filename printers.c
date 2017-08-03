@@ -9,6 +9,11 @@ void print(const char *message)
 	msg((char *)message);
 }
 
+void printCr(void)
+{
+    print("\n");
+}
+
 void tabTo(int n)
 {
     spaces(n - getCursor());
