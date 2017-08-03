@@ -32,6 +32,7 @@ void dotnb(Byte field, Byte digits, Cell n, Byte radix)
         outp += printf("%*d", field, (unsigned int)n);
         break;
     }
+    (void)digits;
 }
 
 void printHex(unsigned int hex)
