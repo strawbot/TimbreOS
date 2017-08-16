@@ -109,6 +109,22 @@ void showMachineName(Cell x)
 	}
 }
 
+Cell getMachine(char * name) // return address of named machine
+{
+	Cell i;
+
+	i = queryq(machinenameq)/2;
+	while(i--) {
+		Cell m = pullq(machinenameq);
+		Cell n = pullq(machinenameq);
+		pushq(m, machinenameq);
+		pushq(n, machinenameq);
+		if (strcmp(n,name) == 0)
+			return m;
+	}
+	return 0;
+}
+
 void listq(Qtype *q) // list q items
 {
 	Byte n;

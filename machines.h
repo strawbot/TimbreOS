@@ -12,6 +12,7 @@ void listq(Qtype * q);
 void machineName(vector machine, const char * name);
 void activateOnceNamed(vector machine, const char *name);
 void showMachineName(Cell x);
+Cell getMachine(char * name);
 
 #define activateOnce(m)	activateOnceNamed(m, #m)
 #define MACHINES (25)
