@@ -2,6 +2,7 @@
 
 #include "ttypes.h"
 
+void millisecondsTick(Long ms);
 void oneMillisecondTick(void);
 void initTimeStamp(void);
 Long getTime(void);

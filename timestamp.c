@@ -9,10 +9,15 @@
 
 static Long uptime; // local time is time since startup
 
+void millisecondsTick(Long ms)
+{
+	uptime += ms;
+	ACKNOWLEDGE_TICK;
+}
+
 void oneMillisecondTick(void)
 {
-	uptime += LOCALTIME_TICK;
-	ACKNOWLEDGE_TICK;
+	millisecondsTick(LOCALTIME_TICK);
 }
 
 void initTimeStamp(void)
