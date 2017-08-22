@@ -9,6 +9,7 @@
 
 #include "machines.h"
 #include "cli.h"
+#include <string.h>
 
 QUEUE(MACHINES, machineq);
 Byte mmoverflow = 0, mmunderflow = 0;
@@ -109,7 +110,7 @@ void showMachineName(Cell x)
 	}
 }
 
-Cell getMachine(char * name) // return address of named machine
+vector getMachine(char * name) // return address of named machine
 {
 	Cell i;
 
@@ -119,10 +120,10 @@ Cell getMachine(char * name) // return address of named machine
 		Cell n = pullq(machinenameq);
 		pushq(m, machinenameq);
 		pushq(n, machinenameq);
-		if (strcmp(n,name) == 0)
-			return m;
+		if (strcmp((char *)n,name) == 0)
+			return (vector)m;
 	}
-	return 0;
+	return NULL;
 }
 
 void listq(Qtype *q) // list q items
