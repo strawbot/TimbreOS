@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include "printers.h"
+#include <string.h>
 
 static int outp = 0;
 
@@ -22,17 +23,39 @@ void print(const char *message)
     outp += printf("%s", message);
 }
 
+char * numString(Byte field, Byte digits, Cell n, Byte radix)
+{
+/* field digits radix format
+ *   0     0      10   "%d"
+ *   0     n      10   "%.nd"
+ *   w     0      10   "%wd"
+ *   w     n      10   "%0w.nd"
+ *                     "%0*.*d",w,n
+ */
+    char * format;
+
+    if (radix == 16)
+        format = "%0*.*X";
+    else
+        format = "%0*.*d";
+
+    static char buf[20];
+
+    snprintf(buf, sizeof(buf), format, field, digits, (unsigned int)n);
+
+    return buf;
+}
+
 void dotnb(Byte field, Byte digits, Cell n, Byte radix)
 {
-    switch (radix) {
-    case 16:
-        outp += printf("%*X", field, (unsigned int)n);
-        break;
-    default:
-        outp += printf("%*d", field, (unsigned int)n);
-        break;
-    }
-    (void)digits;
+    char * format;
+
+    if (radix == 16)
+        format = "%0*.*X";
+    else
+        format = "%0*.*d";
+
+    outp += printf(format, field, digits, (unsigned int)n);
 }
 
 void printHex(unsigned int hex)
