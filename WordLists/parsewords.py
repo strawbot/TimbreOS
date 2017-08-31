@@ -58,7 +58,9 @@ wordlistCheader = ''' \
 #define NAME(s) s "\\000"
 #define END_NAMES ""}; // empty string to cover empty array
 
-#define NOBODIES(functions) vector functions[];
+#define NONAMES(name) PROGMEM char name[] = {""};
+#define NOBODIES(functions) vector functions[] = {NULL};
+
 #define BODIES(functions) vector functions[] = {
 #define BODY(f) (vector)f,
 #define CONSTANTBODY(f)  (void * const)cii,(void * const)&f,
