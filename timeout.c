@@ -2,6 +2,7 @@
 
 #include "timeout.h"
 #include "timestamp.h"
+#include "machines.h"
 
 bool checkTimeout(Timeout *timer) // see if it has timed out
 {
@@ -50,7 +51,7 @@ void timeoutWait(Cell time) // timed delay loop
 
 	setTimeout(time, timer);
 	while (!checkTimeout(timer))
-		;
+		runMachines();
 }
 
 // CLI for timing
