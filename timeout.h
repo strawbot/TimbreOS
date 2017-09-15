@@ -68,6 +68,6 @@ void timeoutWait(Cell time);
 void restartTimeout(Timeout *timer);
 
 void showTime(void);
-void startTime(void);
+void cliStartTime(void);
 void sdotms(Long time);
-void endTime(void);
+void cliEndTime(void);
