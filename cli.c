@@ -964,7 +964,10 @@ Cell signDigits(Byte* cstring, bool sign) // convert string to number according 
         if (!toDigit(&c)) {
 #ifdef FLOAT_SUPPORT
             if (c == '.') { // decimal point encountered - try for mantissa
-                float f = 0;
+                union {
+                	float f;
+                	Cell  n;
+                }num = {0};
 
                 while (*cstring) // start at end of string to work back to decimal
                     cstring++;
@@ -975,13 +978,12 @@ Cell signDigits(Byte* cstring, bool sign) // convert string to number according 
                         error();
                         return n;
                     }
-                    f = (f + c) / base;
+                    num.f = (num.f + c) / base;
                 }
-                f = f + n;
+                num.f = num.f + n;
                 if (sign)
-                    f = -f;
-                *(float*)&n = f;
-                return n;
+                    num.f = -num.f;
+                return num.n;
             }
 #endif
             error();

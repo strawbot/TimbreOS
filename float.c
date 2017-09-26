@@ -11,20 +11,33 @@
 
 float getFloat()
 {
-	Cell c = ret();
-	return *(float *)&c;
+    union {
+    	float f;
+    	Cell  n;
+    }num;
+
+	num.n = ret();
+	return num.f;
 }
 
 void putFloat(float f)
 {
-	lit(*(Cell *)&f);
+    union {
+    	float f;
+    	Cell  n;
+    }num = {f};
+
+	lit(num.n);
 }
 
 void cliFdot()
 {
-	Cell f = ret();
+    union {
+    	float f;
+    	Cell  n;
+    }num = {.n = ret()};
 
-	printFloat(*(float *)&f, 4);
+	printFloat(num.f, 4);
 }
 
 // ops
