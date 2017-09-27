@@ -41,7 +41,7 @@ char * numString(Byte field, Byte digits, Cell n, Byte radix)
 
     static char buf[20];
 
-    snprintf(buf, sizeof(buf), format, field, digits, (unsigned int)n);
+    snprintf(buf, sizeof(buf), format, field, digits, (unsigned int)n); // Note Host version adds null terminator
 
     return buf;
 }
