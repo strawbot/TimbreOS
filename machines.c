@@ -178,7 +178,7 @@ void initMachines(void)
 
 #define N 100
 
-static Long minLoop, maxLoop, sumLoop, countLoop;
+static Long minLoop, maxLoop, sumLoop, countLoop; // add max number of machines
 static Long lastTime;
 static QUEUE(N, sumq);
 
@@ -236,4 +236,13 @@ void resetMachineMonitor(void)
 	zeroq(sumq);
 	lastTime = 0;
 	activateOnce(machineMonitor);
+}
+
+void killMachine() {
+	vector mac = getMachine((char *)parseWord(0));
+
+	if (mac)
+		deactivate(mac);
+	else
+		print("Machine not running.\n");
 }
