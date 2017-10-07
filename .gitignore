@@ -12,3 +12,4 @@ tst_timbreunitteststest
 WordLists/app
 build-TimbreUnitTests-Desktop_Qt_5_8_0_MinGW_32bit-Debug
 *.pro.user*
+build-*

@@ -187,16 +187,16 @@ static void machineMonitor(void);
 static void machineMonitor(void)
 {
 	Long thisTime = getTime();
-	
+
 	if (lastTime)
 	{
 		Long span = thisTime - lastTime;
-		
+
 		if (span < minLoop)
 			minLoop = span;
 		else if (span > maxLoop)
 			maxLoop = span;
-		
+
 		if (queryq(sumq) == N)
 			sumLoop -= pullq(sumq);
 

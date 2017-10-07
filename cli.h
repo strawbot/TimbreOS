@@ -12,7 +12,7 @@
 #define DCELLS 30  // number of data stack cells
 #define RCELLS 30  // number of return stack cells
 #define LINE_LENGTH 80 // number of characters allowed in tib
-#define EMITQ_SIZE 160
+#define EMITQ_SIZE 500
 #define KEYQ_SIZE 80
 #define PAD_SIZE 20
 #define PROMPTSTRING "timbre: "
