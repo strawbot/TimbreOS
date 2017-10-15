@@ -132,6 +132,7 @@ void minusOp(void);
 void modOp(void);
 void msg(const char * m);
 void negateOp(void);
+void notifyEmit();
 void notOp(void);
 void oct(void);
 void orOp(void);
