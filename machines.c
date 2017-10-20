@@ -68,7 +68,7 @@ void runMachines(void) // run all machines
 // viewers
 #if 1
 #include "printers.h"
-QUEUE(MACHINES * 2, machinenameq);
+QUEUE(MACHINES * 4, machinenameq);
 
 void machineName(vector machine, const char * name) // give name to machine
 {
@@ -236,6 +236,8 @@ void resetMachineMonitor(void)
 	zeroq(sumq);
 	lastTime = 0;
 	activateOnce(machineMonitor);
+    nameMachine(listMachines);
+    nameMachine(resetMachineMonitor);
 }
 
 void killMachine() {
