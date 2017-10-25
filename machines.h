@@ -16,7 +16,7 @@ vector getMachine(char * name);
 
 #define activateOnce(m)	activateOnceNamed(m, #m)
 #define nameMachine(m) machineName(m, #m)
-#define MACHINES (25)
+#define MACHINES (50)
 
 #ifndef ATOMIC_SECTION_ENTER // define if used in interrupts
 	#define ATOMIC_SECTION_ENTER

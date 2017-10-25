@@ -169,7 +169,7 @@ void initMachines(void)
 {
 	zeroq(machineq);
 	zeroq(machinenameq);
-	activate(resetMachineMonitor);
+    activateOnce(resetMachineMonitor);
 }
 
 // Machine cycle timer  Robert Chapman  Jan 16, 2015
@@ -237,7 +237,6 @@ void resetMachineMonitor(void)
 	lastTime = 0;
 	activateOnce(machineMonitor);
     nameMachine(listMachines);
-    nameMachine(resetMachineMonitor);
 }
 
 void killMachine() {
