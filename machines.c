@@ -92,22 +92,23 @@ void activateOnceNamed(vector machine, const char * name)
 	machineName(machine, name);
 }
 
+char * getMachineName(Cell x) {
+    Cell i = queryq(machinenameq)/2;
+    while(i--) {
+        Cell m = pullq(machinenameq);
+        Cell n = pullq(machinenameq);
+        pushq(m, machinenameq);
+        pushq(n, machinenameq);
+        if (m == x)
+            return(char *)n;
+    }
+    return (char *)"";
+}
+
 void showMachineName(Cell x)
 {
-	Cell i;
-
 	print("\n"), printHex(x), print(": ");
-	i = queryq(machinenameq)/2;
-	while(i--) {
-		Cell m = pullq(machinenameq);
-		Cell n = pullq(machinenameq);
-		pushq(m, machinenameq);
-		pushq(n, machinenameq);
-		if (m == x) {
-			print((char *)n);
-			return;
-		}
-	}
+    print(getMachineName(x));
 }
 
 vector getMachine(char * name) // return address of named machine
