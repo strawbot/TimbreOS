@@ -18,7 +18,7 @@
 #define PROMPTSTRING "timbre: "
 #define CUSHION LINE_LENGTH // how much space to maintain for HERE
 #define HERE_SPACE 1024 // small here space
-#define OUTPUT_BLOCKED runMachines() // deal with by running machines
+#define OUTPUT_BLOCKED output() // deal with by running machines
 #define safe(atomic)	{protectCli(); atomic; unprotectCli();}
 #endif
 
