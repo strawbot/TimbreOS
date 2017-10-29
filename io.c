@@ -20,7 +20,6 @@ void setOutputq(byteq_t * q) {
 void output() {
 	if (qbq(outputq) && (USART_StatusGet(UART1) & USART_STATUS_TXBL))
 		USART_Tx(UART1, pullbq(outputq));
-	activate(output);
 }
 
 void input() {

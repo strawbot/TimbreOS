@@ -24,6 +24,7 @@
 
 void protectCli(void);
 void unprotectCli(void);
+void output();
 
 // stream tokens
 #define BEEP 7
