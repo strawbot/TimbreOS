@@ -71,6 +71,11 @@ Cell * getPadq()
     return padq;
 }
 
+void output() {
+//    if (qbq(emitq))
+//        printChar(pullbq(emitq));
+}
+
 // compile
 Byte getCompile()
 {

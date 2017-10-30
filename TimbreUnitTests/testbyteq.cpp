@@ -42,3 +42,30 @@ void testbyteq::testbq()
     }
     QVERIFY(sizeof(tq) <= (3*sizeof(Cell) + tsize + 1 + sizeof(Cell)));
 }
+
+void testbyteq::testMinimumbq() {
+    BQUEUE(0, minbq);
+    QVERIFY(qbq(minbq) == 0);
+    QVERIFY(fullbq(minbq) == true);
+    QVERIFY(sizebq(minbq) == 0);
+    QVERIFY(sizeof(minbq) == sizeof(byteq) + sizeof(Cell));
+}
+
+void testbyteq::testSizeofbq() {
+    const int size = sizeof(Cell) - 1;
+    BQUEUE(size, sbq);
+    QVERIFY(sizebq(sbq) == size);
+    QVERIFY(sizeof(sbq) == sizeof(byteq) + sizeof(Cell));
+}
+
+void testbyteq::testFullbq() {
+    const int size = 31;
+    BQUEUE(size, bq);
+    while (!fullbq(bq))
+        pushbq(0, bq);
+    for (int i = 0; i<size; i++) {
+        QVERIFY(fullbq(bq));
+        QVERIFY(qbq(bq) != 0);
+        pushbq(pullbq(bq), bq);
+    }
+}

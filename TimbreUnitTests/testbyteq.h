@@ -14,6 +14,9 @@ signals:
 private slots:
     void init();
     void testbq();
+    void testMinimumbq();
+    void testSizeofbq();
+    void testFullbq();
 };
 
 #endif // TESTBYTEQ_H
