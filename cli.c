@@ -420,7 +420,6 @@ void safeEmit(Byte c)
         alreadyHere = false;
     }
     safe(pushbq(c, emitq));
-	output(); // for interrupt driven output
 }
 
 void emitByte(Byte c)
