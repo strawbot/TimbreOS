@@ -46,8 +46,6 @@ void activateMachineOnce(vector machine) // only have one occurrance of a machin
 
 static Long runDepth = 0;
 
-void monitor(vector m);
-
 void runMachines(void) // run all machines
 {
 	Byte n = (Byte)queryq(machineq);
@@ -62,7 +60,7 @@ void runMachines(void) // run all machines
 			break;
 		}
 		safe(machine = (vector)pullq(machineq));
-		monitor(machine);
+		machine();
 	}
 	runDepth--;
 }
@@ -71,16 +69,6 @@ void runMachines(void) // run all machines
 #if 1
 #include "printers.h"
 QUEUE(MACHINES * 4, machinenameq);
-Cell machineTimes[2][MACHINES * 4]; // machines; max times in ms
-
-void initMachineTimes() {
-    memset(machineTimes, 0, sizeof(machineTimes));
-}
-
-void zeroMachineTimes() {
-    for (int i = MACHINES * 4; i; i--)
-        machineTimes[1][i-1] = 0;
-}
 
 void machineName(vector machine, const char * name) // give name to machine
 {
