@@ -1211,10 +1211,11 @@ void cli(void)
         if (lineEcho)
             spaces(1);
         tib.in = 0;
-        lineEcho = keyEcho; // restore key echoing at end of each line
         interpret();
         zeroTib();
-        dotPrompt();
+        if (lineEcho)
+            dotPrompt();
+        lineEcho = keyEcho; // restore key echoing at end of each line
         return;
     default:
         if (key < ESCAPE)
