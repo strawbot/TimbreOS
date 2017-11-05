@@ -92,7 +92,29 @@ static Short hash(char * string, dictionary_t * dict)
 // rehash based on first character of string
 static Short rehash(char * string, Short index, dictionary_t * dict)
 {
-    index += (*string + 1);
+    index += *string + 1;
+    index %= dict->capacity;
+
+    return index;
+}
+
+// base index on address
+static Short hashKey(Cell address, dictionary_t * dict) {
+    Short hash = HASH_SEED;
+
+    for (Byte i = sizeof(Cell); i; i--) {
+        hash ^= (Short)address;
+        hash = (hash << 3) | (hash >> 13);
+		address >>= 8;
+    }
+
+    hash %= dict->capacity;
+    return hash;
+}
+
+static Short rehashKey(Cell address, Short index, dictionary_t * dict)
+{
+    index += (Byte)address + 1;
     index %= dict->capacity;
 
     return index;
@@ -105,6 +127,16 @@ static Short locate(char * string, dictionary_t * dict)
 
     while(different(string, &dict->table[index]))
         index = rehash(string, index, dict);
+
+    return index;
+}
+
+static Short locateKey(Cell address, dictionary_t * dict)
+{
+    Short index = hashKey(address, dict);
+
+	while(dict->table[index] != NULL && address != (Cell)dict->table[index])
+        index = rehashKey(address, index, dict);
 
     return index;
 }
@@ -248,6 +280,12 @@ void dictAppend(char * string, dictionary_t * dict) // append a string to the di
     dict->table[locateAppend(string, dict)] = string;
 }
 
+void dictAddKey(Cell address, dictionary_t * dict) // append a key to the dictionary
+{
+    plusEntry(dict);
+	*(Cell *)&dict->table[locateKey(address, dict)] = address;
+}
+
 void dictDelete(char * string, dictionary_t * dict) // delete inserted string from dictionary
 {
     Short index = locate(string, dict);
@@ -266,11 +304,26 @@ char * dictFind(char * string, dictionary_t * dict) // find a string in the dict
     return dict->table[locate(string, dict)];
 }
 
+Cell dictFindKey(Cell key, dictionary_t * dict) // find a key in the dict
+{
+	return (Cell)dict->table[locateKey(key, dict)];
+}
+
 Cell * dictAdjunct(char * string, dictionary_t * dict) // return an associate cell for string
 {
     Short index = locate(string, dict);
 
     if (!used(dict->table[index]))
+        return NULL;
+
+    return &dict->adjunct[index];
+}
+
+Cell * dictAdjunctKey(Cell address, dictionary_t * dict) // return an associate cell for key
+{
+    Short index = locateKey(address, dict);
+
+	if ((dict->table[index]) == NULL)
         return NULL;
 
     return &dict->adjunct[index];

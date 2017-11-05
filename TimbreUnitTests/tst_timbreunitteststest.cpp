@@ -30,10 +30,10 @@ int main(int argc, char** argv)
         status |= QTest::qExec(&tc, argc, argv);
     }
 
-//    {
-//        testDictionary tc;
-//        status |= QTest::qExec(&tc, argc, argv);
-//    }
+    {
+        testDictionary tc;
+        status |= QTest::qExec(&tc, argc, argv);
+    }
 
 //    {
 //        testStacks tc;

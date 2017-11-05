@@ -21,9 +21,12 @@ void upsizeDict(dictionary_t * dict);
 
 void dictInsert(char * string, dictionary_t * dict);
 void dictAppend(char * string, dictionary_t * dict);
+void dictAddKey(Cell address, dictionary_t * dict);
 void dictDelete(char * string, dictionary_t * dict);
 char * dictFind(char * string, dictionary_t * dict);
+Cell dictFindKey(Cell address, dictionary_t * dict);
 Cell * dictAdjunct(char * string, dictionary_t * dict);
+Cell * dictAdjunctKey(Cell address, dictionary_t * dict);
 
 void dictPrint(dictionary_t *dict);
 char * dictFirst(dictionary_t * dict);
