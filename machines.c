@@ -196,9 +196,10 @@ static void monitor(vector m) {
 void machineStats(void)
 {
 	for (Short i=0; i<macnames.capacity; i++)
-		if (macnames.adjunct[i] != 0) {
-			printCr(), print((char *)macnames.adjunct[i]), print(": ");
-			printDec(mactimes.adjunct[i]), print("ms");
-		}
+		if (macnames.adjunct[i] != 0)
+			if (mactimes.adjunct[i]) {
+				printCr(), print((char *)macnames.adjunct[i]), print(": ");
+				printDec(mactimes.adjunct[i]), print("ms");
+			}
 }
 
