@@ -183,11 +183,14 @@ void killMachine() {
 
 static void monitor(vector m) {
 	Cell * stat = dictAdjunctKey((Cell)m, &mactimes);
-	Cell time = getTime();
-	m();
-	time = getTime() - time;
-	if (*stat < time)
-		*stat = time;
+	if (stat) {
+		Cell time = getTime();
+		m();
+		time = getTime() - time;
+		if (*stat < time)
+			*stat = time;
+	} else
+		m();
 }
 
 void machineStats(void)
