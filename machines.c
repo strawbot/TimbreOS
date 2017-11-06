@@ -80,14 +80,14 @@ void initMachineStats() {
 }
 
 void zeroMachineTimes() {
-	memset(mactimes.adjunct, 0 sizeof(mactimes.adjunct));
+	memset(mactimes.adjunct, 0, sizeof(mactimes.adjunct));
 }
 
 void machineName(vector machine, const char * name) // give name to machine
 {
-	dictAddKey(machine, &macnames);
-	dictAddKey(machine, &mactimes);
-	*dictAdjunctKey(machine, &macnames) = (Cell)name;
+	dictAddKey((Cell)machine, &macnames);
+	dictAddKey((Cell)machine, &mactimes);
+	*dictAdjunctKey((Cell)machine, &macnames) = (Cell)name;
 }
 
 void activateOnceNamed(vector machine, const char * name)
@@ -97,7 +97,7 @@ void activateOnceNamed(vector machine, const char * name)
 }
 
 char * getMachineName(Cell x) {
-	char * name = *(char **)dictAdjunctKey(machine, &macnames);
+	char * name = *(char **)dictAdjunctKey(x, &macnames);
 
 	if (name)
 		return name;
@@ -145,7 +145,6 @@ void listq(Qtype *q) // list q items
 			showMachineName(l[i]);
 	}
 }
-#endif
 
 void listMachines(void)
 {
@@ -162,8 +161,6 @@ void listm(void) // list machine statuses
 {
 	activate(listMachines);
 }
-
-void resetMachineMonitor(void);
 
 void initMachines(void)
 {
@@ -185,7 +182,7 @@ void killMachine() {
 #include "printers.h"
 
 static void monitor(vector m) {
-	Cell * stat = dictAdjunctKey(m, mactimes);
+	Cell * stat = dictAdjunctKey((Cell)m, &mactimes);
 	Cell time = getTime();
 	m();
 	time = getTime() - time;
@@ -198,7 +195,7 @@ void machineStats(void)
 	for (Short i=0; i<macnames.capacity; i++)
 		if (macnames.adjunct[i] != 0) {
 			printCr(), print((char *)macnames.adjunct[i]), print(": ");
-			prindDec(mactimes.adjunct[i]), print("ms");
+			printDec(mactimes.adjunct[i]), print("ms");
 		}
 }
 
