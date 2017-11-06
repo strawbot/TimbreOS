@@ -32,17 +32,17 @@ void dictPrint(dictionary_t *dict);
 char * dictFirst(dictionary_t * dict);
 char * dictNext(dictionary_t * dict);
 
-// prime numbers just less than n**2
+// prime numbers just less than 2**n
 enum {
-    HASH8=256-5,
-    HASH9=512-3,
-    HASH10=1024-3,
-    HASH11=2048-9,
-    HASH12=4096-3,
-    HASH13=8192-1,
-    HASH14=16384-3,
-    HASH15=32768-19,
-    HASH16=65536-15
+    HASH8 =(1<<8) -5,
+    HASH9 =(1<<9) -3,
+    HASH10=(1<<10)-3,
+    HASH11=(1<<11)-9,
+    HASH12=(1<<12)-3,
+    HASH13=(1<<13)-1,
+    HASH14=(1<<14)-3,
+    HASH15=(1<<15)-19,
+    HASH16=(1<<16)-15
 };
 
 // create static dictionary
