@@ -46,8 +46,6 @@ void activateMachineOnce(vector machine) // only have one occurrance of a machin
 
 static Long runDepth = 0;
 
-static void monitor(vector m);
-
 void runMachines(void) // run all machines
 {
 	Byte n = (Byte)queryq(machineq);
@@ -62,7 +60,7 @@ void runMachines(void) // run all machines
 			break;
 		}
 		safe(machine = (vector)pullq(machineq));
-		monitor(machine);
+		machineRun(machine);
 	}
 	runDepth--;
 }
@@ -110,22 +108,15 @@ void showMachineName(Cell x)
     print(getMachineName(x));
 }
 
-// vector getMachine(char * name) // return address of named machine
-// {
-// 	Cell i;
-// 
-// 	i = queryq(machinenameq)/2;
-// 	while(i--) {
-// 		Cell m = pullq(machinenameq);
-// 		Cell n = pullq(machinenameq);
-// 		pushq(m, machinenameq);
-// 		pushq(n, machinenameq);
-// 		if (strcmp((char *)n,name) == 0)
-// 			return (vector)m;
-// 	}
-// 	return NULL;
-// }
-// 
+vector getMachine(char * name) // return address of named machine
+{
+	for (Short i=0; i<macnames.capacity; i++)
+		if (macnames.adjunct[i] != 0)
+            if (strcmp((char *)macnames.adjunct[i], name) == 0)
+			    return (vector)(Cell)macnames.table[i];
+	return NULL;
+}
+
 void listq(Qtype *q) // list q items
 {
 	Byte n;
@@ -169,19 +160,19 @@ void initMachines(void)
 }
 
 void killMachine() {
-// 	vector mac = getMachine((char *)parseWord(0));
-// 
-// 	if (mac)
-// 		deactivate(mac);
-// 	else
-// 		print("Machine not running.\n");
+	vector mac = getMachine((char *)parseWord(0));
+
+	if (mac)
+		deactivate(mac);
+	else
+		print("Machine not running.\n");
 }
 
 // Machine cycle timer
 #include "timestamp.h"
 #include "printers.h"
 
-static void monitor(vector m) {
+void machineRun(vector m) {
 	Cell * stat = dictAdjunctKey((Cell)m, &mactimes);
 	if (stat) {
 		Cell time = getTime();
