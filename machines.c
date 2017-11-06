@@ -186,11 +186,16 @@ void machineRun(vector m) {
 
 void machineStats(void)
 {
-	for (Short i=0; i<macnames.capacity; i++)
-		if (macnames.adjunct[i] != 0)
-			if (mactimes.adjunct[i]) {
-				printCr(), print((char *)macnames.adjunct[i]), print(": ");
-				printDec(mactimes.adjunct[i]), print("ms");
-			}
+	for (Short i=0; i<mactimes.capacity; i++)
+		if (mactimes.adjunct[i] != 0) {
+		    Cell machine = (Cell)mactimes.table[i];
+		    char * name = (char *)macnames.adjunct[i];
+			printCr();
+			if (name)
+			    print(name);
+			else
+			    printHex(machine);
+			print(": "), printDec(mactimes.adjunct[i]), print("ms");
+		}
 }
 
