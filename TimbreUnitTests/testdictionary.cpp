@@ -406,6 +406,14 @@ void testDictionary::TestAddkey() {
         *dictAdjunctKey(key, &keydict) = key;
     }
     QVERIFY(keydict.free == 0);
+
+    // check adding same key does not increase # of entries
+    emptyDict(&keydict);
+    QVERIFY(keydict.free == keydict.capacity/2);
+    Short key = randomKey();
+    dictAddKey(key, &keydict);
+    dictAddKey(key, &keydict);
+    QVERIFY(keydict.free + 1 == keydict.capacity/2);
 }
 
 void testDictionary::TestAdjunctKey() {

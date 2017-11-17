@@ -282,8 +282,11 @@ void dictAppend(char * string, dictionary_t * dict) // append a string to the di
 
 void dictAddKey(Cell address, dictionary_t * dict) // append a key to the dictionary
 {
-    plusEntry(dict);
-	*(Cell *)&dict->table[locateKey(address, dict)] = address;
+	Cell key = locateKey(address, dict);
+
+	if (dict->table[key] == NULL)
+		plusEntry(dict);
+	*(Cell *)&dict->table[key] = address;
 }
 
 void dictDelete(char * string, dictionary_t * dict) // delete inserted string from dictionary
