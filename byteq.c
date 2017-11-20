@@ -58,11 +58,12 @@ Cell sizebq(Cell *q) // return size of q
 Cell qbq(Cell *q) // query #elements in q
 {
     byteq * bq = (byteq *)q;
-
-	if (bq->insert <= bq->remove)
-		return bq->remove - bq->insert;
-
-	return bq->remove + sizebq(q) + 1 - bq->insert;
+    int n = bq->remove - bq->insert;
+    
+    if (n < 0)
+        n += sizebq(q) + 1;
+        
+    return (Cell)n;
 }
 
 bool fullbq(Cell *q) // true if q is full

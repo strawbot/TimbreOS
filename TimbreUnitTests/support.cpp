@@ -72,8 +72,8 @@ Cell * getPadq()
 }
 
 void output() {
-//    if (qbq(emitq))
-//        printChar(pullbq(emitq));
+    if (qbq(emitq))
+        printChar(pullbq(emitq));
 }
 
 // compile

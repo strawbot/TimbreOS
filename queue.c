@@ -39,9 +39,11 @@ Cell sizeq(Cell *q) // return size of q
 
 Cell queryq(Cell *q) // query #elements in q
 {
-	if (q[QINSERT] <= q[QREMOVE])
-		return (Cell)(q[QREMOVE] - q[QINSERT]);
-	return (Cell)(q[QREMOVE] + sizeq(q) + 1 - q[QINSERT]);
+    int n = q[QREMOVE] - q[QINSERT];
+    
+    if (n < 0)
+        n += sizeq(q) + 1;
+    return (Cell)n;
 }
 
 Cell fullq(Cell *q) // true if q is full
