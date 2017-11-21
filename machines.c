@@ -60,30 +60,32 @@ void runMachines(void) // run all machines
 			break;
 		}
 		safe(machine = (vector)pullq(machineq));
-		machine();
+		machineRun(machine);
 	}
 	runDepth--;
 }
 
 // viewers
-#if 1
+#include "dictionary.h"
 #include "printers.h"
-QUEUE(MACHINES * 4, machinenameq);
+
+HASHDICT(HASH8, macnames); // keep track of machine names
+HASHDICT(HASH8, mactimes); // keep track of machine max execution times
+
+void initMachineStats() {
+    emptyDict(&macnames);
+    emptyDict(&mactimes);
+}
+
+void zeroMachineTimes() {
+	memset(mactimes.adjunct, 0, sizeof(mactimes.adjunct));
+}
 
 void machineName(vector machine, const char * name) // give name to machine
 {
-	Cell i;
-
-	i = queryq(machinenameq)/2U;
-	while(i--)
-	{
-		Cell m = pullq(machinenameq);
-		Cell n = pullq(machinenameq);
-		if (m != (Cell)machine)
-			pushq(m, machinenameq), pushq(n, machinenameq);
-	}
-	pushq((Cell)machine, machinenameq);
-	pushq((Cell)name, machinenameq);
+	dictAddKey((Cell)machine, &macnames);
+	dictAddKey((Cell)machine, &mactimes);
+	*dictAdjunctKey((Cell)machine, &macnames) = (Cell)name;
 }
 
 void activateOnceNamed(vector machine, const char * name)
@@ -93,15 +95,10 @@ void activateOnceNamed(vector machine, const char * name)
 }
 
 char * getMachineName(Cell x) {
-    Cell i = queryq(machinenameq)/2;
-    while(i--) {
-        Cell m = pullq(machinenameq);
-        Cell n = pullq(machinenameq);
-        pushq(m, machinenameq);
-        pushq(n, machinenameq);
-        if (m == x)
-            return(char *)n;
-    }
+	char * name = *(char **)dictAdjunctKey(x, &macnames);
+
+	if (name)
+		return name;
     return (char *)"";
 }
 
@@ -113,17 +110,10 @@ void showMachineName(Cell x)
 
 vector getMachine(char * name) // return address of named machine
 {
-	Cell i;
-
-	i = queryq(machinenameq)/2;
-	while(i--) {
-		Cell m = pullq(machinenameq);
-		Cell n = pullq(machinenameq);
-		pushq(m, machinenameq);
-		pushq(n, machinenameq);
-		if (strcmp((char *)n,name) == 0)
-			return (vector)m;
-	}
+	for (Short i=0; i<macnames.capacity; i++)
+		if (macnames.adjunct[i] != 0)
+            if (strcmp((char *)macnames.adjunct[i], name) == 0)
+			    return (vector)(Cell)macnames.table[i];
 	return NULL;
 }
 
@@ -146,7 +136,6 @@ void listq(Qtype *q) // list q items
 			showMachineName(l[i]);
 	}
 }
-#endif
 
 void listMachines(void)
 {
@@ -164,80 +153,10 @@ void listm(void) // list machine statuses
 	activate(listMachines);
 }
 
-void resetMachineMonitor(void);
-
 void initMachines(void)
 {
 	zeroq(machineq);
-	zeroq(machinenameq);
-    activateOnce(resetMachineMonitor);
-}
-
-// Machine cycle timer  Robert Chapman  Jan 16, 2015
-// runs as a machine and keeps track of min, avg and max times between runs
-#include "timestamp.h"
-
-#define N 100
-
-static Long minLoop, maxLoop, sumLoop, countLoop; // add max number of machines
-static Long lastTime;
-static QUEUE(N, sumq);
-
-static void machineMonitor(void);
-//Keeps statistics on minimum and maximum run time for a queue of machines
-static void machineMonitor(void)
-{
-	Long thisTime = getTime();
-
-	if (lastTime)
-	{
-		Long span = thisTime - lastTime;
-
-		if (span < minLoop)
-			minLoop = span;
-		else if (span > maxLoop)
-			maxLoop = span;
-
-		if (queryq(sumq) == N)
-			sumLoop -= pullq(sumq);
-
-		pushq(span, sumq);
-		sumLoop += span;
-	}
-	lastTime = thisTime;
-	countLoop++;
-	activate(machineMonitor);
-}
-
-// CLI
-#include "printers.h"
-
-void machineStats(void);
-void machineStats(void)
-{
-	print("\nLoop times (ms). Min: ");
-	printDec(minLoop);
-	print("  Max: ");
-	printDec(maxLoop);
-	print("  Average: ");
-	if (queryq(sumq))
-		printDec(sumLoop/queryq(sumq));
-	else
-		print("no sum ");
-	print("  #loops: ");
-	printDec(countLoop);
-}
-
-void resetMachineMonitor(void)
-{
-	minLoop = 1000000000;
-	maxLoop = 0;
-	sumLoop = 0;
-	countLoop = 0;
-	zeroq(sumq);
-	lastTime = 0;
-	activateOnce(machineMonitor);
-    nameMachine(listMachines);
+	initMachineStats();
 }
 
 void killMachine() {
@@ -248,3 +167,35 @@ void killMachine() {
 	else
 		print("Machine not running.\n");
 }
+
+// Machine cycle timer
+#include "timestamp.h"
+#include "printers.h"
+
+void machineRun(vector m) {
+	Cell * stat = dictAdjunctKey((Cell)m, &mactimes);
+	if (stat) {
+		Cell time = getTime();
+		m();
+		time = getTime() - time;
+		if (*stat < time)
+			*stat = time;
+	} else
+		m();
+}
+
+void machineStats(void)
+{
+	for (Short i=0; i<mactimes.capacity; i++)
+		if (mactimes.adjunct[i] != 0) {
+		    Cell machine = (Cell)mactimes.table[i];
+		    char * name = (char *)macnames.adjunct[i];
+			printCr();
+			if (name)
+			    print(name);
+			else
+			    printHex(machine);
+			print(": "), printDec(mactimes.adjunct[i]), print("ms");
+		}
+}
+

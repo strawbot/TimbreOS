@@ -82,7 +82,6 @@ void testDictionary::init()
     for (Short i=0; i<testdict.capacity; i++)
        if (testdict.table[i] != 0)
            print("Not Empty ");
-//   initDict(&testdict, 1);
 }
 
 void testDictionary::TestFree()
@@ -220,6 +219,8 @@ void testDictionary::TestLocate()
     QVERIFY(index != locate(s, &testdict));
     testdict.table[index] = (char*)"zeroString";
     QVERIFY(index != locate(s, &testdict));
+    index = locate((char *)"string not there", &testdict);
+    QVERIFY(testdict.table[index] == NULL);
 }
 
 void testDictionary::TestInsert()
@@ -387,3 +388,118 @@ void testDictionary::TestUpsize()
     QBENCHMARK_ONCE {upsizeDict(&testdict);}
     QVERIFY(n != testdict.capacity);
 }
+
+#define KEY_RANGE 100000
+#define KEY_OFFSET 1
+
+Cell randomKey() {
+    return rand()%KEY_RANGE + KEY_OFFSET;
+}
+
+void testDictionary::TestAddkey() {
+    HASHDICT(HASH8, keydict);
+    emptyDict(&keydict);
+    QVERIFY(keydict.free == keydict.capacity/2);
+    while (keydict.free) {
+        Short key = randomKey();
+        dictAddKey(key, &keydict);
+        *dictAdjunctKey(key, &keydict) = key;
+    }
+    QVERIFY(keydict.free == 0);
+
+    // check adding same key does not increase # of entries
+    emptyDict(&keydict);
+    QVERIFY(keydict.free == keydict.capacity/2);
+    Short key = randomKey();
+    dictAddKey(key, &keydict);
+    dictAddKey(key, &keydict);
+    QVERIFY(keydict.free + 1 == keydict.capacity/2);
+}
+
+void testDictionary::TestAdjunctKey() {
+    Cell clone = randomKey();
+    Cell key, key2;
+    HASHDICT(HASH8, keydict);
+    emptyDict(&keydict);
+
+    QVERIFY(NULL == dictAdjunctKey(clone, &keydict));
+    QVERIFY(NULL == dictAdjunctKey(clone, &keydict));
+    dictAddKey(clone, &keydict);
+    QVERIFY(0 == *dictAdjunctKey(clone, &keydict));
+    *dictAdjunctKey(clone, &keydict) += 1;
+    QVERIFY(1 == *dictAdjunctKey(clone, &keydict));
+
+
+    // test to see if adjunct gets moved with string inserts
+    emptyDict(&keydict);
+    int i = keydict.free;
+    while (i--) {
+       key = randomKey();
+       while (dictFindKey(key, &keydict)) // must be unique
+           key = randomKey();
+       dictAddKey(key, &keydict);
+       *dictAdjunctKey(key, &keydict) = key;
+    }
+
+    // and again with appends
+    emptyDict(&keydict);
+    i = keydict.free;
+    while (i--) {
+       key = randomKey();
+       dictAddKey(key, &keydict);
+       *dictAdjunctKey(key, &keydict) = key;
+       for (Short j=0; j<keydict.capacity; j++)
+           if (keydict.table[j] != (char *)keydict.adjunct[j])
+               breakpoint();
+    }
+    for (Short i=0; i<keydict.capacity; i++) { // check
+        key = (Cell)keydict.table[i];
+
+        if (key) {
+            key2 = *dictAdjunctKey(key, &keydict);
+            QVERIFY(0 != key2);
+            QVERIFY(key == key2);
+        }
+    }
+}
+
+void testDictionary::TestKeyHash()
+{
+    HASHDICT(HASH8, keydict);
+    emptyDict(&keydict);
+
+    // test uniquity
+    QVERIFY(hashKey(KEY_RANGE, &keydict) != hashKey(KEY_RANGE+1, &keydict));
+    QVERIFY(hashKey(KEY_RANGE+100, &keydict) != hashKey(KEY_RANGE+1000, &keydict));
+
+    // test boundaries
+    for (Short i=0; i<keydict.capacity*10; i++)
+        QVERIFY(keydict.capacity > hashKey(randomKey(), &keydict));
+
+    // test distribution: use percent of the capicity of random strings and double the content if already 1 otherwise set to 1
+    // perfect distribution would yield a sum of part of the capacity; more collisions to single location get exponentially worse
+    int percent = 50;
+    for (int i=0; i<keydict.capacity*percent/100; i++) // fill up %age of the dictionary
+        keydict.adjunct[locateKey(randomKey(), &keydict)] += 1;
+
+    Cell collisions = 0;
+    for (int i=0; i<keydict.capacity; i++)
+        if (keydict.adjunct[i])
+            collisions += keydict.adjunct[i] - 1;
+    printFloat((float)collisions*100/keydict.capacity, 1);
+    print("% collisions when ");
+    printDec(percent);
+    print("% full\n");
+    QVERIFY(collisions <  keydict.capacity);
+}
+
+/*
+ * Public:
+ *  void dictAddKey(Cell address, dictionary_t * dict);
+ *  Cell * dictAdjunctKey(Cell address, dictionary_t * dict);
+ * Private:
+ *  Short hashKey(Cell address, dictionary_t * dict)
+ *  Short rehashKey(Cell address, Short index, dictionary_t * dict)
+ *  Short locateKey(Cell address, dictionary_t * dict)
+ *
+ */

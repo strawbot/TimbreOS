@@ -35,7 +35,7 @@ void testoutput::TestSafeEmitNest()
         pushbq(1, emitq);
     safeEmit(3);
     while(qbq(emitq)) {
-        switch(popbq(emitq)) {
+        switch(pullbq(emitq)) {
         case 1: break;
         case 3: QVERIFY(qbq(emitq) == 0); return;
         default: QFAIL("should not get here!"); return;

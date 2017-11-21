@@ -33,6 +33,9 @@ private slots:
     void TestFind();
     void TestAdjunct();
     void TestUpsize();
+    void TestAddkey();
+    void TestAdjunctKey();
+    void TestKeyHash();
 };
 
 #endif // TESTDICTIONARY_H
