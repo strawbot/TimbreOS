@@ -62,9 +62,10 @@ wordlistCheader = ''' \
 #define NOBODIES(functions) vector functions[] = {NULL};
 
 #define BODIES(functions) vector functions[] = {
+#define CBODIES struct constantCall constantbodies[] = {
 #define BODY(f) (vector)f,
-#define CONSTANTBODY(f)  (void * const)cii,(void * const)&f,
-#define CONSTANTNUMBER(n) (void * const)cii,(void * const)n,
+#define CONSTANTBODY(f)  { cii, &f },
+#define CONSTANTNUMBER(n)  { cii, (Byte *)n },
 #define END_BODIES };
 
 void cii(void);
@@ -192,7 +193,7 @@ def generateCode(file):
 	file.write('END_NAMES\n\n')
 	if constants:
 		externs(file, constants)
-		file.write('\nBODIES(constantbodies)\n')
+		file.write('\nCBODIES\n')
 		bodies(file, constants, 'CONSTANTBODY', 'CONSTANTNUMBER')
 		file.write('END_BODIES\n\n')
 	else:

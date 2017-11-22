@@ -55,11 +55,12 @@ typedef struct header {
 #define strcmp_P(a,b) strcmp((char*)a,(char*)b)
 #define strlen_P(m) strlen(m)
 
+struct constantCall { vector v; Byte * b; };
 #endif
 
 extern vector wordbodies[];
-extern void (*constantbodies[])();
-extern void (*immediatebodies[])();
+extern struct constantCall constantbodies[];
+extern vector immediatebodies[];
 
 // These are character arrays with a zero between strings; C inserts a final string zero - But only if there is a string
 extern PROGMEM char wordnames[];
@@ -192,3 +193,6 @@ void semiColon(void);
 void constant(void);
 void variable(void);
 void resetCli(void);
+
+void setCliResult(Cell n);
+Cell getCliResult();

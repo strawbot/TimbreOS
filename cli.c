@@ -864,7 +864,7 @@ Byte searchDictionaries(Byte* cstring, tcbody** t) // look through dictionaries 
 
     index = searchNames(cstring, constantnames);
     if (index != 0) {
-        *t = (tcbody*)&constantbodies[2 * (index - 1)]; // array of two pointers
+        *t = (tcbody*)&constantbodies[index - 1];
         return NAME_BITS;
     }
 
@@ -1336,6 +1336,12 @@ void resetCli(void)
     decimal();
     quit();
 }
+
+// results: general mechanism to pass values as results from commands
+Cell result;
+
+void setCliResult(Cell n) { result = n; }
+Cell getCliResult() { return result; }
 
 // TODO: group by function; factor out magic numbers; improve names; reduce coupling so CLI can ignore parts; static functions; float support
 // forget last definition if it encroaches; for bigger test scripts. support test scripting.
