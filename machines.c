@@ -78,7 +78,7 @@ void initMachineStats() {
 }
 
 void zeroMachineTimes() {
-	memset(mactimes.adjunct, 0, sizeof(mactimes.adjunct));
+    memset(&mactimes.adjunct[0], 0, sizeof(mactimes.adjunct));
 }
 
 void machineName(vector machine, const char * name) // give name to machine
