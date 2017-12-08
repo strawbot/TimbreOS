@@ -4,7 +4,7 @@ Constants
 End
 
 Words
-	help	help  // print words with one line help; allow wild card filtering
+	help	help  // print words with one line help; allow wild card filtering; parenthesis show ( args - results ) and precede the command; angle brackets show arguments that follow commands
 	words	words // list all words in dictionary
 End
 
