@@ -122,6 +122,7 @@ void keyIn(Byte c);
 void leftBracket(void);
 void lessThan(void);
 void lii(void);
+void listenQuietly(Byte * string, Byte length);
 void lit(Cell n);
 void literal(Cell n);
 void longFetch(void);

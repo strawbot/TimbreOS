@@ -1203,17 +1203,16 @@ void cli(void)
             return;
         tib.in -= 1;
         break;
+    case 0: // end of line
     case CRETURN:
-    case 0: // a cursor return
-        key = 0;
-        tib.buffer[tib.in] = key;
-        outp = 0;
         if (lineEcho)
             spaces(1);
+        tib.buffer[tib.in] = 0;
         tib.in = 0;
+        outp = 0;
         interpret();
         zeroTib();
-        if (lineEcho)
+        if (lineEcho || key == CRETURN)
             dotPrompt();
         lineEcho = keyEcho; // restore key echoing at end of each line
         return;
@@ -1225,9 +1224,16 @@ void cli(void)
             tib.in++;
         } else
             key = BEEP;
+        break;
     }
     if (lineEcho)
         emitByte(key);
+}
+
+void listenQuietly(Byte * string, Byte length) {
+    while (length--)
+        keyIn(*string++);
+    lineEcho = false; // keep line echo quiet
 }
 
 void evaluate(Byte* string)
@@ -1236,9 +1242,7 @@ void evaluate(Byte* string)
 
     zeroTib(); // clear out any network debris - assure command execution
     emptyKeyq();
-    while (length--)
-        keyIn(*string++);
-    lineEcho = false; // keep line echo quiet
+    listenQuietly(string, length);
 }
 
 // defining words
