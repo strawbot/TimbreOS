@@ -123,11 +123,10 @@ void listq(Qtype *q) // list q items
 
 	n = (Byte)queryq(q);
 	{
-		Cell l[MACHINES]; // must be greater than n
+		Cell l[n];
 
 		ATOMIC_SECTION_ENTER;
-		for (Byte i=0; i<n; i++)
-		{
+		for (Byte i=0; i<n; i++) {
 			l[i] = pullq(q);
 			pushq(l[i], q);
 		}
