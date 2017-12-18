@@ -1205,11 +1205,11 @@ void cli(void)
         break;
     case 0: // end of line
     case CRETURN:
+        outp = 0;
         if (lineEcho)
             spaces(1);
         tib.buffer[tib.in] = 0;
         tib.in = 0;
-        outp = 0;
         interpret();
         zeroTib();
         if (lineEcho || key == CRETURN)
