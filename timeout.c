@@ -3,6 +3,7 @@
 #include "timeout.h"
 #include "timestamp.h"
 #include "machines.h"
+#include "cli.h"
 
 bool checkTimeout(Timeout *timer) // see if it has timed out
 {
@@ -85,4 +86,8 @@ void cliEndTime(void)
 	
 	print(" Elapsed time (S.ms): ");
 	sdotms(t);
+}
+
+void cliSleep() {
+    timeoutWait(ret() TO_SECONDS);
 }
