@@ -168,33 +168,53 @@ void killMachine() {
 }
 
 // Machine cycle timer
-#include "timestamp.h"
+#include "codeStats.c"
 #include "printers.h"
+#include <stdlib.h>
 
 void machineRun(vector m) {
 	Cell * stat = dictAdjunctKey((Cell)m, &mactimes);
 	if (stat) {
-		Cell time = getTime();
+		Cell time = getTicks();
 		m();
-		time = getTime() - time;
+		time = getTicks() - time;
 		if (*stat < time)
 			*stat = time;
 	} else
 		m();
 }
 
+static int indexCompare(const void *a,const void *b) {
+	Short *x = (Short *) a;
+	Short *y = (Short *) b;
+	return mactimes.adjunct[*y] - mactimes.adjunct[*x];
+}
+
 void machineStats(void)
 {
+	Short indexes[mactimes.capacity];
+	Short j=0;
+
 	for (Short i=0; i<mactimes.capacity; i++)
-		if (mactimes.adjunct[i] != 0) {
-		    Cell machine = (Cell)mactimes.table[i];
-		    char * name = (char *)macnames.adjunct[i];
-			printCr();
-			if (name)
-			    print(name);
-			else
-			    printHex(machine);
-			print(": "), printDec(mactimes.adjunct[i]), print("ms");
-		}
+		if (mactimes.adjunct[i] != 0)
+			indexes[j++] = i;
+	
+	qsort(indexes, j, sizeof(Short), indexCompare);
+	
+	for (Short i=0; i<j; i++) {
+		Cell machine = (Cell)mactimes.table[indexes[i]];
+		char * name = (char *)macnames.adjunct[indexes[i]];
+		printCr();
+		if (name)
+			print(name);
+		else
+			printHex(machine);
+		print(": ");
+		Cell time = mactimes.adjunct[indexes[i]];
+		if (CONVERT_TO_US(time) > 9999)
+			printDec(CONVERT_TO_MS(time)), print("ms");
+		else
+			printDec(CONVERT_TO_US(time)), print("us");
+	}
 }
 
