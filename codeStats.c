@@ -8,6 +8,7 @@
 #define getTicks() (*(Long *)(0xE0001004)) // cortex-M3
 #define CONVERT_TO_US(n) ((n)/CLOCK_MHZ)
 #define CONVERT_TO_MS(n) ((n)/(CLOCK_MHZ*1000))
+#define US_TO_TICKS(n)	 ((n)*CLOCK_MHZ)
 
 #ifdef FOR_EACH_STAT
 /*
@@ -50,14 +51,18 @@ static void printStats() {
 #define incStat(stat) statCounts[stat]++
 #define maxStat(n, stat) if ((n) > statCounts[stat]) statCounts[stat] = n
 
-// Time measures in microseconds
-#define startUS() Cell startingTime = getTicks()
-#define maxUS(stat) maxStat(CONVERT_TO_US(getTicks() - startingTime), stat)
-
-// Time measures in milliseconds
-#define startMS() startUS()
-#define maxMS(stat) maxStat(CONVERT_TO_MS(getTicks() - startingTime), stat)
-
 #else
 typedef int make_iso_compilers_happy;
 #endif
+
+// Time measures in microseconds
+#define startUS() Cell startingTime = getTicks()
+#define endUS() CONVERT_TO_US(getTicks() - startingTime)
+#define maxUS(stat) maxStat(endUS(), stat)
+#define waitUS(n)  startUS(); while(US_TO_TICKS(n) > getTicks() - startingTime)
+
+// Time measures in milliseconds
+#define startMS() startUS()
+#define endMS() CONVERT_TO_MS(getTicks() - startingTime)
+#define maxMS(stat) maxStat(endMS(), stat)
+
