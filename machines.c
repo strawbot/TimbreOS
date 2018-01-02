@@ -164,7 +164,16 @@ void killMachine() {
 	if (mac)
 		deactivate(mac);
 	else
-		print("Machine not running.\n");
+		print("Machine not available.\n");
+}
+
+void activateMachine() {
+	vector mac = getMachine((char *)parseWord(0));
+
+	if (mac)
+		activate(mac);
+	else
+		print("Machine not available.\n");
 }
 
 // Machine cycle timer
