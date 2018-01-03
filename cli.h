@@ -197,3 +197,6 @@ void resetCli(void);
 
 void setCliResult(Cell n);
 Cell getCliResult();
+
+bool isCompiling();
+void interpretString(Byte c);
