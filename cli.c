@@ -1104,8 +1104,6 @@ void literal(Cell n)
 void makeString(char c) // ( - a )
 {
     char* string = (char*)hp;
-
-    tib.in += 1; // skip leading "
     parse(c);
     strcpy(string, &string[1]); // remove leading count
     lit((Cell)hp);
@@ -1113,18 +1111,26 @@ void makeString(char c) // ( - a )
     aligned();
 }
 
+
+void interpretString(Byte c)
+{
+	if (compiling)
+		compileAhead();
+
+	makeString(c);
+
+	if (compiling) {
+		swap();
+		compileEndif();
+		literal(ret());
+	}
+}
+
 void quote(void)
 {
-    if (compiling)
-        compileAhead();
-
-    makeString(QUOTE);
-
-    if (compiling) {
-        swap();
-        compileEndif();
-        literal(ret());
-    }
+	skip(' ');
+	skip('"');
+	interpretString(QUOTE);
 }
 
 // interpreter
@@ -1351,3 +1357,8 @@ Cell getCliResult() { return result; }
 // forget last definition if it encroaches; for bigger test scripts. support test scripting.
 // need to test at the functional level with full dictionary
 // need to verify here space overflow protection; perhaps other overflow protections too
+
+bool isCompiling()
+{
+	return compiling != 0;
+}
