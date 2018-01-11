@@ -1244,11 +1244,10 @@ void listenQuietly(Byte * string, Byte length) {
 
 void evaluate(Byte* string)
 {
-    Byte length = (Byte)strlen((char*)string) + 1; // also key in zero from end of line
-
     zeroTib(); // clear out any network debris - assure command execution
-    emptyKeyq();
-    listenQuietly(string, length);
+
+    strncpy((char *)tib.buffer, (char *)string, LINE_LENGTH);
+    interpret();
 }
 
 // defining words
