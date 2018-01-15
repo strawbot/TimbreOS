@@ -1,11 +1,13 @@
 // Generic stats counter for a file  Robert Chapman  Dec 15, 2017
+#include "em_timer.h"
 
 // 14 MHz clock ticks; wraps after 5 minutes; 71.4 ns resolution
 #ifndef CLOCK_MHZ
   #define CLOCK_MHZ 14
 #endif
 
-#define getTicks() (*(Long *)(0xE0001004)) // cortex-M3
+#define getM3Ticks() (*(Long *)(0xE0001004)) // cortex-M3
+#define getTicks() (TIMER1->CNT<<16|TIMER0->CNT)
 #define CONVERT_TO_US(n) ((n)/CLOCK_MHZ)
 #define CONVERT_TO_MS(n) ((n)/(CLOCK_MHZ*1000))
 #define US_TO_TICKS(n)	 ((n)*CLOCK_MHZ)
