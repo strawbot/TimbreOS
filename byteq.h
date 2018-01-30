@@ -44,6 +44,10 @@ typedef struct byteq {
 
 // for use in structures and enabled in init code later
 #define NEW_BQ(size, name)	Cell name[(sizeof(byteq) + size + sizeof(Cell))/sizeof(Cell)]
+#define INIT_BQ(bq)	{ \
+						(bq)[QEND] = (Cell)(sizeof(bq)) - sizeof(byteq) - 1; \
+						(bq)[QINSERT] = (bq)[QREMOVE] = BQDATA; \
+					}
 /*
 	struct {
 		...
@@ -51,6 +55,8 @@ typedef struct byteq {
 	} s;
 	
 	setsizebq(10, s.newbq);
+	 or
+	INIT_BQ(s.newbq); // will be exact or bigger depending on length mod cell size
 */
 #define leftbq(q)	 (sizebq(q) - qbq(q)) // how much is left
 
