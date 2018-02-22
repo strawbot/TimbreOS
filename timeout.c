@@ -80,12 +80,13 @@ void cliStartTime(void)
 	startingTime = getTime();
 }
 
-void cliEndTime(void)
+Long cliEndTime(void)
 {
 	Long t = getTime() - startingTime;
 	
 	print(" Elapsed time (S.ms): ");
 	sdotms(t);
+	return t;
 }
 
 void cliSleep() {

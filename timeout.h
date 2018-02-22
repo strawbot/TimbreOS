@@ -71,4 +71,4 @@ void restartTimeout(Timeout *timer);
 void showTime(void);
 void cliStartTime(void);
 void sdotms(Long time);
-void cliEndTime(void);
+Long cliEndTime(void);
