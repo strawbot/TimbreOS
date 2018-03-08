@@ -11,11 +11,6 @@
 //#undef Byte
 #include "stdint.h"
 
-// codewarrior is being stupid so this is needed
-#undef uintptr_t
-typedef unsigned long int glx_uintptr_t;
-#define uintptr_t glx_uintptr_t
-
 #undef Long
 #ifndef Byte
 typedef unsigned char Byte; /* minimum memory transfer unit */

@@ -60,7 +60,7 @@ typedef struct {
 #endif
 
 bool checkTimeout(Timeout *timer);
-void setTimeout(Long time, Timeout *timer);
+void setTimeout(Cell time, Timeout *timer);
 Integer sinceTimeout(Timeout *timer);
 void stopTimeout(Timeout *timer);
 void startTimeout(Timeout *timer);
@@ -71,4 +71,4 @@ void restartTimeout(Timeout *timer);
 void showTime(void);
 void cliStartTime(void);
 void sdotms(Long time);
-void cliEndTime(void);
+Long cliEndTime(void);

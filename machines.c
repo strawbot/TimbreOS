@@ -17,9 +17,10 @@ Byte mmoverflow = 0, mmunderflow = 0;
 void activate(vector Machine)
 {
 	ATOMIC_SECTION_ENTER;
-	pushq((Cell)Machine, machineq);
-	if (queryq(machineq) == 0)
+	if (leftq(machineq) == 0)
 		mmoverflow++;
+	else
+		pushq((Cell)Machine, machineq);
 	ATOMIC_SECTION_LEAVE;
 }
 
