@@ -278,7 +278,6 @@ void cComma(void) /* n -- */
 Cell align(Cell p) /* a -- a' */
 {
     struct {
-        void* x;
         char y;
         void* z;
     } a;
@@ -409,9 +408,8 @@ void emptyEmitq(void)
 
 void safeEmit(Byte c)
 {
-    static bool alreadyHere = false; // prevent overwrites
-
     if (fullbq(emitq)) {
+    	static bool alreadyHere = false; // prevent overwrites
         if (alreadyHere) // support blocking on first writer but dump after that
             return;
         alreadyHere = true;
@@ -1244,11 +1242,10 @@ void listenQuietly(Byte * string, Byte length) {
 
 void evaluate(Byte* string)
 {
-    Byte length = (Byte)strlen((char*)string) + 1; // also key in zero from end of line
-
     zeroTib(); // clear out any network debris - assure command execution
-    emptyKeyq();
-    listenQuietly(string, length);
+
+    strncpy((char *)tib.buffer, (char *)string, LINE_LENGTH);
+    interpret();
 }
 
 // defining words
@@ -1306,10 +1303,10 @@ void variable(void) /* n -- */
 // Tools
 static void list_dictionaries(void) // list words in dictionaries
 {
-    PGM_P dictionary, *dictionaries[] = { constantnames, wordnames, immediatenames };
-    Byte i, c;
-
+    Byte i;
     for (i = 0; i < 3; i++) {
+    	PGM_P dictionary, *dictionaries[] = { constantnames, wordnames, immediatenames };
+    	Byte c;
         dictionary = dictionaries[i];
         while ((c = pgm_read_byte(dictionary++)) != 0) {
             do {
