@@ -81,7 +81,7 @@ Words // IO
 	.h		doth // ( n - ) print number in hex
 	.s		dots // print number of items on data stack and items
 	dump	dump // ( a n - ) dump n 16-byte rows of memory starting at address a
-	reset	resetCli // reset everything including removing all definitions
+	resetcli	resetCli // reset cli including removing all macros
 End
 
 Words // definitions
