@@ -25,7 +25,7 @@ char * numString(Byte field, Byte digits, Cell n, Byte radix)
 	Byte b = getBase();
 	setBase(radix);
 	lit(n), startNumberConversion();
-	if (field == digits) // if field is equal to digits fill with zeroes
+	if (field != 0 && field == digits) // if field is equal to digits fill with zeroes
 		while(digits--)
 			convertDigit();
 	else
