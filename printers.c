@@ -3,6 +3,7 @@
 #include "cli.h"
 #include "byteq.h"
 #include "machines.h"
+#include <string.h>
 
 void print(const char *message)
 {
@@ -24,7 +25,7 @@ char * numString(Byte field, Byte digits, Cell n, Byte radix)
 	Byte b = getBase();
 	setBase(radix);
 	lit(n), startNumberConversion();
-	if (field) // if field is not zero print specific number of digits
+	if (field == digits) // if field is equal to digits fill with zeroes
 		while(digits--)
 			convertDigit();
 	else
@@ -37,10 +38,10 @@ char * numString(Byte field, Byte digits, Cell n, Byte radix)
 
 void dotnb(Byte field, Byte digits, Cell n, Byte radix)
 {
-
-	for (int i = field - digits; i > 0; i--)
-		print(" ");
-	print(numString(field, digits, n, radix));
+	char * string = numString(field, digits, n, radix);
+	Byte width = strlen(string);
+	while (width++ < field) print(" "); // right justify
+	print(string);
 }
 
 void printHex(unsigned int hex)

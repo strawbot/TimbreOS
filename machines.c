@@ -219,16 +219,15 @@ void machineStats(void)
 		Cell machine = (Cell)mactimes.table[indexes[i]];
 		char * name = (char *)macnames.adjunct[indexes[i]];
 		printCr();
+		Cell time = mactimes.adjunct[indexes[i]];
+		if (CONVERT_TO_US(time) > 9999)
+			dotnb(7, 6, CONVERT_TO_MS(time), 10), print(" ms  ");
+		else
+			dotnb(7, 6, CONVERT_TO_US(time), 10), print(" us  ");
 		if (name)
 			print(name);
 		else
 			printHex(machine);
-		print(": ");
-		Cell time = mactimes.adjunct[indexes[i]];
-		if (CONVERT_TO_US(time) > 9999)
-			printDec(CONVERT_TO_MS(time)), print("ms");
-		else
-			printDec(CONVERT_TO_US(time)), print("us");
 	}
 }
 
