@@ -6,8 +6,7 @@
   #define CLOCK_MHZ 14
 #endif
 
-#define getM3Ticks() (*(Long *)(0xE0001004)) // cortex-M3
-#define getTicks() (TIMER0->CNT|(TIMER1->CNT<<16))
+#define getTicks() (DWT->CYCCNT) // cortex-M3 cycle counter from ETM
 #define CONVERT_TO_US(n) ((n)/CLOCK_MHZ)
 #define CONVERT_TO_MS(n) ((n)/(CLOCK_MHZ*1000))
 #define US_TO_TICKS(n)	 ((n)*CLOCK_MHZ)

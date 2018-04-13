@@ -186,14 +186,11 @@ void activateMachine() {
 void machineRun(vector m) {
 	Cell * stat = dictAdjunctKey((Cell)m, &mactimes);
 	if (stat) {
-		Cell time1 = getTicks();
+		Cell time = getTicks();
 		m();
-		Cell time2 = getTicks();
-		if (time2 < time1) // cascaded counters not cascading fast enough so fudge it
-			time2 += 0x10000; // add the late roll over bit
-		Cell time3 = time2 - time1;
-		if (*stat < time3)
-			*stat = time3;
+		time = getTicks() - time;
+		if (time > *stat)
+		    *stat = time;
 	} else
 		m();
 }
