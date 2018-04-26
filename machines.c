@@ -186,11 +186,11 @@ void activateMachine() {
 void machineRun(vector m) {
 	Cell * stat = dictAdjunctKey((Cell)m, &mactimes);
 	if (stat) {
-		Cell time = getTicks();
+		int time = (int)getTicks();
 		m();
-		time = getTicks() - time;
-		if (time > *stat)
-		    *stat = time;
+        time = (int)getTicks() - time;
+        if (time > (int)*stat)
+            *stat = (Cell)time;
 	} else
 		m();
 }
