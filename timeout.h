@@ -54,7 +54,7 @@ typedef struct {
 //#define Timeout Long
 //#define checkTimeout(timer) (timer <= getTime()) // this will fail after 49 days
 //#define setTimeout(time, timer) timer = getTime() + time
-//#define sinceTimeout(timer) (timer - getTime())
+//#define elapsedTime(timer) (timer - getTime())
 // Note: (getTime() - rtcto.timeset) will give elapsed time from start of timeout
 
 #endif
