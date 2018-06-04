@@ -1243,9 +1243,10 @@ void listenQuietly(Byte * string, Byte length) {
 void evaluate(Byte* string)
 {
     zeroTib(); // clear out any network debris - assure command execution
-
+    outp = 0;
     strncpy((char *)tib.buffer, (char *)string, LINE_LENGTH);
     interpret();
+    zeroTib();
 }
 
 // defining words
