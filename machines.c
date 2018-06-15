@@ -70,8 +70,8 @@ void runMachines(void) // run all machines
 #include "dictionary.h"
 #include "printers.h"
 
-HASHDICT(HASH8, macnames); // keep track of machine names
-HASHDICT(HASH8, mactimes); // keep track of machine max execution times
+HASHDICT(HASH9, macnames); // keep track of machine names
+HASHDICT(HASH9, mactimes); // keep track of machine max execution times
 
 void initMachineStats() {
     emptyDict(&macnames);
