@@ -67,4 +67,4 @@ void pushq(Cell , Cell *); // push item into queue
 Cell popq(Cell *); // pop item from queue
 void stuffq(Cell , Cell *); // stuff item into queue
 void rotateq(Cell *, Cell n); // rotate n queue items
-void transferq(Cell *, Cell *, Cell n); // transfer n items between queues
+void transferq(Cell *src, Cell *dst, Cell n); // transfer n items between queues
