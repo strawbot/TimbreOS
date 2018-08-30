@@ -144,6 +144,7 @@ void parse(Byte c);
 Byte * parseWord(Byte c);
 void plusBits(void);
 void plusOp(void);
+char * postQuote();
 void questionDup(void);
 void rat(void);
 void resetCli(void);
@@ -199,4 +200,3 @@ void setCliResult(Cell n);
 Cell getCliResult();
 
 bool isCompiling();
-void interpretString(Byte c);

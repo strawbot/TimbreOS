@@ -1099,36 +1099,38 @@ void literal(Cell n)
 }
 
 // strings
-void makeString(char c) // ( - a )
+// parse a string optionally quoted; allow for zero length strings
+char * postQuote() {
+ 	skip(SPACE);
+    if (peek() == QUOTE) {
+    	tib.in++;
+    	parse(QUOTE);
+    	return (char *)&hp[1];
+    }
+    return (char *)parseWord(SPACE);
+}
+
+void makeString(char * string) // ( - a )
 {
-    char* string = (char*)hp;
-    parse(c);
-    strcpy(string, &string[1]); // remove leading count
+    strcpy((char *)hp, string); // remove leading count
     lit((Cell)hp);
-    allot(strlen(string) + 1); // account for null terminator
+    Cell n = strlen((char *)hp);
+    allot(n + 1); // account for null terminator
     aligned();
 }
 
-
-void interpretString(Byte c)
+void quote(void)
 {
 	if (compiling)
 		compileAhead();
 
-	makeString(c);
+	makeString(postQuote());
 
 	if (compiling) {
 		swap();
 		compileEndif();
 		literal(ret());
 	}
-}
-
-void quote(void)
-{
-	skip(' ');
-	skip('"');
-	interpretString(QUOTE);
 }
 
 // interpreter
@@ -1144,16 +1146,19 @@ void quit(void)
 
 void interpret(void)
 {
-    while (peek() != 0) {
+	while (true) {
+        skip(SPACE);
+        if (peek() == 0) return;
+
         tcbody* t;
         Byte headbits;
         Byte* cstring;
 
-        skip(SPACE);
         if (peek() == QUOTE) {
             quote();
             continue;
         }
+
         cstring = parseWord(SPACE);
         headbits = lookup(cstring, &t);
         if (headbits != 0)
