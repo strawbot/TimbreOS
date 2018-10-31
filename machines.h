@@ -2,7 +2,9 @@
 
 #include "queue.h"
 
-void activate(vector machine);
+void activate (vector machine);
+void now (vector machine);
+
 void activateMachineOnce(vector machine);
 void deactivate(vector machine);
 void runMachines(void);
@@ -19,6 +21,7 @@ void machineRun(vector m);
 #define activateOnce(m)	activateOnceNamed(m, #m)
 #define nameMachine(m) machineName(m, #m)
 #define MACHINES (50)
+#define ACTIONS (MACHINES)
 
 #ifndef ATOMIC_SECTION_ENTER // define if used in interrupts
 	#define ATOMIC_SECTION_ENTER

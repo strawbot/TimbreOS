@@ -12,17 +12,32 @@
 #include <string.h>
 
 QUEUE(MACHINES, machineq);
-Byte mmoverflow = 0, mmunderflow = 0;
+QUEUE(ACTIONS, actionq);
 
-void activate(vector Machine)
-{
+Byte mmoverflow = 0, mmunderflow = 0;
+Byte amoverflow = 0;
+
+void activate(vector machine) {
 	ATOMIC_SECTION_ENTER;
-	if (leftq(machineq) == 0)
-		mmoverflow++;
+	if (leftq(machineq))
+		pushq((Cell)machine, machineq);
 	else
-		pushq((Cell)Machine, machineq);
+		mmoverflow++;
 	ATOMIC_SECTION_LEAVE;
 }
+
+void now (vector machine) { // actions
+	ATOMIC_SECTION_ENTER;
+	if (leftq(actionq))
+		pushq((Cell)machine, actionq);
+	else
+		amoverflow++;
+	ATOMIC_SECTION_LEAVE;	
+}
+
+//void after(Long time, timeout action)  { // run machine after time
+//
+//}
 
 void deactivate(vector machine) // remove a machine from queue
 {
@@ -47,22 +62,24 @@ void activateMachineOnce(vector machine) // only have one occurrance of a machin
 
 static Long runDepth = 0;
 
-void runMachines(void) // run all machines
-{
-	Byte n = (Byte)queryq(machineq);
+void runMachines(void) {  // run all machines
+	Byte n = (Byte)(queryq(machineq) + queryq(actionq));
 
 	runDepth++;
-	while(n--)
-	{
+	do {
 		vector machine;
-		if (queryq(machineq) == 0)
-		{
+		
+		if (queryq(actionq)) {// TODO: actions can stall out machines: limited by n
+			safe(machine = (vector)pullq(actionq));
+		} else if (queryq(machineq)) {
+			safe(machine = (vector)pullq(machineq));
+		} else {
 			mmunderflow++;
 			break;
-		}
-		safe(machine = (vector)pullq(machineq));
+		} 
 		machineRun(machine);
-	}
+		
+	} while (n--);
 	runDepth--;
 }
 
@@ -157,6 +174,7 @@ void listm(void) // list machine statuses
 void initMachines(void)
 {
 	zeroq(machineq);
+	zeroq(actionq);
 	initMachineStats();
 }
 
@@ -189,7 +207,7 @@ void machineRun(vector m) {
 		int time = (int)getTicks();
 		m();
         time = (int)getTicks() - time;
-        if (time > (int)*stat)
+        if (time > (int)*stat) // TODO: consider atomicity of readnwrite
             *stat = (Cell)time;
 	} else
 		m();
