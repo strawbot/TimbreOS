@@ -1,12 +1,12 @@
-#include “timeouts.h”
+#include "timeout.h"
 
 #ifndef _TIMEACTION_H_
 #define _TIMEACTION_H_
 
-#define after(t, m)
-{
-	static TimeAction ta = {action = m, .name = “#m”};
-	doLater(t, &ta);
+#define after(t, m) \
+{ \
+	static TimeAction ta = {.action = m, .name = #m}; \
+	doLater(t,  &ta); \
 }
 
 typedef struct TimeAction {
