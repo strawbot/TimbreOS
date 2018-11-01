@@ -9,27 +9,28 @@
 
 static QUEUE(30, timeactionq);
 
-static struct TimeAction * timeactionList = NULL;
+static struct TimeAction timeactionList = {NULL};
 
 static void inlistTimeActions() {
 	while (queryq(timeactionq)) {
 		TimeAction * ta = (TimeAction *)pullq(timeactionq);
-		ta->link = timeactionList;
-		timeactionList = ta;
+
+		ta->link = timeactionList.link;
+		timeactionList.link = ta;
 	}
 }
 
 static void checkTimeActions() {
-	TimeAction ** before = &timeactionList;
-	TimeAction * ta = timeactionList;
+	TimeAction * before = &timeactionList;
+	TimeAction * ta = before->link;
 
 	while (ta) {
 		if (checkTimeout(&ta->to)) {
+			before->link = ta->link;
 			now(ta->action);
-			(*before)->link = ta->link;
 		} else
-			before = &ta;
-		ta = ta->link;
+			before = ta;
+		ta = before->link;
 	}
 }
 
@@ -38,8 +39,6 @@ void timeaction_IRQ() {
 	checkTimeActions();
 }
 
-void doLater(Long t, TimeAction * ta) {
-	setTimeout(t, &ta->to);
+void timeaction(TimeAction * ta) {
 	pushq((Cell)ta, timeactionq);
 }
-

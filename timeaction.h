@@ -6,7 +6,8 @@
 #define after(t, m) \
 { \
 	static TimeAction ta = {.action = m, .name = #m}; \
-	doLater(t,  &ta); \
+	setTimeout(t, &ta->to); \
+	timeaction(&ta); \
 }
 
 typedef struct TimeAction {
@@ -16,6 +17,6 @@ typedef struct TimeAction {
 	const char * name;
 } TimeAction;
 
-void doLater(Long t, TimeAction * ta);
+void timeaction(TimeAction * ta);
 
 #endif
