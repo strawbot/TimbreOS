@@ -6,7 +6,7 @@
 #define after(t, m) \
 { \
 	static TimeAction ta = {.action = m, .name = #m}; \
-	setTimeout(t, &ta->to); \
+	setTimeout(t, &ta.to); \
 	timeaction(&ta); \
 }
 
