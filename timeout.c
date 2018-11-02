@@ -9,7 +9,11 @@ bool checkTimeout(Timeout *timer) // see if it has timed out
 {
 	if (timer->off == true) // see if it is enalbed
 		return false;
-	return (bool)((getTime() - timer->timeset) >= timer->timeout);
+	
+	Integer elapsed = getTime() - timer->timeset;
+	Integer interval = (Integer)timer->timeout;
+
+	return elapsed >= interval;
 }
 
 void setTimeout(Cell time, Timeout *timer) // set the timeout time and turn on the timeout
@@ -36,8 +40,10 @@ void startTimeout(Timeout *timer) // turn on a timeout
 
 void repeatTimeout(Timeout *timer) // set the timeout time for an interval after and turn on the timeout
 {
-	timer->timeset += timer->timeout;
-	timer->off = false;
+	if (checkTimeout(timer)) { // only repeat it if it has happened
+		timer->timeset += timer->timeout;
+		timer->off = false;
+	}
 }
 
 void restartTimeout(Timeout *timer) // restart the timeout from right now
