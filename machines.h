@@ -17,6 +17,7 @@ void showMachineName(Cell x);
 vector getMachine(char * name);
 char * getMachineName(Cell x);
 void machineRun(vector m);
+void runMachineqs();
 
 #define activateOnce(m)	activateOnceNamed(m, #m)
 #define nameMachine(m) machineName(m, #m)

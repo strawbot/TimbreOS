@@ -83,6 +83,40 @@ void runMachines(void) {  // run all machines
 	runDepth--;
 }
 
+// Multiple Machine queues
+typedef struct MQueue {
+	struct MQueue * link;
+	Qtype * mq;
+} MQueue;
+
+// runtimeqs
+// runs machines from all machineq's with priority given to top mq's after running a machine
+// when an mq is empty, then the next one will be run
+// this is different than the runMachines() which will run only the snapshot count of machines
+// queued up to run at the start before exiting.
+// Contrarily, runMachineqs() will not exit until all machines have been run. This is good
+// for running low power modes after all the work has been done.
+// runMachines() is good for getting out of a sticky spot where code is stuck waiting
+
+MQueue machineqmq  = {.link = NULL,         .mq = machineq};
+MQueue timeactionq = {.link = &machineqmq,  .mq = actionq };
+//MQueue priorityq = {.link = &timeacitonq, .mq = NEWQ(10)};
+
+MQueue * mqq = &timeactionq;
+
+void runMachineqs() {
+	MQueue * mqi = mqq;
+	do {
+        Qtype * mq = mqi->mq;
+		if (queryq(mq)) {
+			machineRun((vector)pullq(mq));
+			mqi = mqq;
+            continue;
+		} else
+			mqi = mqi->link;
+	} while (mqi != 0);
+}
+
 // viewers
 #include "dictionary.h"
 #include "printers.h"
