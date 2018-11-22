@@ -4,11 +4,11 @@
 #define _TIMEACTION_H_
 
 #define after(t, m) \
-{ \
+do { \
 	static TimeAction ta = {.action = m, .name = #m}; \
 	setTimeout(t, &ta.to); \
 	timeaction(&ta); \
-}
+} while (false)
 
 typedef struct TimeAction {
 	struct TimeAction * link;
