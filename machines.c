@@ -11,8 +11,9 @@
 #include "cli.h"
 #include <string.h>
 
-QUEUE(MACHINES, machineq);
-QUEUE(ACTIONS, actionq);
+QUEUE(MACHINES, machineq); // workers
+QUEUE(ACTIONS, actionq); // now
+QUEUE(EVENTS, eventq); // happenstance
 
 Byte mmoverflow = 0, mmunderflow = 0;
 Byte amoverflow = 0;
@@ -33,6 +34,10 @@ void now (vector machine) { // actions
 	else
 		amoverflow++;
 	ATOMIC_SECTION_LEAVE;	
+}
+
+void event(vector machine) { // events
+	pushq((Cell)machine, eventq);
 }
 
 //void after(Long time, timeout action)  { // run machine after time
@@ -83,6 +88,14 @@ void runMachines(void) {  // run all machines
 	runDepth--;
 }
 
+bool runmac(Qtype * mq) {
+	if (queryq(mq)) {
+		machineRun((vector)pullq(mq));
+		return true;
+	}
+	return false;
+}
+
 // Multiple Machine queues
 typedef struct MQueue {
 	struct MQueue * link;
@@ -98,24 +111,59 @@ typedef struct MQueue {
 // for running low power modes after all the work has been done.
 // runMachines() is good for getting out of a sticky spot where code is stuck waiting
 
-MQueue machineqmq  = {.link = NULL,         .mq = machineq};
-MQueue timeactionq = {.link = &machineqmq,  .mq = actionq };
-//MQueue priorityq = {.link = &timeacitonq, .mq = NEWQ(10)};
+MQueue workerq  = {.link = NULL,         .mq = machineq};
+MQueue timeactionq = {.link = &workerq,  .mq = actionq };
+MQueue happenq = {.link = &timeactionq, .mq = eventq};
 
-MQueue * mqq = &timeactionq;
+MQueue * mqq = &happenq;
 
 void runMachineqs() {
 	MQueue * mqi = mqq;
 	do {
-        Qtype * mq = mqi->mq;
-		if (queryq(mq)) {
-			machineRun((vector)pullq(mq));
+		if (runmac(mqi->mq)) {
 			mqi = mqq;
             continue;
-		} else
-			mqi = mqi->link;
+		}
+		mqi = mqi->link;
 	} while (mqi != 0);
 }
+
+void events() {
+	while (runmac(eventq));
+}
+
+void actions() {
+	do events();
+	while (runmac(actionq));
+}
+
+bool machines() {
+	return runmac(machineq);
+}
+
+Long allThings() {
+	return queryq(actionq) + queryq(machineq) + queryq(eventq);
+}
+
+// endless loop for endless machines; returns for machines that sleep
+void run_till_done() {
+	do actions();
+	while (machines());
+}
+
+// run at most the number of machines at the moment - a slice or up to a whole of a cycle
+void run_slice() {
+	for (int i = allThings(); i != 0; i--) {
+		actions();
+		if (!machines())
+		   break;
+	}
+}
+
+//notes:
+// slice() will run actions with priority;
+// run_till_done() will not run actions as the first thing; possibly coming back from hibernate - critical because actions could get stagnant
+// fixed by reworking control structures
 
 // viewers
 #include "dictionary.h"
