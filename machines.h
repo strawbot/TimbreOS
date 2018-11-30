@@ -18,9 +18,12 @@ vector getMachine(char * name);
 char * getMachineName(Cell x);
 void machineRun(vector m);
 void runMachineqs();
+void run_till_done();
+void run_slice();
 
 #define activateOnce(m)	activateOnceNamed(m, #m)
 #define nameMachine(m) machineName(m, #m)
+
 #define MACHINES (50)
 #define ACTIONS (MACHINES)
 #define EVENTS (MACHINES)
