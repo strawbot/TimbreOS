@@ -23,6 +23,7 @@ void runMachineqs();
 #define nameMachine(m) machineName(m, #m)
 #define MACHINES (50)
 #define ACTIONS (MACHINES)
+#define EVENTS (MACHINES)
 
 #ifndef ATOMIC_SECTION_ENTER // define if used in interrupts
 	#define ATOMIC_SECTION_ENTER
