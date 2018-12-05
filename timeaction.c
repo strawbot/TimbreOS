@@ -25,6 +25,7 @@
 #include "queue.h"
 #include "machines.h"
 #include "timeaction.h"
+#include "../Health/statCtrs.h"
 
 static QUEUE(30, timeactionq);
 
@@ -47,6 +48,7 @@ static void checkTimeActions() {
 		if (checkTimeout(&ta->to)) {
 			before->link = ta->link;
 			now(ta->action);
+            ta->link = (struct TimeAction *) LINK_SENTINEL;
 		} else
 			before = ta;
 		ta = before->link;
@@ -59,5 +61,13 @@ void timeaction_IRQ() {
 }
 
 void timeaction(TimeAction * ta) {
+    if (ta->link == (struct TimeAction *) LINK_SENTINEL)
+    {
+        ta->link = NULL;
 	pushq((Cell)ta, timeactionq);
+    }
+    else
+    {
+        incCtr(doubleActionError);
+    }
 }

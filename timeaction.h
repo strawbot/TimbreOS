@@ -3,9 +3,11 @@
 #ifndef _TIMEACTION_H_
 #define _TIMEACTION_H_
 
+#define LINK_SENTINEL   0xFACEF00D
+
 #define after(t, m) \
 do { \
-	static TimeAction ta = {.action = m, .name = #m}; \
+	static TimeAction ta = {.action = m, .name = #m, .link = (struct TimeAction *) LINK_SENTINEL}; \
 	setTimeout(t, &ta.to); \
 	timeaction(&ta); \
 } while (false)
