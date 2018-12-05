@@ -1,6 +1,7 @@
-// take an action after time
+// take an action after time or event
 /*
-	after(TO_MSECS(25), some_action);
+	  after(ta_msecs(25), some_action);
+	  every(ta_msecs(25), some_action);
 
 	The interrupt to run the checkTimeouts for all the after's is independant
 	of the timeout times. The timeout times are based on BURTC timer. The
@@ -20,12 +21,24 @@
 	the RTC counter can be set to a different time interval. When running all
 	three lists, the 10ms list is checked each interrupt. The 100ms list is
 	checked each 10 interrupts and the 1S list is checked each 100 interrupts.
+	
+	after will run an action after some time while every is similar the
+	difference is that "every" is periodic from the first time the action
+	executes whereas "after" will run after the time but there may be some
+	other time in there as well.
+	
+	  when(some_event, some_action);
+	
+	for events, they have a local queue which gets loaded up with machines that
+	subscribe to the event. When the event happens, all the queued machines get run.
 */
 
 #include "queue.h"
 #include "machines.h"
-#include "timeaction.h"
+#include "action.h"
 #include "printers.h"
+
+// time actions
 static QUEUE(30, timeactionq);
 
 static TimeAction timeactionList = {NULL};
@@ -81,4 +94,23 @@ void every_time(TimeAction * ta) {
 	else
 	    repeatTimeout(&ta->to);
 	timeaction(ta); 
+}
+
+// event actions
+void when(Qtype * actionq, vector action) {
+    if (leftq(actionq))
+        pushq((Cell)action, actionq);
+    else {
+    	char * name;
+        print("\nError: actionq full!  ");
+        if ((name = getMachineName((Cell)action)) != NULL)
+            print(name);
+    }
+}
+
+void runActions(Qtype * actionq) {
+    for (int i = queryq(actionq); i; i--) {
+        later((vector)q(actionq));
+        rotateq(actionq, 1);
+    }
 }

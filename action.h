@@ -27,6 +27,8 @@ do { \
 void timeaction(TimeAction * ta);
 void after_time(Long t, TimeAction * ta);
 void every_time(TimeAction * ta);
+void when(Qtype * actionq, vector action);
+void runActions(Qtype * actionq);
 
 // #define ta_usecs()
 #define ta_msecs(t) (((long long)t*128)/125)
