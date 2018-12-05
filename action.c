@@ -33,7 +33,6 @@
 	subscribe to the event. When the event happens, all the queued machines get run.
 */
 
-#include "queue.h"
 #include "machines.h"
 #include "action.h"
 #include "printers.h"
