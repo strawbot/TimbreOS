@@ -1,9 +1,13 @@
 // for machines  Rob Chapman  Jan 22, 2010
 
+#ifndef _MACHINES_H_
+#define _MACHINES_H_
+
 #include "queue.h"
 
 void activate (vector machine);
 void now (vector machine);
+#define later(m)    activate(m)
 
 void activateMachineOnce(vector machine);
 void deactivate(vector machine);
@@ -58,3 +62,5 @@ void noop(void);
 		...
 		deactivate(machine1); // turn off
 */
+
+#endif
