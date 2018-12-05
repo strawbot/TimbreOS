@@ -6,6 +6,7 @@
 #include "machines.h"
 
 #include <string.h>
+#include <ctype.h>
 
 // structures
 static QUEUE(DCELLS, dataStack);
@@ -907,26 +908,22 @@ void error(void)
 // Number conversion
 Byte checkBase(Byte* cstring) // check for prefixes: 0X, 0x, 0C, 0c, 0B or 0b
 {
-    if (cstring[0] != 0 && cstring[1] != 0 && cstring[2] != 0) // count is longer than 2
-        if (*cstring == '0') { // and first digit is 0
-            switch (cstring[1]) {
-            case 'b':
-            case 'B':
-                bin();
-                break;
-            case 'c':
-            case 'C':
-                oct();
-                break;
-            case 'x':
-            case 'X':
-                hex();
-                break;
-            default:
-                return 0;
-            }
-            return 2; // skip leading base change
-        }
+    if (cstring[0] == '0' && cstring[1] != 0 && cstring[2] != 0) {// count is longer than 2
+		switch (tolower(cstring[1])) {
+		case 'b':
+			bin();
+			break;
+		case 'c':
+			oct();
+			break;
+		case 'x':
+			hex();
+			break;
+		default:
+			return 0;
+		}
+		return 2; // skip leading base change
+    }
     return 0; // skip nothing
 }
 
