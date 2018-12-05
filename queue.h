@@ -68,3 +68,4 @@ Cell popq(Cell *); // pop item from queue
 void stuffq(Cell , Cell *); // stuff item into queue
 void rotateq(Cell *, Cell n); // rotate n queue items
 void transferq(Cell *src, Cell *dst, Cell n); // transfer n items between queues
+void deq(Cell item, Qtype *q); // remove all copies of item from the q

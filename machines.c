@@ -40,22 +40,9 @@ void event(vector machine) { // events
 	pushq((Cell)machine, eventq);
 }
 
-//void after(Long time, timeout action)  { // run machine after time
-//
-//}
-
-void deactivate(vector machine) // remove a machine from queue
-{
-	Byte n;
-
+void deactivate(vector machine) { // remove a machine from queue
 	ATOMIC_SECTION_ENTER;
-	n = (Byte)queryq(machineq);
-	while(n--)
-	{
-		Cell m = pullq(machineq);
-		if (m != (Cell)machine)
-			pushq(m, machineq);
-	}
+	deq((Cell)machine, machineq);
 	ATOMIC_SECTION_LEAVE;
 }
 

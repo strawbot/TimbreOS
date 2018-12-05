@@ -86,3 +86,15 @@ void transferq(Cell * srcq, Cell * dstq, Cell n) // transfer n items between que
 	for(;n;n--)
 		pushq(pullq(srcq),dstq);
 }
+
+void deq(Cell item, Qtype *q) { // remove all copies of item from the q
+	Byte n;
+
+	n = (Byte)queryq(q);
+	while(n--)
+	{
+		Cell m = pullq(q);
+		if (m != item)
+			pushq(m, q);
+	}
+}
