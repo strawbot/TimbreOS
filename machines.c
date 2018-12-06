@@ -156,12 +156,15 @@ void run_slice() {
 #include "dictionary.h"
 #include "printers.h"
 
+#define UNKNOWN "unknown_machines"
+
 HASHDICT(HASH9, macnames); // keep track of machine names
 HASHDICT(HASH9, mactimes); // keep track of machine max execution times
 
 void initMachineStats() {
     emptyDict(&macnames);
     emptyDict(&mactimes);
+    machineName((vector)UNKNOWN, UNKNOWN);
 }
 
 void zeroMachineTimes() {
@@ -272,14 +275,15 @@ void activateMachine() {
 
 void machineRun(vector m) {
 	Cell * stat = dictAdjunctKey((Cell)m, &mactimes);
-	if (stat) {
-		int time = (int)getTicks();
-		m();
-        time = (int)getTicks() - time;
-        if (time > (int)*stat) // TODO: consider atomicity of readnwrite
-            *stat = (Cell)time;
-	} else
-		m();
+	if (stat == 0) 
+		stat = dictAdjunctKey((Cell)UNKNOWN, &mactimes);
+
+	int time = (int)getTicks();
+	m();
+	time = (int)getTicks() - time;
+	
+	if (time > (int)*stat) // TODO: consider atomicity of readnwrite
+		*stat = (Cell)time;
 }
 
 static int indexCompare(const void *a,const void *b) {

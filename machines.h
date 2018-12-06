@@ -4,6 +4,7 @@
 #define _MACHINES_H_
 
 #include "queue.h"
+#include "action.h"
 
 void activate (vector machine);
 void now (vector machine);
