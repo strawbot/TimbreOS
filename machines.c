@@ -195,7 +195,7 @@ char * getMachineName(Cell x) {
 
 void showMachineName(Cell x)
 {
-	print("\n"), printHex(x), print(": ");
+	print("\n "), printHex(x), print(": ");
     print(getMachineName(x));
 }
 
@@ -227,14 +227,18 @@ void listq(Qtype *q) // list q items
 	}
 }
 
+void listTimeActions();
+
 void listMachines(void)
 {
-	print("\nDepth: "), printDec(runDepth);
+	print("\nmachineq:\n Depth: "), printDec(runDepth);
 	listq(machineq);
 	if (mmunderflow)
-		print("\nmunderflows: "), printDec(mmunderflow);
+		print("\n munderflows: "), printDec(mmunderflow);
 	if (mmoverflow)
-		print("\nmoverflows: "), printDec(mmoverflow);
+		print("\n moverflows: "), printDec(mmoverflow);
+	if (queryq(actionq))  print("\nactionq:"), listq(actionq);
+	listTimeActions();
 	dotPrompt();
 }
 

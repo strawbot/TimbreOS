@@ -42,6 +42,20 @@ static QUEUE(30, timeactionq);
 
 static TimeAction timeactionList = {NULL};
 
+static Integer time_left(Timeout * timer) {
+	Integer elapsed = getTime() - timer->timeset;
+	Integer interval = (Integer)timer->timeout;
+
+	return interval - elapsed;
+}
+
+void listTimeActions() {
+    TimeAction * ta = &timeactionList;
+    print("\nPending timed actions:");
+    while ((ta = ta->link) != NULL)
+        print("\n "), print(ta->name), print(" in "),  printDec(time_left(&ta->to)), print("ms");
+}
+
 static void inlistTimeActions() {
 	while (queryq(timeactionq)) {
 		TimeAction * ta = (TimeAction *)pullq(timeactionq);
@@ -89,10 +103,11 @@ void after_time(Long t, TimeAction * ta) {
 
 void every_time(TimeAction * ta) {
 	if (ta->to.off == true)
-	    setTimeout(ta->to.timeout, &ta->to);
-	else
+	    after_time(ta->to.timeout, ta);
+	else {
 	    repeatTimeout(&ta->to);
-	timeaction(ta); 
+	    timeaction(ta); 
+    }
 }
 
 // event actions
@@ -103,7 +118,7 @@ void when(Qtype * actionq, vector action) {
     	char * name;
         print("\nError: actionq full!  ");
         if ((name = getMachineName((Cell)action)) != NULL)
-            print(name);
+            print("Trying to actionize:"), print(name);
     }
 }
 
