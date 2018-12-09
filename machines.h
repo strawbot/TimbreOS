@@ -7,7 +7,7 @@
 #include "action.h"
 
 void activate (vector machine);
-void now (vector machine);
+void next (vector machine);
 #define later(m)    activate(m)
 
 void activateMachineOnce(vector machine);

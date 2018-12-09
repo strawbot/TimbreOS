@@ -27,7 +27,7 @@ void activate(vector machine) {
 	ATOMIC_SECTION_LEAVE;
 }
 
-void now (vector machine) { // actions
+void next(vector machine) { // actions
 	ATOMIC_SECTION_ENTER;
 	if (leftq(actionq))
 		pushq((Cell)machine, actionq);

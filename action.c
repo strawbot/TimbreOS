@@ -73,7 +73,7 @@ static void checkTimeActions() {
 		if (checkTimeout(&ta->to)) {
 			before->link = ta->link;
             ta->link = LINK_SENTINEL;
-			now(ta->action);
+			next(ta->action);
 		} else
 			before = ta;
 	}
