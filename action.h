@@ -1,5 +1,6 @@
 #include "timeout.h"
 #include "queue.h"
+#include <stdbool.h>
 
 #ifndef _TIMEACTION_H_
 #define _TIMEACTION_H_
