@@ -6,7 +6,9 @@
   #define CLOCK_MHZ 14
 #endif
 
+// ARM Cortex-M3 extended trace macrocell registers: Data Watchpoint and Trace (DWT)
 #define getTicks() (DWT->CYCCNT) // cortex-M3 cycle counter from ETM
+
 #define CONVERT_TO_US(n) ((n)/CLOCK_MHZ)
 #define CONVERT_TO_MS(n) ((n)/(CLOCK_MHZ*1000))
 #define US_TO_TICKS(n)	 ((n)*CLOCK_MHZ)
