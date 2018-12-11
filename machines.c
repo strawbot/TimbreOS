@@ -164,7 +164,7 @@ HASHDICT(HASH9, mactimes); // keep track of machine max execution times
 void initMachineStats() {
     emptyDict(&macnames);
     emptyDict(&mactimes);
-    machineName((vector)UNKNOWN, UNKNOWN);
+    machineName((vector)(Cell)UNKNOWN, UNKNOWN);
 }
 
 void zeroMachineTimes() {
