@@ -111,14 +111,14 @@ void every_time(TimeAction * ta) {
 }
 
 // event actions
-void when(Qtype * actionq, vector action) {
+void when(Cell * actionq, vector action) {
     if (leftq(actionq))
         pushq((Cell)action, actionq);
     else {
     	char * name;
-        print("\nError: actionq full!  ");
+        print("\nError: eventq full!  ");
         if ((name = getMachineName((Cell)action)) != NULL)
-            print("Trying to actionize:"), print(name);
+            print("Trying to eventize:"), print(name);
     }
 }
 
