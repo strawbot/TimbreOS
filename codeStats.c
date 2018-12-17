@@ -43,7 +43,7 @@ static Cell statCounts[NUM_STATS] = {0};
 	if (statCounts[stat]) \
 		print("\n"#stat": "), printDec(statCounts[stat]);
 
-static void printStats() {
+inline static void printStats() {
     FOR_EACH_STAT(PRINT_STAT)
     memset(statCounts, 0, sizeof(statCounts));
 }

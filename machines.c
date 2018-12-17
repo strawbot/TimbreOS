@@ -13,7 +13,6 @@
 
 QUEUE(MACHINES, machineq); // workers
 QUEUE(ACTIONS, actionq); // now
-QUEUE(EVENTS, eventq); // happenstance
 
 Byte mmoverflow = 0, mmunderflow = 0;
 Byte amoverflow = 0;
@@ -34,10 +33,6 @@ void next(vector machine) { // actions
 	else
 		amoverflow++;
 	ATOMIC_SECTION_LEAVE;	
-}
-
-void event(vector machine) { // events
-	pushq((Cell)machine, eventq);
 }
 
 void deactivate(vector machine) { // remove a machine from queue
@@ -100,9 +95,8 @@ typedef struct MQueue {
 
 MQueue workerq  = {.link = NULL,         .mq = machineq};
 MQueue timeactionq = {.link = &workerq,  .mq = actionq };
-MQueue happenq = {.link = &timeactionq, .mq = eventq};
 
-MQueue * mqq = &happenq;
+MQueue * mqq = &timeactionq;
 
 void runMachineqs() {
 	MQueue * mqi = mqq;
@@ -115,12 +109,7 @@ void runMachineqs() {
 	} while (mqi != 0);
 }
 
-void events() {
-	while (runmac(eventq));
-}
-
 void actions() {
-	do events();
 	while (runmac(actionq));
 }
 
@@ -129,7 +118,7 @@ bool machines() {
 }
 
 Long allThings() {
-	return queryq(actionq) + queryq(machineq) + queryq(eventq);
+	return queryq(actionq) + queryq(machineq);
 }
 
 // endless loop for endless machines; returns for machines that sleep
