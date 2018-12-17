@@ -5,6 +5,7 @@
 
 #include "queue.h"
 #include "action.h"
+#include "event.h"
 
 void activate (vector machine);
 void next (vector machine);

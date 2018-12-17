@@ -1,4 +1,4 @@
-// take an action after time or event
+// take an action after time
 /*
 	  after(ta_msecs(25), some_action);
 	  every(ta_msecs(25), some_action);
@@ -27,14 +27,9 @@
 	executes whereas "after" will run after the time but there may be some
 	other time in there as well.
 	
-	  when(some_event, some_action);
-	
-	for events, they have a local queue which gets loaded up with machines that
-	subscribe to the event. When the event happens, all the queued machines get run.
 */
 
 #include "machines.h"
-#include "action.h"
 #include "printers.h"
 
 // time actions
@@ -85,7 +80,7 @@ void timeaction_IRQ() {
 }
 
 __attribute__ ((weak)) void timeActionError(TimeAction * ta) {
-    print(ta->name), print(" is already in ta queue!");
+    print(ta->name), print(" is already in timeaction queue!");
 }
 
 void timeaction(TimeAction * ta) {
@@ -107,24 +102,5 @@ void every_time(TimeAction * ta) {
 	else {
 	    repeatTimeout(&ta->to);
 	    timeaction(ta); 
-    }
-}
-
-// event actions
-void when(Cell * actionq, vector action) {
-    if (leftq(actionq))
-        pushq((Cell)action, actionq);
-    else {
-    	char * name;
-        print("\nError: eventq full!  ");
-        if ((name = getMachineName((Cell)action)) != NULL)
-            print("Trying to eventize:"), print(name);
-    }
-}
-
-void runActions(Qtype * actionq) {
-    for (int i = queryq(actionq); i; i--) {
-        later((vector)q(actionq));
-        rotateq(actionq, 1);
     }
 }
