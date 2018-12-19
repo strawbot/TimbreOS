@@ -62,9 +62,17 @@ void once(Cell * eventq, vector action) {
 
 void noaction() {}
 
-void happen(Cell * eventq) {
+void do_once(Cell * eventq) {
 	while(q(eventq) != (Cell)noaction) { next((vector)pullq(eventq)); }
+}
+
+void do_every(Cell * eventq) {
 	while(p(eventq) != (Cell)noaction) { next((vector)p(eventq)); stuffq(popq(eventq),eventq); }
+}
+
+void happen(Cell * eventq) {
+	do_once(eventq);
+	do_every(eventq);
 	stuffq(popq(eventq),eventq);
 }
 
