@@ -147,10 +147,13 @@ void run_slice() {
 
 #define UNKNOWN "unknown_machines"
 
+QUEUE(10, unknownq);
+
 HASHDICT(HASH9, macnames); // keep track of machine names
 HASHDICT(HASH9, mactimes); // keep track of machine max execution times
 
 void initMachineStats() {
+	zeroq(unknownq);
     emptyDict(&macnames);
     emptyDict(&mactimes);
     machineName((vector)(Cell)UNKNOWN, UNKNOWN);
@@ -268,8 +271,11 @@ void activateMachine() {
 
 void machineRun(vector m) {
 	Cell * stat = dictAdjunctKey((Cell)m, &mactimes);
-	if (stat == 0) 
+	if (stat == 0) {
 		stat = dictAdjunctKey((Cell)UNKNOWN, &mactimes);
+		if (leftq(unknownq))
+			pushq((Cell)m,unknownq);
+	}
 
 	int time = (int)getTicks();
 	m();
@@ -305,9 +311,12 @@ void machineStats(void)
 			dotnb(7, 6, CONVERT_TO_MS(time), 10), print(" ms  ");
 		else
 			dotnb(7, 6, CONVERT_TO_US(time), 10), print(" us  ");
-		if (name)
+		if (name) {
 			print(name);
-		else
+			if (name == (char *)UNKNOWN)
+				for (int i = queryq(unknownq); i; i--)
+					print(" "), dotnb(0, 0, q(unknownq), 16), rotateq(unknownq, 1);
+		} else
 			printHex(machine);
 	}
 }
