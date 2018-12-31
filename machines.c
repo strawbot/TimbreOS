@@ -9,6 +9,7 @@
 
 #include "machines.h"
 #include "cli.h"
+#include "printers.h"
 #include <string.h>
 
 QUEUE(MACHINES, machineq); // workers
@@ -109,8 +110,23 @@ void runMachineqs() {
 	} while (mqi != 0);
 }
 
+QUEUE(100, dids);
+bool monitorActions = false;
+
 void actions() {
-	while (runmac(actionq));
+	while (queryq(actionq)) {
+		Cell action = pullq(actionq);
+		if (monitorActions)  if (leftq(dids))  pushq(action, dids);
+		machineRun((vector)action);
+	}
+}
+
+char * getMachineName(Cell x);
+
+void didWhat() {
+	while (queryq(dids)) {
+		print(" "), print(getMachineName(pullq(dids)));
+	}
 }
 
 bool machines() {
@@ -121,7 +137,7 @@ Long allThings() {
 	return queryq(actionq) + queryq(machineq);
 }
 
-// endless loop for endless machines; returns for machines that sleep
+// endless loop for endless machines; returns for machines that wait
 void run_till_done() {
 	do actions();
 	while (machines());
@@ -244,6 +260,7 @@ void initMachines(void)
 	zeroq(machineq);
 	zeroq(actionq);
 	initMachineStats();
+	zeroq(dids);
 }
 
 void killMachine() {
