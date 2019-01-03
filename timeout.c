@@ -63,7 +63,7 @@ void timeoutWait(Cell time) // timed delay loop
 
 // CLI for timing
 #include "printers.h"
-Long startingTime;
+static Long startingTime;
 
 void showTime(void)
 {
