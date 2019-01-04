@@ -19,7 +19,7 @@ void freeDict(dictionary_t * dict);
 void emptyDict(dictionary_t * dict);
 void upsizeDict(dictionary_t * dict);
 
-void dictInsert(char * string, dictionary_t * dict);
+Cell * dictInsert(char * string, dictionary_t * dict);
 void dictAppend(char * string, dictionary_t * dict);
 void dictAddKey(Cell address, dictionary_t * dict);
 void dictDelete(char * string, dictionary_t * dict);
