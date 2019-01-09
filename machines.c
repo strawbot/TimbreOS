@@ -33,7 +33,7 @@ void next(vector machine) { // actions
 		pushq((Cell)machine, actionq);
 	else
 		amoverflow++;
-	ATOMIC_SECTION_LEAVE;	
+	ATOMIC_SECTION_LEAVE;
 }
 
 void deactivate(vector machine) { // remove a machine from queue
@@ -56,7 +56,7 @@ void runMachines(void) {  // run all machines
 	runDepth++;
 	do {
 		vector machine;
-		
+
 		if (queryq(actionq)) {// TODO: actions can stall out machines: limited by n
 			safe(machine = (vector)pullq(actionq));
 		} else if (queryq(machineq)) {
@@ -64,9 +64,9 @@ void runMachines(void) {  // run all machines
 		} else {
 			mmunderflow++;
 			break;
-		} 
+		}
 		machineRun(machine);
-		
+
 	} while (n--);
 	runDepth--;
 }
@@ -297,7 +297,7 @@ void machineRun(vector m) {
 	int time = (int)getTicks();
 	m();
 	time = (int)getTicks() - time;
-	
+
 	if (time > (int)*stat) // TODO: consider atomicity of readnwrite
 		*stat = (Cell)time;
 }
@@ -316,18 +316,23 @@ void machineStats(void)
 	for (Short i=0; i<mactimes.capacity; i++)
 		if (mactimes.adjunct[i] != 0)
 			indexes[j++] = i;
-	
+
 	qsort(indexes, j, sizeof(Short), indexCompare);
-	
+
 	for (Short i=0; i<j; i++) {
 		Cell machine = (Cell)mactimes.table[indexes[i]];
 		char * name = (char *)macnames.adjunct[indexes[i]];
 		printCr();
 		Cell time = mactimes.adjunct[indexes[i]];
-		if (CONVERT_TO_US(time) > 9999)
+		Long us = CONVERT_TO_US(time);
+
+		if (us > 9999)
 			dotnb(7, 6, CONVERT_TO_MS(time), 10), print(" ms  ");
+		else if (us)
+			dotnb(7, 6, us, 10), print(" us  ");
 		else
-			dotnb(7, 6, CONVERT_TO_US(time), 10), print(" us  ");
+			dotnb(7, 6, CONVERT_TO_NS(time), 10), print(" ns  ");
+
 		if (name) {
 			print(name);
 			if (name == (char *)UNKNOWN)
@@ -337,4 +342,3 @@ void machineStats(void)
 			printHex(machine);
 	}
 }
-
