@@ -21,12 +21,12 @@
 	the RTC counter can be set to a different time interval. When running all
 	three lists, the 10ms list is checked each interrupt. The 100ms list is
 	checked each 10 interrupts and the 1S list is checked each 100 interrupts.
-	
+
 	after will run an action after some time while every is similar the
 	difference is that "every" is periodic from the first time the action
 	executes whereas "after" will run after the time but there may be some
 	other time in there as well.
-	
+
 */
 
 #include "machines.h"
@@ -48,7 +48,7 @@ void listTimeActions() {
     TimeAction * ta = &timeactionList;
     print("\nPending timed actions:");
     while ((ta = ta->link) != NULL)
-        print("\n "), print(ta->name), print(" in "),  printDec(time_left(&ta->to)), print("ms");
+        print("\n "), print(getMachineName((Cell)ta->action)), print(" in "),  printDec(time_left(&ta->to)), print("ms");
 }
 
 static void inlistTimeActions() {
@@ -80,7 +80,8 @@ void timeaction_IRQ() {
 }
 
 __attribute__ ((weak)) void timeActionError(TimeAction * ta) {
-    print(ta->name), print(" is already in timeaction queue!");
+    print(getMachineName((Cell)ta->action));
+	print(" is already in timeaction queue!");
 }
 
 void timeaction(TimeAction * ta) {
@@ -101,6 +102,54 @@ void every_time(TimeAction * ta) {
 	    after_time(ta->to.timeout, ta);
 	else {
 	    repeatTimeout(&ta->to);
-	    timeaction(ta); 
+	    timeaction(ta);
     }
+}
+
+#define TOTAL_TA 40
+static TimeAction timeactions[TOTAL_TA];
+
+void init_ta() {
+	for (int i = 0; i < TOTAL_TA; i++) {
+		timeactions[i].link = &timeactions[i+1];
+		timeactions[i].type = RANCH;
+	}
+	timeactions[TOTAL_TA-1].link = LINK_SENTINEL;
+}
+
+TimeAction * getTa() {
+	TimeAction * ta = timeactions[0].link;
+
+	if (ta != LINK_SENTINEL) {
+		timeactions[0].link = timeactions[0].link->link;
+		return ta;
+	}
+	print("\nERROR in getTa: No more TimeActions left.");
+	return timeactions;
+}
+
+void stopTa(TimeAction * ta) {
+	TimeAction * before = &timeactionList;
+	TimeAction * tai;
+
+	while ((tai = before->link) != 0) {
+		if (tai == ta) {
+			before->link = ta->link;
+			if (ta->type == FREE_RANGE)
+				ta->link = LINK_SENTINEL;
+			else {
+				ta->link = timeactions[0].link;
+				timeactions[0].link = ta;
+			}
+		} else
+			before = tai;
+	}
+}
+
+TimeAction * timeToAction(Long time, vector action) {
+	TimeAction * ta = getTa();
+
+	setTimeout(time, &ta->to);
+	ta->action = action;
+	timeaction(ta);
 }
