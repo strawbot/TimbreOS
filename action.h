@@ -33,6 +33,7 @@ void after_time(Long t, TimeAction * ta);
 void every_time(TimeAction * ta);
 
 TimeAction * timeToAction(Long time, vector action);
+void stopTa(TimeAction * ta);
 
 // #define ta_usecs()
 #define ta_msecs(t) (((long long)t*128)/125)

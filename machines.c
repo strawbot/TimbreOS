@@ -12,6 +12,8 @@
 #include "printers.h"
 #include <string.h>
 
+void init_ta();
+
 QUEUE(MACHINES, machineq); // workers
 QUEUE(ACTIONS, actionq); // now
 
@@ -247,20 +249,19 @@ void listMachines(void)
 		print("\n moverflows: "), printDec(mmoverflow);
 	if (queryq(actionq))  print("\nactionq:"), listq(actionq);
 	listTimeActions();
-	dotPrompt();
 }
 
 void listm(void) // list machine statuses
 {
 	activate(listMachines);
 }
-
 void initMachines(void)
 {
 	zeroq(machineq);
 	zeroq(actionq);
 	initMachineStats();
 	zeroq(dids);
+	init_ta();
 }
 
 void killMachine() {

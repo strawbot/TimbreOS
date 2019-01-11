@@ -31,6 +31,9 @@
 
 #include "machines.h"
 #include "printers.h"
+#include <string.h>
+
+static void relist(TimeAction * ta);
 
 // time actions
 static QUEUE(30, timeactionq);
@@ -47,8 +50,14 @@ static Integer time_left(Timeout * timer) {
 void listTimeActions() {
     TimeAction * ta = &timeactionList;
     print("\nPending timed actions:");
-    while ((ta = ta->link) != NULL)
-        print("\n "), print(getMachineName((Cell)ta->action)), print(" in "),  printDec(time_left(&ta->to)), print("ms");
+    while ((ta = ta->link) != NULL) {
+		print("\n ");
+		printHex((Cell)ta->action);
+		char * name = getMachineName((Cell)ta->action);
+		if (strlen(name))
+        	print(name);
+		print(" in "),  printDec(time_left(&ta->to)), print("ms");
+	}
 }
 
 static void inlistTimeActions() {
@@ -67,7 +76,10 @@ static void checkTimeActions() {
 	while ((ta = before->link) != 0) {
 		if (checkTimeout(&ta->to)) {
 			before->link = ta->link;
-            ta->link = LINK_SENTINEL;
+			if (ta->type == FREE_RANGE)
+				ta->link = LINK_SENTINEL;
+			else
+				relist(ta);
 			next(ta->action);
 		} else
 			before = ta;
@@ -80,8 +92,7 @@ void timeaction_IRQ() {
 }
 
 __attribute__ ((weak)) void timeActionError(TimeAction * ta) {
-    print(getMachineName((Cell)ta->action));
-	print(" is already in timeaction queue!");
+    printHex((Cell)ta), print(" is already in timeaction queue!");
 }
 
 void timeaction(TimeAction * ta) {
@@ -121,11 +132,17 @@ TimeAction * getTa() {
 	TimeAction * ta = timeactions[0].link;
 
 	if (ta != LINK_SENTINEL) {
-		timeactions[0].link = timeactions[0].link->link;
+		timeactions[0].link = ta->link;
+		ta->link = LINK_SENTINEL;
 		return ta;
 	}
 	print("\nERROR in getTa: No more TimeActions left.");
 	return timeactions;
+}
+
+static void relist(TimeAction * ta) {
+	ta->link = timeactions[0].link;
+	timeactions[0].link = ta;
 }
 
 void stopTa(TimeAction * ta) {
@@ -137,12 +154,19 @@ void stopTa(TimeAction * ta) {
 			before->link = ta->link;
 			if (ta->type == FREE_RANGE)
 				ta->link = LINK_SENTINEL;
-			else {
-				ta->link = timeactions[0].link;
-				timeactions[0].link = ta;
-			}
-		} else
-			before = tai;
+			else
+				relist(ta);
+			return;
+		}
+		before = tai;
+	}
+
+	for (int n = queryq(timeactionq); n; n--) {
+		Cell tap = pullq(timeactionq);
+		if (tap == (Cell)ta)
+			relist(ta);
+		else
+			pushq(tap, timeactionq);
 	}
 }
 
@@ -152,4 +176,5 @@ TimeAction * timeToAction(Long time, vector action) {
 	setTimeout(time, &ta->to);
 	ta->action = action;
 	timeaction(ta);
+	return ta;
 }
