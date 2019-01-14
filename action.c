@@ -80,7 +80,9 @@ static void checkTimeActions() {
 				ta->link = LINK_SENTINEL;
 			else
 				relist(ta);
-			next(ta->action);
+
+			if (ta->action)
+				next(ta->action);
 		} else
 			before = ta;
 	}
