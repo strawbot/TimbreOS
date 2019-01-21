@@ -24,7 +24,7 @@ void pushq(Cell c, Cell *q) // push an element into the q
 Cell pullq(Cell *q) // pull oldest element from the q
 {
 	Cell c = q[q[QREMOVE]];
-	
+
 	if (q[QREMOVE] == QDATA)
 		q[QREMOVE] = q[QEND];
 	else
@@ -40,7 +40,7 @@ Cell sizeq(Cell *q) // return size of q
 Cell queryq(Cell *q) // query #elements in q
 {
     int n = q[QREMOVE] - q[QINSERT];
-    
+
     if (n < 0)
         n += sizeq(q) + 1;
     return (Cell)n;
@@ -88,13 +88,33 @@ void transferq(Cell * srcq, Cell * dstq, Cell n) // transfer n items between que
 }
 
 void deq(Cell item, Qtype *q) { // remove all copies of item from the q
-	Byte n;
+	Long n;
 
-	n = (Byte)queryq(q);
+	n = queryq(q);
 	while(n--)
 	{
 		Cell m = pullq(q);
 		if (m != item)
 			pushq(m, q);
 	}
+}
+
+Long scanq(Cell item, Qtype *qi) { // count occurances of item in queue
+	/*
+	 scan through data in the queue without moving it or changing any
+	 pointers. The region of the queue to search is either a single
+	 block from 1 to the size of the queue in size or two blocks with
+	 one starting at the start of the queue array and the other at the
+	 end of the queue array. Either one may be from 0 to the queue size
+	 minus one.
+
+	 Here's the wrong way to do it:
+	*/
+	Long i = 0;
+	for(Long n = queryq(qi); n; n--) {
+		if (item == q(qi))
+			i++;
+		pushq(pullq(qi),qi);
+	}
+	return i;
 }

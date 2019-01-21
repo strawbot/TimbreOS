@@ -98,7 +98,9 @@ __attribute__ ((weak)) void timeActionError(TimeAction * ta) {
 }
 
 void timeaction(TimeAction * ta) {
-    if (ta->link == LINK_SENTINEL) {
+    if (ta->link == LINK_SENTINEL
+		         &&
+		       0 == scanq((Cell)ta, timeactionq)) {
         ta->link = NULL;
 	    pushq((Cell)ta, timeactionq);
     } else

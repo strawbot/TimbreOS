@@ -69,3 +69,4 @@ void stuffq(Cell , Cell *); // stuff item into queue
 void rotateq(Cell *, Cell n); // rotate n queue items
 void transferq(Cell *src, Cell *dst, Cell n); // transfer n items between queues
 void deq(Cell item, Qtype *q); // remove all copies of item from the q
+Long scanq(Cell item, Qtype *q); // count occurances of item in queue
