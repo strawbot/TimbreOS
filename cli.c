@@ -991,7 +991,7 @@ Cell signDigits(Byte* cstring, bool sign) // convert string to number according 
     return n;
 }
 
-Cell stringNumber(Byte* cstring)
+Cell stringNumber(char * cstring)
 {
     Cell n;
     Byte b = base;
@@ -999,8 +999,8 @@ Cell stringNumber(Byte* cstring)
 
     if (sign)
         cstring++;
-    cstring += checkBase(cstring);
-    n = signDigits(cstring, sign);
+    cstring += checkBase((Byte *)cstring);
+    n = signDigits((Byte *)cstring, sign);
     base = b;
     return n;
 }
@@ -1161,7 +1161,7 @@ void interpret(void)
         if (headbits != 0)
             headbits == compiling ? compileIt(t) : executeIt(t);
         else {
-            Cell n = stringNumber(cstring);
+            Cell n = stringNumber((char *)cstring);
 
             if (interpretError) {
                 quit();

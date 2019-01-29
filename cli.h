@@ -168,7 +168,7 @@ void starOp(void);
 void startNumberConversion(void);
 void store(void);
 void stringLength(void);
-Cell stringNumber(Byte* cstring);
+Cell stringNumber(char * cstring);
 void swap(void);
 void tor(void);
 void type(void);
