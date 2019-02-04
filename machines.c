@@ -170,6 +170,14 @@ QUEUE(10, unknownq);
 HASHDICT(HASH9, macnames); // keep track of machine names
 HASHDICT(HASH9, mactimes); // keep track of machine max execution times
 
+void listMachineNames() {
+	int i = 0;
+	dictionary_t *dict = &macnames;
+	for (char * entry = dictFirst(dict); entry; entry = dictNext(dict), i++)
+		print("\n"), print((char *)dict->adjunct[dict->iter]), printHex((Cell)entry);
+	print("\n#names:"), printDec(i);
+}
+
 void initMachineStats() {
 	zeroq(unknownq);
     emptyDict(&macnames);
@@ -189,8 +197,7 @@ void machineName(vector machine, const char * name) // give name to machine
 	*dictAdjunctKey((Cell)machine, &macnames) = (Cell)name;
 }
 
-void activateOnceNamed(vector machine, const char * name)
-{
+void activateOnceNamed(vector machine, const char * name) {
 	activateMachineOnce(machine);
 	machineName(machine, name);
 }
@@ -209,8 +216,7 @@ void showMachineName(Cell x)
     print(getMachineName(x));
 }
 
-vector getMachine(char * name) // return address of named machine
-{
+vector getMachine(char * name) { // return address of named machine
 	for (Short i=0; i<macnames.capacity; i++)
 		if (macnames.adjunct[i] != 0)
             if (strcmp((char *)macnames.adjunct[i], name) == 0)
@@ -218,8 +224,7 @@ vector getMachine(char * name) // return address of named machine
 	return NULL;
 }
 
-void listq(Qtype *q) // list q items
-{
+void listq(Qtype *q) { // list q items
 	Byte n;
 
 	n = (Byte)queryq(q);
@@ -239,8 +244,7 @@ void listq(Qtype *q) // list q items
 
 void listTimeActions();
 
-void listMachines(void)
-{
+void listMachines(void) {
 	print("\nmachineq:\n Depth: "), printDec(runDepth);
 	listq(machineq);
 	if (mmunderflow)
@@ -251,12 +255,10 @@ void listMachines(void)
 	listTimeActions();
 }
 
-void listm(void) // list machine statuses
-{
+void listm(void) { // list machine statuses
 	activate(listMachines);
 }
-void initMachines(void)
-{
+void initMachines(void) {
 	zeroq(machineq);
 	zeroq(actionq);
 	initMachineStats();
@@ -309,8 +311,7 @@ static int indexCompare(const void *a,const void *b) {
 	return mactimes.adjunct[*y] - mactimes.adjunct[*x];
 }
 
-void machineStats(void)
-{
+void machineStats(void) {
 	Short indexes[mactimes.capacity];
 	Short j=0;
 
