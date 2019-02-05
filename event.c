@@ -1,7 +1,7 @@
 // Events can be awaited by multiple actions
 /*
 	  when(some_event, some_action);
-	
+
 	for events, they have a local store which gets loaded up with machines that
 	subscribe to the event. When the event happens, all the loaded machines get run.
 	One way to do that is to dump all the machines into the actionq and leave. This
@@ -9,13 +9,13 @@
 	and "run now, next or later"
 	Whether to remember those machines or not is guided by:
 	"action must be taken by the running program to be run another action"
-	
+
 	Key points of definition:
 	 - repeat or not
 	 	if repeat then with choice or not
 	   * without repeat, events may be missed. given a choice, for oneof, some(n,)
 	     or all
-	     
+
 	 whether to repeat call a function for an event multiple times
 	 needing only one event is a reasonable expectation of the API
 	 as is continued but with unsubscribe
@@ -37,7 +37,14 @@
 #include "machines.h"
 #include "printers.h"
 
-// event actions
+void noaction() {}
+
+// event connections
+void clearEvent(Cell * eventq) {
+	zeroq(eventq);
+	pushq((Cell)noaction, eventq);
+}
+
 void when(Cell * eventq, vector action) {
     if (leftq(eventq))
         pushq((Cell)action, eventq);
@@ -60,23 +67,19 @@ void once(Cell * eventq, vector action) {
     }
 }
 
-void noaction() {}
-
-void do_once(Cell * eventq) {
+// event occurrance
+static void do_once(Cell * eventq) {
 	while(q(eventq) != (Cell)noaction) { next((vector)pullq(eventq)); }
 }
 
-void do_every(Cell * eventq) {
-	while(p(eventq) != (Cell)noaction) { next((vector)p(eventq)); stuffq(popq(eventq),eventq); }
+static void do_every(Cell * eventq) {
+	while(p(eventq) != (Cell)noaction) {
+		next((vector)p(eventq)); stuffq(popq(eventq),eventq);
+	}
+	stuffq(popq(eventq),eventq);
 }
 
 void happen(Cell * eventq) {
 	do_once(eventq);
 	do_every(eventq);
-	stuffq(popq(eventq),eventq);
-}
-
-void setEvent(Cell * event) {
-	zeroq(event);
-	pushq((Cell)noaction, event);
 }

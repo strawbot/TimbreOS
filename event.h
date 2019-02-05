@@ -7,11 +7,11 @@
 
 #define extEvent(event) extern Cell event[]
 
+void noaction(); // queue sentinel separates repeaters and one shots
+
 void when(Cell * event, vector action);
 void once(Cell * event, vector action);
 void happen(Cell * event);
-void setEvent(Cell * event);
-
-void noaction();
+void clearEvent(Cell * event);
 
 #endif
