@@ -41,7 +41,7 @@ Headless(minusBranch);
 Headless(tor);
 
 // data stack
-Cell ret(void) /* m - */
+Cell ret() /* m - */
 {
     return popq(dataStack);
 }
@@ -56,12 +56,12 @@ Cell depth()
     return queryq(dataStack);
 }
 
-void spStore(void) /* ... - */
+void spStore() /* ... - */
 {
     zeroq(dataStack);
 }
 
-void swap(void) /* m n - n m */
+void swap() /* m n - n m */
 {
     Cell top = popq(dataStack);
     Cell next = popq(dataStack);
@@ -70,17 +70,17 @@ void swap(void) /* m n - n m */
     pushq(next, dataStack);
 }
 
-void drop(void) /* n - */
+void drop() /* n - */
 {
     popq(dataStack);
 }
 
-void dup(void) /* m - m m */
+void dup() /* m - m m */
 {
     pushq(p(dataStack), dataStack);
 }
 
-void over(void) /* m n - m n m */
+void over() /* m n - m n m */
 {
     Cell top = popq(dataStack);
     Cell next = p(dataStack);
@@ -89,29 +89,29 @@ void over(void) /* m n - m n m */
     pushq(next, dataStack);
 }
 
-void questionDup(void) /* n - [n] n */
+void questionDup() /* n - [n] n */
 {
     if (p(dataStack) != 0)
         dup();
 }
 
 // return stack
-void rpStore(void)
+void rpStore()
 {
     zeroq(returnStack);
 }
 
-void tor(void) /* m - */
+void tor() /* m - */
 {
     pushq(popq(dataStack), returnStack);
 }
 
-void rat(void) /* - m */
+void rat() /* - m */
 {
     pushq(p(returnStack), dataStack);
 }
 
-void rfrom(void) /* - m */
+void rfrom() /* - m */
 {
     pushq(popq(returnStack), dataStack);
 }
@@ -127,27 +127,27 @@ void rfrom(void) /* - m */
     pushq((Cell)((Integer)next op(Integer) top), dataStack)
 #define unary(op) pushq(op popq(dataStack), dataStack)
 
-void andOp(void) /* m n - p */
+void andOp() /* m n - p */
 {
     binary(&);
 }
 
-void orOp(void) /* m n - p */
+void orOp() /* m n - p */
 {
     binary(|);
 }
 
-void xorOp(void) /* m n - p */
+void xorOp() /* m n - p */
 {
     binary (^);
 }
 
-void notOp(void) /* m - n */
+void notOp() /* m - n */
 {
     unary(~);
 }
 
-void shiftOp(void) /* n m - p */
+void shiftOp() /* n m - p */
 {
     Cell top = popq(dataStack);
     Cell next = popq(dataStack);
@@ -160,22 +160,22 @@ void shiftOp(void) /* n m - p */
 }
 
 // math
-void plusOp(void) /* m \ n -- p */
+void plusOp() /* m \ n -- p */
 {
     binary(+);
 }
 
-void minusOp(void) /* m \ n -- p */
+void minusOp() /* m \ n -- p */
 {
     binary(-);
 }
 
-void negateOp(void) /* m -- n */
+void negateOp() /* m -- n */
 {
     unary(-);
 }
 
-void slashModOp(void) /* n \ m -- remainder \ quotient */
+void slashModOp() /* n \ m -- remainder \ quotient */
 {
     Cell top = popq(dataStack);
     Cell next = popq(dataStack);
@@ -184,28 +184,28 @@ void slashModOp(void) /* n \ m -- remainder \ quotient */
     pushq(next / top, dataStack);
 }
 
-void slashOp(void) /* n \ m -- quotient */
+void slashOp() /* n \ m -- quotient */
 {
     binary(/);
 }
 
-void modOp(void) /* n \ m -- remainder */
+void modOp() /* n \ m -- remainder */
 {
     binary(%);
 }
 
-void starOp(void) /* n \ m -- p */
+void starOp() /* n \ m -- p */
 {
     binary(*);
 }
 
-void absOp(void) /* n -- n */
+void absOp() /* n -- n */
 {
     if ((Integer)p(dataStack) < 0)
         pushq((Cell)(-(Integer)popq(dataStack)), dataStack);
 }
 
-void maxOp(void) /* n \ m -- p */
+void maxOp() /* n \ m -- p */
 {
     Cell top = popq(dataStack);
     Cell next = popq(dataStack);
@@ -216,7 +216,7 @@ void maxOp(void) /* n \ m -- p */
         pushq(next, dataStack);
 }
 
-void minOp(void) /* n \ m -- p */
+void minOp() /* n \ m -- p */
 {
     Cell top = popq(dataStack);
     Cell next = popq(dataStack);
@@ -228,23 +228,23 @@ void minOp(void) /* n \ m -- p */
 }
 
 // compare
-void equals(void) /* n \ m -- flag */
+void equals() /* n \ m -- flag */
 {
     binary(==);
 }
 
-void lessThan(void) /* n \ m -- flag */
+void lessThan() /* n \ m -- flag */
 {
     binaryInts(<);
 }
 
-void greaterThan(void) /* n \ m -- flag */
+void greaterThan() /* n \ m -- flag */
 {
     binaryInts(>);
 }
 
 // memory
-void error(void);
+void error();
 
 void hereSay(Byte* space, Cell size)
 {
@@ -252,7 +252,7 @@ void hereSay(Byte* space, Cell size)
     hpEnd = space + size;
 }
 
-void here(void) /* -- addr */
+void here() /* -- addr */
 {
     lit((Cell)hp);
 }
@@ -265,12 +265,12 @@ void allot(Cell n)
         error();
 }
 
-void cliAllot(void)
+void cliAllot()
 {
     allot(ret());
 }
 
-void cComma(void) /* n -- */
+void cComma() /* n -- */
 {
     *hp = (Byte)popq(dataStack);
     allot(1);
@@ -287,12 +287,12 @@ Cell align(Cell p) /* a -- a' */
     return (p + z) & ~z;
 }
 
-void aligned(void)
+void aligned()
 {
     hp = (Byte*)align((Cell)hp);
 }
 
-void comma(void) /* n -- */
+void comma() /* n -- */
 {
     Cell top = popq(dataStack);
     Cell* p = (Cell*)hp;
@@ -301,12 +301,12 @@ void comma(void) /* n -- */
     allot(sizeof(Cell));
 }
 
-void fetch(void) /* a -- n */
+void fetch() /* a -- n */
 {
     pushq(*(Cell*)popq(dataStack), dataStack);
 }
 
-void store(void) /* n \ a -- */
+void store() /* n \ a -- */
 {
     Cell top = popq(dataStack);
     Cell next = popq(dataStack);
@@ -314,7 +314,7 @@ void store(void) /* n \ a -- */
     *(Cell*)top = next;
 }
 
-void longFetch(void) // a - lo \ hi
+void longFetch() // a - lo \ hi
 {
     Long l = *(Long*)popq(dataStack);
 
@@ -322,7 +322,7 @@ void longFetch(void) // a - lo \ hi
     pushq((Cell)(l >> 16), dataStack);
 }
 
-void longStore(void) // lo \ hi \ a -
+void longStore() // lo \ hi \ a -
 {
     Cell top = popq(dataStack);
     Cell next = popq(dataStack);
@@ -331,14 +331,14 @@ void longStore(void) // lo \ hi \ a -
     *(Long*)top = ((Long)next << 16) + third;
 }
 
-void shortFetch(void) // a - n
+void shortFetch() // a - n
 {
     Short s = *(Short*)popq(dataStack);
 
     pushq((Cell)s, dataStack);
 }
 
-void shortStore(void) // n \ a -
+void shortStore() // n \ a -
 {
     Cell top = popq(dataStack);
     Cell next = popq(dataStack);
@@ -346,14 +346,14 @@ void shortStore(void) // n \ a -
     *(Short*)top = (Short)next;
 }
 
-void byteFetch(void) /* a -- c */
+void byteFetch() /* a -- c */
 {
     Byte c = *(Byte*)popq(dataStack);
 
     pushq((Cell)c, dataStack);
 }
 
-void byteStore(void) /* c \ a -- */
+void byteStore() /* c \ a -- */
 {
     Cell top = popq(dataStack);
     Cell next = popq(dataStack);
@@ -361,7 +361,7 @@ void byteStore(void) /* c \ a -- */
     *(Byte*)top = (Byte)next;
 }
 
-void plusBits(void) /* bits \ addr -- */
+void plusBits() /* bits \ addr -- */
 {
     Cell top = popq(dataStack);
     Cell next = popq(dataStack);
@@ -369,7 +369,7 @@ void plusBits(void) /* bits \ addr -- */
     *(Byte*)top |= next;
 }
 
-void minusBits(void) /* bits \ addr -- */
+void minusBits() /* bits \ addr -- */
 {
     Cell top = popq(dataStack);
     Cell next = popq(dataStack);
@@ -377,7 +377,7 @@ void minusBits(void) /* bits \ addr -- */
     *(Byte*)top = (Byte)(*(Byte*)top & ~next);
 }
 
-void byteMove(void) /* src \ dest \ count -- */
+void byteMove() /* src \ dest \ count -- */
 {
     Cell top = popq(dataStack);
     Cell next = popq(dataStack);
@@ -386,7 +386,7 @@ void byteMove(void) /* src \ dest \ count -- */
     memcpy((void*)next, (void*)third, top);
 }
 
-void byteFill(void) /* addr \ count \ char -- */
+void byteFill() /* addr \ count \ char -- */
 {
     Cell top = popq(dataStack);
     Cell next = popq(dataStack);
@@ -395,14 +395,14 @@ void byteFill(void) /* addr \ count \ char -- */
     memset((void*)third, (Byte)top, next);
 }
 
-void byteErase(void) /* addr \ count -- */
+void byteErase() /* addr \ count -- */
 {
     lit(0);
     byteFill();
 }
 
 // output stream
-void emptyEmitq(void)
+void emptyEmitq()
 {
     zerobq(emitq);
 }
@@ -435,24 +435,24 @@ void emitByte(Byte c)
     safeEmit(c);
 }
 
-void emitOp(void) /* char -- */
+void emitOp() /* char -- */
 {
     emitByte((Byte)popq(dataStack));
 }
 
-void cursorReturn(void)
+void cursorReturn()
 {
     emitByte(10);
     emitByte(13);
 }
 
-void maybeCr(void)
+void maybeCr()
 {
     if (outp != 0)
         cursorReturn();
 }
 
-int getCursor(void)
+int getCursor()
 {
     return outp;
 }
@@ -463,7 +463,7 @@ void msg(const char* m) // message in program space
         emitByte(*m++);
 }
 
-void type(void) /* addr \ count -- */
+void type() /* addr \ count -- */
 {
     Byte n = (Byte)popq(dataStack);
     Byte* a = (Byte*)popq(dataStack);
@@ -472,7 +472,7 @@ void type(void) /* addr \ count -- */
         emitByte(*a++);
 }
 
-void stringLength(void) /* a - c */
+void stringLength() /* a - c */
 {
     lit(strlen((char*)ret()));
 }
@@ -483,37 +483,37 @@ void spaces(int n)
         emitByte(SPACE);
 }
 
-void bin(void)
+void bin()
 {
     base = 2;
 }
 
-void oct(void)
+void oct()
 {
     base = 8;
 }
 
-void decimal(void)
+void decimal()
 {
     base = 10;
 }
 
-void hex(void)
+void hex()
 {
     base = 16;
 }
 
-void hold(void) /* char -- */
+void hold() /* char -- */
 {
     pushbq((Byte)popq(dataStack), padq);
 }
 
-void startNumberConversion(void)
+void startNumberConversion()
 {
     zerobq(padq);
 }
 
-void convertDigit(void) /* n -- n */
+void convertDigit() /* n -- n */
 {
     Cell n = popq(dataStack);
     Byte c = (Byte)(n % base);
@@ -527,14 +527,14 @@ void convertDigit(void) /* n -- n */
     pushq(n, dataStack);
 }
 
-void convertNumber(void) /* n -- n */
+void convertNumber() /* n -- n */
 {
     do {
         convertDigit();
     } while (p(dataStack) != 0);
 }
 
-void sign(void) /* m \ n -- n */
+void sign() /* m \ n -- n */
 {
     Cell top = popq(dataStack);
     Cell next = popq(dataStack);
@@ -544,7 +544,7 @@ void sign(void) /* m \ n -- n */
     pushq(top, dataStack);
 }
 
-void endNumberConversion(void) /* n -- addr \ count */
+void endNumberConversion() /* n -- addr \ count */
 {
     Cell n = qbq(padq);
     Byte* a = &hp[LINE_LENGTH];
@@ -558,7 +558,7 @@ void endNumberConversion(void) /* n -- addr \ count */
     *a = 0; // add null terminator for use as a C string
 }
 
-void dotr(void) /* n \ m -- */
+void dotr() /* n \ m -- */
 {
     tor();
 
@@ -581,14 +581,14 @@ void dotr(void) /* n \ m -- */
     type();
 }
 
-void dot(void) /* n -- */
+void dot() /* n -- */
 {
     lit(0);
     dotr();
     spaces(1);
 }
 
-void dotb(void) /* n -- */ // print bits in number
+void dotb() /* n -- */ // print bits in number
 {
     Cell n = ret();
     Cell mask = ~(((Cell)-1) >> 1);
@@ -615,7 +615,7 @@ void dotb(void) /* n -- */ // print bits in number
     }
 }
 
-void dotd(void) /* n -- */
+void dotd() /* n -- */
 {
     Byte b = base;
 
@@ -624,7 +624,7 @@ void dotd(void) /* n -- */
     base = b;
 }
 
-void doth(void) /* n -- */
+void doth() /* n -- */
 {
     Byte b = base;
 
@@ -635,7 +635,7 @@ void doth(void) /* n -- */
     base = b;
 }
 
-void dots(void) /* -- */
+void dots() /* -- */
 {
     Integer n = depth();
 
@@ -657,7 +657,7 @@ void dots(void) /* -- */
     }
 }
 
-Byte getBase(void)
+Byte getBase()
 {
     return base;
 }
@@ -674,19 +674,19 @@ void setPrompt(const char* string)
     strncpy((char*)prompt, string, sizeof(prompt) - 1);
 }
 
-void dotPrompt(void)
+void dotPrompt()
 {
     maybeCr();
     compiling ? msg("] ") : msg((char*)prompt);
 }
 
 // compiler
-void righBracket(void)
+void righBracket()
 {
     compiling = 0x80;
 }
 
-void leftBracket(void)
+void leftBracket()
 {
     compiling = 0;
 }
@@ -703,7 +703,7 @@ void executeIt(tcbody* t)
     t->ii();
 }
 
-void execute(void) /* a - */
+void execute() /* a - */
 {
     executeIt((tcbody*)ret());
 }
@@ -719,7 +719,7 @@ void cii() /* -- ii */ // constant retreiver
     lit(tick->list[0].lit);
 }
 
-void lii(void) /* -- n */ // inline literals
+void lii() /* -- n */ // inline literals
 {
     lit(ip++->lit);
 }
@@ -734,12 +734,12 @@ void colonii() // macro threader
     ip = save;
 }
 
-void branch(void)
+void branch()
 {
     ip = ip->branch;
 }
 
-void zeroBranch(void) /* f -- */
+void zeroBranch() /* f -- */
 {
     if (ret() == 0)
         branch();
@@ -747,7 +747,7 @@ void zeroBranch(void) /* f -- */
         ip++;
 }
 
-void minusBranch(void)
+void minusBranch()
 {
     Cell i = pullq(returnStack);
 
@@ -759,13 +759,13 @@ void minusBranch(void)
 }
 
 // parsing
-void zeroTib(void)
+void zeroTib()
 {
     tib.in = 0;
     tib.buffer[tib.in] = 0;
 }
 
-Byte peek(void)
+Byte peek()
 {
     return tib.buffer[tib.in];
 }
@@ -800,7 +800,7 @@ Byte* parseWord(Byte c) // return C-string from input
     return &hp[1];
 }
 
-void comment(void) /* char -- */ // scan input for end comment or 0
+void comment() /* char -- */ // scan input for end comment or 0
 {
     Byte* input = &tib.buffer[tib.in];
 
@@ -898,7 +898,7 @@ Byte lookup(Byte* cstring, tcbody** t)
 }
 
 // Error recovery
-void error(void)
+void error()
 {
     msg((char*)&hp[1]);
     msg("<- eh?");
@@ -1006,7 +1006,7 @@ Cell stringNumber(Byte* cstring)
 }
 
 // control flow
-void compileAhead(void)
+void compileAhead()
 {
     compileIt(&_branch);
     here();
@@ -1014,7 +1014,7 @@ void compileAhead(void)
     comma();
 }
 
-void compileIf(void)
+void compileIf()
 {
     compileIt(&_zeroBranch);
     here();
@@ -1022,57 +1022,57 @@ void compileIf(void)
     comma();
 }
 
-void compileEndif(void)
+void compileEndif()
 {
     here();
     swap();
     store();
 }
 
-void compileElse(void)
+void compileElse()
 {
     compileAhead();
     swap();
     compileEndif();
 }
 
-void compileBegin(void)
+void compileBegin()
 {
     here();
 }
 
-void compileAgain(void)
+void compileAgain()
 {
     compileIt(&_branch);
     comma();
 }
 
-void compileWhile(void)
+void compileWhile()
 {
     compileIf();
 }
 
-void compileRepeat(void)
+void compileRepeat()
 {
     swap();
     compileAgain();
     compileEndif();
 }
 
-void compileUntil(void)
+void compileUntil()
 {
     compileIt(&_zeroBranch);
     comma();
 }
 
-void compileFor(void)
+void compileFor()
 {
     compileIt(&_tor);
     compileAhead();
     here();
 }
 
-void compileNext(void)
+void compileNext()
 {
     swap();
     compileEndif();
@@ -1080,7 +1080,7 @@ void compileNext(void)
     comma();
 }
 
-void compileExit(void)
+void compileExit()
 {
     lit(0);
     comma();
@@ -1116,7 +1116,7 @@ void makeString(char * string) // ( - a )
     aligned();
 }
 
-void quote(void)
+void quote()
 {
 	if (compiling)
 		compileAhead();
@@ -1131,7 +1131,7 @@ void quote(void)
 }
 
 // interpreter
-void quit(void)
+void quit()
 {
     interpretError = 0;
     spStore();
@@ -1141,7 +1141,7 @@ void quit(void)
     cursorReturn();
 }
 
-void interpret(void)
+void interpret()
 {
 	while (true) {
         skip(SPACE);
@@ -1183,7 +1183,7 @@ void autoEchoOff()
     keyEcho = false;
 }
 
-void emptyKeyq(void)
+void emptyKeyq()
 {
     zerobq(keyq);
 }
@@ -1193,7 +1193,7 @@ void keyIn(Byte c)
     pushbq(c, keyq);
 }
 
-void cli(void)
+void cli()
 {
     if (qbq(keyq) == 0)
         return;
@@ -1253,7 +1253,7 @@ void evaluate(Byte* string)
 
 // defining words
 // make header name from null terminated string no header bits, easier searching, count becomes strlen; link;string;->:ii;list ; or string is a pointer to a string and then the header is a fixed size structure;
-static void makeHeader(void)
+static void makeHeader()
 {
     aligned();
     here();
@@ -1266,7 +1266,7 @@ static void makeHeader(void)
     aligned();
 }
 
-void colon(void)
+void colon()
 {
     makeHeader();
     wordlist->name[0] |= SMUDGE_BITS;
@@ -1275,14 +1275,14 @@ void colon(void)
     righBracket();
 }
 
-void semiColon(void)
+void semiColon()
 {
     compileExit();
     wordlist->name[0] &= ~SMUDGE_BITS;
     leftBracket();
 }
 
-void constant(void) /* n -- */
+void constant() /* n -- */
 {
     makeHeader();
     lit((Cell)cii);
@@ -1290,21 +1290,21 @@ void constant(void) /* n -- */
     comma();
 }
 
-void create(void)
+void create()
 {
     makeHeader();
     lit((Cell)vii);
     comma();
 }
 
-void variable(void) /* n -- */
+void variable() /* n -- */
 {
     create();
     comma();
 }
 
 // Tools
-static void list_dictionaries(void) // list words in dictionaries
+static void list_dictionaries() // list words in dictionaries
 {
     Byte i;
     for (i = 0; i < 3; i++) {
@@ -1320,7 +1320,7 @@ static void list_dictionaries(void) // list words in dictionaries
     }
 }
 
-void words(void) // list user words and system dictionaries
+void words() // list user words and system dictionaries
 {
     header* list = wordlist;
 
@@ -1339,7 +1339,7 @@ void words(void) // list user words and system dictionaries
 }
 
 // reset all
-void resetCli(void)
+void resetCli()
 {
     hereSay(hpStart, hpEnd - hpStart);
     wordlist = NULL;
