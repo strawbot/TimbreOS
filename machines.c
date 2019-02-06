@@ -9,11 +9,13 @@
 
 #include "machines.h"
 #include "cli.h"
+#include "printers.h"
 #include <string.h>
+
+void init_ta();
 
 QUEUE(MACHINES, machineq); // workers
 QUEUE(ACTIONS, actionq); // now
-QUEUE(EVENTS, eventq); // happenstance
 
 Byte mmoverflow = 0, mmunderflow = 0;
 Byte amoverflow = 0;
@@ -33,11 +35,7 @@ void next(vector machine) { // actions
 		pushq((Cell)machine, actionq);
 	else
 		amoverflow++;
-	ATOMIC_SECTION_LEAVE;	
-}
-
-void event(vector machine) { // events
-	pushq((Cell)machine, eventq);
+	ATOMIC_SECTION_LEAVE;
 }
 
 void deactivate(vector machine) { // remove a machine from queue
@@ -60,7 +58,7 @@ void runMachines(void) {  // run all machines
 	runDepth++;
 	do {
 		vector machine;
-		
+
 		if (queryq(actionq)) {// TODO: actions can stall out machines: limited by n
 			safe(machine = (vector)pullq(actionq));
 		} else if (queryq(machineq)) {
@@ -68,9 +66,9 @@ void runMachines(void) {  // run all machines
 		} else {
 			mmunderflow++;
 			break;
-		} 
+		}
 		machineRun(machine);
-		
+
 	} while (n--);
 	runDepth--;
 }
@@ -100,9 +98,8 @@ typedef struct MQueue {
 
 MQueue workerq  = {.link = NULL,         .mq = machineq};
 MQueue timeactionq = {.link = &workerq,  .mq = actionq };
-MQueue happenq = {.link = &timeactionq, .mq = eventq};
 
-MQueue * mqq = &happenq;
+MQueue * mqq = &timeactionq;
 
 void runMachineqs() {
 	MQueue * mqi = mqq;
@@ -115,13 +112,23 @@ void runMachineqs() {
 	} while (mqi != 0);
 }
 
-void events() {
-	while (runmac(eventq));
-}
+QUEUE(100, dids);
+bool monitorActions = false;
 
 void actions() {
-	do events();
-	while (runmac(actionq));
+	while (queryq(actionq)) {
+		Cell action = pullq(actionq);
+		if (monitorActions)  if (leftq(dids))  pushq(action, dids);
+		machineRun((vector)action);
+	}
+}
+
+char * getMachineName(Cell x);
+
+void didWhat() {
+	while (queryq(dids)) {
+		print(" "), print(getMachineName(pullq(dids)));
+	}
 }
 
 bool machines() {
@@ -129,10 +136,10 @@ bool machines() {
 }
 
 Long allThings() {
-	return queryq(actionq) + queryq(machineq) + queryq(eventq);
+	return queryq(actionq) + queryq(machineq);
 }
 
-// endless loop for endless machines; returns for machines that sleep
+// endless loop for endless machines; returns for machines that wait
 void run_till_done() {
 	do actions();
 	while (machines());
@@ -158,10 +165,21 @@ void run_slice() {
 
 #define UNKNOWN "unknown_machines"
 
+QUEUE(10, unknownq);
+
 HASHDICT(HASH9, macnames); // keep track of machine names
 HASHDICT(HASH9, mactimes); // keep track of machine max execution times
 
+void listMachineNames() {
+	int i = 0;
+	dictionary_t *dict = &macnames;
+	for (char * entry = dictFirst(dict); entry; entry = dictNext(dict), i++)
+		print("\n"), print((char *)dict->adjunct[dict->iter]), printHex((Cell)entry);
+	print("\n#names:"), printDec(i);
+}
+
 void initMachineStats() {
+	zeroq(unknownq);
     emptyDict(&macnames);
     emptyDict(&mactimes);
     machineName((vector)(Cell)UNKNOWN, UNKNOWN);
@@ -179,8 +197,7 @@ void machineName(vector machine, const char * name) // give name to machine
 	*dictAdjunctKey((Cell)machine, &macnames) = (Cell)name;
 }
 
-void activateOnceNamed(vector machine, const char * name)
-{
+void activateOnceNamed(vector machine, const char * name) {
 	activateMachineOnce(machine);
 	machineName(machine, name);
 }
@@ -199,8 +216,7 @@ void showMachineName(Cell x)
     print(getMachineName(x));
 }
 
-vector getMachine(char * name) // return address of named machine
-{
+vector getMachine(char * name) { // return address of named machine
 	for (Short i=0; i<macnames.capacity; i++)
 		if (macnames.adjunct[i] != 0)
             if (strcmp((char *)macnames.adjunct[i], name) == 0)
@@ -208,8 +224,7 @@ vector getMachine(char * name) // return address of named machine
 	return NULL;
 }
 
-void listq(Qtype *q) // list q items
-{
+void listq(Qtype *q) { // list q items
 	Byte n;
 
 	n = (Byte)queryq(q);
@@ -229,8 +244,7 @@ void listq(Qtype *q) // list q items
 
 void listTimeActions();
 
-void listMachines(void)
-{
+void listMachines(void) {
 	print("\nmachineq:\n Depth: "), printDec(runDepth);
 	listq(machineq);
 	if (mmunderflow)
@@ -239,19 +253,17 @@ void listMachines(void)
 		print("\n moverflows: "), printDec(mmoverflow);
 	if (queryq(actionq))  print("\nactionq:"), listq(actionq);
 	listTimeActions();
-	dotPrompt();
 }
 
-void listm(void) // list machine statuses
-{
+void listm(void) { // list machine statuses
 	activate(listMachines);
 }
-
-void initMachines(void)
-{
+void initMachines(void) {
 	zeroq(machineq);
 	zeroq(actionq);
 	initMachineStats();
+	zeroq(dids);
+	init_ta();
 }
 
 void killMachine() {
@@ -279,13 +291,16 @@ void activateMachine() {
 
 void machineRun(vector m) {
 	Cell * stat = dictAdjunctKey((Cell)m, &mactimes);
-	if (stat == 0) 
+	if (stat == 0) {
 		stat = dictAdjunctKey((Cell)UNKNOWN, &mactimes);
+		if (leftq(unknownq))
+			pushq((Cell)m,unknownq);
+	}
 
 	int time = (int)getTicks();
 	m();
 	time = (int)getTicks() - time;
-	
+
 	if (time > (int)*stat) // TODO: consider atomicity of readnwrite
 		*stat = (Cell)time;
 }
@@ -296,30 +311,36 @@ static int indexCompare(const void *a,const void *b) {
 	return mactimes.adjunct[*y] - mactimes.adjunct[*x];
 }
 
-void machineStats(void)
-{
+void machineStats(void) {
 	Short indexes[mactimes.capacity];
 	Short j=0;
 
 	for (Short i=0; i<mactimes.capacity; i++)
 		if (mactimes.adjunct[i] != 0)
 			indexes[j++] = i;
-	
+
 	qsort(indexes, j, sizeof(Short), indexCompare);
-	
+
 	for (Short i=0; i<j; i++) {
 		Cell machine = (Cell)mactimes.table[indexes[i]];
 		char * name = (char *)macnames.adjunct[indexes[i]];
 		printCr();
 		Cell time = mactimes.adjunct[indexes[i]];
-		if (CONVERT_TO_US(time) > 9999)
+		Long us = CONVERT_TO_US(time);
+
+		if (us > 9999)
 			dotnb(7, 6, CONVERT_TO_MS(time), 10), print(" ms  ");
+		else if (us)
+			dotnb(7, 6, us, 10), print(" us  ");
 		else
-			dotnb(7, 6, CONVERT_TO_US(time), 10), print(" us  ");
-		if (name)
+			dotnb(7, 6, CONVERT_TO_NS(time), 10), print(" ns  ");
+
+		if (name) {
 			print(name);
-		else
+			if (name == (char *)UNKNOWN)
+				for (int i = queryq(unknownq); i; i--)
+					print(" "), dotnb(0, 0, q(unknownq), 16), rotateq(unknownq, 1);
+		} else
 			printHex(machine);
 	}
 }
-

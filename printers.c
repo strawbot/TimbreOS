@@ -20,6 +20,7 @@ void tabTo(int n)
     spaces(n - getCursor());
 }
 
+// 0, 0 n r - for minimal field width for all digits
 char * numString(Byte field, Byte digits, Cell n, Byte radix)
 {
 	Byte b = getBase();

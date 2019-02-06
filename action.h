@@ -7,30 +7,33 @@
 
 #define LINK_SENTINEL  (TimeAction *)0xFACEF00D
 
+enum {FREE_RANGE, RANCH} ta_types;
+
 typedef struct TimeAction {
 	struct TimeAction * link;
+	Cell type;
 	Timeout to;
 	vector action;
-	const char * name;
 } TimeAction;
 
 #define after(t, m) \
 do { \
-	static TimeAction ta = {.link = LINK_SENTINEL, .action = m, .name = #m}; \
+	static TimeAction ta = {.link = LINK_SENTINEL, .action = m}; \
 	after_time(t, &ta); \
 } while (false)
 
 #define every(t, m) \
 do { \
-	static TimeAction ta = {.link = LINK_SENTINEL, .to={t,0,true}, .action = m, .name = #m}; \
+	static TimeAction ta = {.link = LINK_SENTINEL, .to={t,0,true}, .action = m}; \
 	every_time(&ta); \
 } while (false)
 
 void timeaction(TimeAction * ta);
 void after_time(Long t, TimeAction * ta);
 void every_time(TimeAction * ta);
-void when(Qtype * actionq, vector action);
-void runActions(Qtype * actionq);
+
+TimeAction * timeToAction(Long time, vector action);
+void stopTa(TimeAction * ta);
 
 // #define ta_usecs()
 #define ta_msecs(t) (((long long)t*128)/125)

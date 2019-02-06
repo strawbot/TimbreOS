@@ -169,7 +169,7 @@ void starOp();
 void startNumberConversion();
 void store();
 void stringLength();
-Cell stringNumber(Byte* cstring);
+Cell stringNumber(char * cstring);
 void swap();
 void tor();
 void type();

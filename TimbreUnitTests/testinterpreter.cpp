@@ -16,7 +16,7 @@ void error(void);
 Byte checkBase(Byte * string);
 bool toDigit(Byte *n);
 Cell signDigits(Byte * string, bool sign);
-Cell stringNumber(Byte * string);
+Cell stringNumber(char * string);
 void quit();
 void interpret();
 }

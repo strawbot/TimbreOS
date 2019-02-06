@@ -1,4 +1,4 @@
-// take an action after time or event
+// take an action after time
 /*
 	  after(ta_msecs(25), some_action);
 	  every(ta_msecs(25), some_action);
@@ -21,21 +21,19 @@
 	the RTC counter can be set to a different time interval. When running all
 	three lists, the 10ms list is checked each interrupt. The 100ms list is
 	checked each 10 interrupts and the 1S list is checked each 100 interrupts.
-	
+
 	after will run an action after some time while every is similar the
 	difference is that "every" is periodic from the first time the action
 	executes whereas "after" will run after the time but there may be some
 	other time in there as well.
-	
-	  when(some_event, some_action);
-	
-	for events, they have a local queue which gets loaded up with machines that
-	subscribe to the event. When the event happens, all the queued machines get run.
+
 */
 
 #include "machines.h"
-#include "action.h"
 #include "printers.h"
+#include <string.h>
+
+static void relist(TimeAction * ta);
 
 // time actions
 static QUEUE(30, timeactionq);
@@ -52,8 +50,14 @@ static Integer time_left(Timeout * timer) {
 void listTimeActions() {
     TimeAction * ta = &timeactionList;
     print("\nPending timed actions:");
-    while ((ta = ta->link) != NULL)
-        print("\n "), print(ta->name), print(" in "),  printDec(time_left(&ta->to)), print("ms");
+    while ((ta = ta->link) != NULL) {
+		print("\n ");
+		printHex((Cell)ta->action);
+		char * name = getMachineName((Cell)ta->action);
+		if (strlen(name))
+        	print(name);
+		print(" in "),  printDec(time_left(&ta->to)), print("ms");
+	}
 }
 
 static void inlistTimeActions() {
@@ -72,8 +76,13 @@ static void checkTimeActions() {
 	while ((ta = before->link) != 0) {
 		if (checkTimeout(&ta->to)) {
 			before->link = ta->link;
-            ta->link = LINK_SENTINEL;
-			next(ta->action);
+			if (ta->type == FREE_RANGE)
+				ta->link = LINK_SENTINEL;
+			else
+				relist(ta);
+
+			if (ta->action)
+				next(ta->action);
 		} else
 			before = ta;
 	}
@@ -85,11 +94,13 @@ void timeaction_IRQ() {
 }
 
 __attribute__ ((weak)) void timeActionError(TimeAction * ta) {
-    print(ta->name), print(" is already in ta queue!");
+    printHex((Cell)ta), print(" is already in timeaction queue!");
 }
 
 void timeaction(TimeAction * ta) {
-    if (ta->link == LINK_SENTINEL) {
+    if (ta->link == LINK_SENTINEL
+		         &&
+		       0 == scanq((Cell)ta, timeactionq)) {
         ta->link = NULL;
 	    pushq((Cell)ta, timeactionq);
     } else
@@ -106,25 +117,68 @@ void every_time(TimeAction * ta) {
 	    after_time(ta->to.timeout, ta);
 	else {
 	    repeatTimeout(&ta->to);
-	    timeaction(ta); 
+	    timeaction(ta);
     }
 }
 
-// event actions
-void when(Cell * actionq, vector action) {
-    if (leftq(actionq))
-        pushq((Cell)action, actionq);
-    else {
-    	char * name;
-        print("\nError: eventq full!  ");
-        if ((name = getMachineName((Cell)action)) != NULL)
-            print("Trying to eventize:"), print(name);
-    }
+#define TOTAL_TA 40
+static TimeAction timeactions[TOTAL_TA];
+
+void init_ta() {
+	for (int i = 0; i < TOTAL_TA; i++) {
+		timeactions[i].link = &timeactions[i+1];
+		timeactions[i].type = RANCH;
+	}
+	timeactions[TOTAL_TA-1].link = LINK_SENTINEL;
 }
 
-void runActions(Qtype * actionq) {
-    for (int i = queryq(actionq); i; i--) {
-        later((vector)q(actionq));
-        rotateq(actionq, 1);
-    }
+TimeAction * getTa() {
+	TimeAction * ta = timeactions[0].link;
+
+	if (ta != LINK_SENTINEL) {
+		timeactions[0].link = ta->link;
+		ta->link = LINK_SENTINEL;
+		return ta;
+	}
+	print("\nERROR in getTa: No more TimeActions left.");
+	return timeactions;
+}
+
+static void relist(TimeAction * ta) {
+	ta->link = timeactions[0].link;
+	timeactions[0].link = ta;
+}
+
+void stopTa(TimeAction * ta) {
+	TimeAction * before = &timeactionList;
+	TimeAction * tai;
+
+	while ((tai = before->link) != 0) {
+		if (tai == ta) {
+			before->link = ta->link;
+			if (ta->type == FREE_RANGE)
+				ta->link = LINK_SENTINEL;
+			else
+				relist(ta);
+			return;
+		}
+		before = tai;
+	}
+
+	for (int n = queryq(timeactionq); n; n--) {
+		Cell tap = pullq(timeactionq);
+		if (tap == (Cell)ta)
+			relist(ta);
+		else
+			pushq(tap, timeactionq);
+	}
+}
+
+TimeAction * timeToAction(Long time, vector action) {
+	TimeAction * ta = getTa();
+
+	setTimeout(time, &ta->to);
+	ta->action = action;
+	timeaction(ta);
+	return ta;
 }

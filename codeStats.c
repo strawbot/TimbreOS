@@ -9,6 +9,7 @@
 // ARM Cortex-M3 extended trace macrocell registers: Data Watchpoint and Trace (DWT)
 #define getTicks() (DWT->CYCCNT) // cortex-M3 cycle counter from ETM
 
+#define CONVERT_TO_NS(n) ((n)*1000/CLOCK_MHZ)
 #define CONVERT_TO_US(n) ((n)/CLOCK_MHZ)
 #define CONVERT_TO_MS(n) ((n)/(CLOCK_MHZ*1000))
 #define US_TO_TICKS(n)	 ((n)*CLOCK_MHZ)
@@ -43,7 +44,7 @@ static Cell statCounts[NUM_STATS] = {0};
 	if (statCounts[stat]) \
 		print("\n"#stat": "), printDec(statCounts[stat]);
 
-static void printStats() {
+inline static void printStats() {
     FOR_EACH_STAT(PRINT_STAT)
     memset(statCounts, 0, sizeof(statCounts));
 }
@@ -68,4 +69,3 @@ typedef int make_iso_compilers_happy;
 #define startMS() startUS()
 #define endMS() CONVERT_TO_MS(getTicks() - startingTime)
 #define maxMS(stat) maxStat(endMS(), stat)
-

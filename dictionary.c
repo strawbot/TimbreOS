@@ -249,13 +249,16 @@ void upsizeDict(dictionary_t * dict)
 }
 
 // Usage
-void dictInsert(char * string, dictionary_t * dict) // insert a string into the dictionary
+Cell * dictInsert(char * string, dictionary_t * dict) // insert a string into the dictionary
 {
     Cell adjunct = 0, temp;
     Short index;
 
     plusEntry(dict);
     index = hash(string, dict);
+
+    Cell * empty = &dict->adjunct[index];
+
     while (used(dict->table[index])) {
         // if same, insert newer and push other deeper in the chain
         if (same(string, dict->table[index])) {
@@ -272,6 +275,8 @@ void dictInsert(char * string, dictionary_t * dict) // insert a string into the 
     }
     dict->table[index] = string;
     dict->adjunct[index] = adjunct;
+    return empty;
+
 }
 
 void dictAppend(char * string, dictionary_t * dict) // append a string to the dictionary
@@ -332,11 +337,19 @@ Cell * dictAdjunctKey(Cell address, dictionary_t * dict) // return an associate 
     return &dict->adjunct[index];
 }
 
+char * getMachineName(Cell x);
+
 void dictPrint(dictionary_t *dict)
 {
 	for (char * entry = dictFirst(dict); entry; entry = dictNext(dict)) {
 		print("\n"), print(entry);
-		print("  adjunct: "), printHex(dict->adjunct[dict->iter]);
+        print("  adjunct: ");
+        Cell adj = dict->adjunct[dict->iter];
+        char * name = getMachineName(adj);
+        if (name)
+            print(name);
+        else
+            printHex(adj);
     }
 }
 
