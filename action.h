@@ -7,7 +7,7 @@
 
 #define LINK_SENTINEL  (TimeAction *)0xFACEF00D
 
-enum {FREE_RANGE, RANCH} ta_types;
+enum {FREE_RANGE, RANCH};
 
 typedef struct TimeAction {
 	struct TimeAction * link;
