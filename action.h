@@ -11,20 +11,20 @@ enum {FREE_RANGE, RANCH};
 
 typedef struct TimeAction {
 	struct TimeAction * link;
-	Cell type;
-	Timeout to;
 	vector action;
+	Timeout to;
+	Cell type;
 } TimeAction;
 
 #define after(t, m) \
 do { \
-	static TimeAction ta = {.link = LINK_SENTINEL, .action = m}; \
+	static TimeAction ta = {LINK_SENTINEL, m, {0}, 0}; \
 	after_time(t, &ta); \
 } while (false)
 
 #define every(t, m) \
 do { \
-	static TimeAction ta = {.link = LINK_SENTINEL, .to={t,0,true}, .action = m}; \
+	static TimeAction ta = {LINK_SENTINEL, m, {t,0,true}, 0}; \
 	every_time(&ta); \
 } while (false)
 
