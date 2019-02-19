@@ -172,6 +172,7 @@ void stringLength();
 Cell stringNumber(char * cstring);
 void swap();
 void tor();
+bool toDigit(Byte* n);
 void type();
 void vii();
 void word();
