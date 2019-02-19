@@ -49,12 +49,13 @@ typedef struct byteq {
 						(bq)[QEND] = (Cell)(sizeof(bq)) - sizeof(byteq) - 1; \
 						(bq)[QINSERT] = (bq)[QREMOVE] = BQDATA; \
 					}
+    // should verify both instance creators end up with the same values
 /*
 	struct {
 		...
 		NEW_BQ(10, newbq);
 	} s;
-	
+
 	setsizebq(10, s.newbq);
 	 or
 	INIT_BQ(s.newbq); // will be exact or bigger depending on length mod cell size
@@ -74,3 +75,12 @@ bool fullbq(Cell *q);
 void setsizebq(Cell size, Cell * q);
 void wrappedbq(Cell * q);
 
+// use queue structure as an array
+#define BARRAY(size, name) BQUEUE(size,name)
+void storeB(Byte b, Cell * a);
+void writeB(Byte b, Cell * a);
+Byte readB(Cell * a) ;
+Long sizeB(Cell * a);
+Long leftB(Cell * a);
+Byte * indexB(Long index, Cell * a);
+void initB(Cell * a);

@@ -59,10 +59,10 @@ Cell qbq(Cell *q) // query #elements in q
 {
     byteq * bq = (byteq *)q;
     int n = bq->remove - bq->insert;
-    
+
     if (n < 0)
         n += sizebq(q) + 1;
-        
+
     return (Cell)n;
 }
 
@@ -83,4 +83,44 @@ void wrappedbq(Cell * q)
 	byteq * bq = (byteq *)q;
 
 	bq->remove = bq->insert;
+}
+
+// an array with insert
+void storeB(Byte b, Cell * a) {
+    byteq * bq = (byteq *)a;
+    bq->q[bq->insert] = b;
+}
+
+void writeB(Byte b, Cell * a) { // stuff item into an array
+    byteq * bq = (byteq *)a;
+
+    bq->q[bq->insert] = b;
+    if (bq->insert < (bq->end - 1))
+        bq->insert++;
+}
+
+Byte readB(Cell * a) { // read it out like a queue
+    byteq * bq = (byteq *)a;
+    if (bq->remove < bq->insert)
+        return bq->q[bq->remove++];
+    return 0;
+}
+
+Long sizeB(Cell * a) {
+    return ((byteq *)a)->insert - BQDATA;
+}
+
+Long leftB(Cell * a) {
+    byteq * bq = (byteq *)a;
+    return bq->insert - bq->remove;
+}
+
+Byte * indexB(Long index, Cell * a) {
+    byteq * bq = (byteq *)a;
+    return &bq->q[index];
+}
+
+void initB(Cell * a) {
+    byteq * bq = (byteq *)a;
+    bq->insert = bq->remove = BQDATA;
 }
