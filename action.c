@@ -174,6 +174,33 @@ void stopTa(TimeAction * ta) {
 	}
 }
 
+void stopTimeAction(vector action) {
+	TimeAction * before = &timeactionList;
+	TimeAction * tai;
+
+	while ((tai = before->link) != 0) {
+		if (tai->action == action) {
+			before->link = tai->link;
+			if (tai->type == FREE_RANGE)
+				tai->link = LINK_SENTINEL;
+			else
+				relist(tai);
+		} else
+			before = tai;
+	}
+
+	for (int n = queryq(timeactionq); n; n--) {
+		TimeAction * tap = (TimeAction *)pullq(timeactionq);
+		if (tap->action == action) {
+			if (tap->type == FREE_RANGE)
+				tap->link = LINK_SENTINEL;
+			else
+				relist(tap);
+		} else
+			pushq((Cell)tap, timeactionq);
+	}
+}
+
 TimeAction * timeToAction(Long time, vector action) {
 	TimeAction * ta = getTa();
 

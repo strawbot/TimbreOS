@@ -13,5 +13,6 @@ void when(Cell * event, vector action);
 void once(Cell * event, vector action);
 void happen(Cell * event);
 void clearEvent(Cell * event);
+void stopEventAction(Cell * eventq, vector action);
 
 #endif

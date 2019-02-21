@@ -83,3 +83,7 @@ void happen(Cell * eventq) {
 	do_once(eventq);
 	do_every(eventq);
 }
+
+void stopEventAction(Cell * eventq, vector action) {
+	deq((Cell)action, eventq);
+}

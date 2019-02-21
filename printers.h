@@ -13,6 +13,7 @@ void printnDec(unsigned int n, unsigned int dec);
 void printDec(unsigned int dec);
 void printDec0(unsigned int dec);
 void printFloat(float dec, int n);
+void printDouble(double dec, int n);
 void printBin(unsigned int bin);
 void printChar(unsigned char ch);
 void printHex2(unsigned int hex);

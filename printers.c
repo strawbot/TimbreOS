@@ -70,7 +70,7 @@ void printDec0(unsigned int dec)
 	printnDec(0, dec);
 }
 
-void printFloat(float f, int n)
+void printDouble(double f, int n)
 {
 	if (f < 0.0) {
 		print("-");
@@ -80,11 +80,17 @@ void printFloat(float f, int n)
 	print(".");
 	while (n--) {
 		f *= 10;
+		if (n == 0)
+			f += .5;
 		printDec0(((unsigned int)f)%10);
 	}
 	print(" ");
 }
-			
+
+void printFloat(float f, int n) {
+	printDouble((double)f, n);
+}
+
 void printBin(unsigned int bin)
 {
 	lit(bin), dotb();
