@@ -80,7 +80,7 @@ void wrappedbq(Cell * q);
 void storeB(Byte b, Cell * a);
 void writeB(Byte b, Cell * a);
 Byte readB(Cell * a) ;
-Long sizeB(Cell * a);
+Long usedB(Cell * a);
 Long leftB(Cell * a);
 Byte * indexB(Long index, Cell * a);
 void initB(Cell * a);

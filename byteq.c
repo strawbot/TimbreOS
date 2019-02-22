@@ -106,7 +106,7 @@ Byte readB(Cell * a) { // read it out like a queue
     return 0;
 }
 
-Long sizeB(Cell * a) {
+Long usedB(Cell * a) {
     return ((byteq *)a)->insert - BQDATA;
 }
 
