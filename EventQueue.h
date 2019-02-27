@@ -135,15 +135,16 @@ void _whenEventQ(EventQueue *event, void *cpp_obj, void *cpp_method);
 void onceEventQ(EventQueue *event, void *cpp_obj, void *cpp_method);
 void stopEventQ(EventQueue *event, void *cpp_obj, void *cpp_method);
 
+// outside a class
 #define EventQ(n,name) queue_type name##queue[n]; EventQueue __##name(n, name##queue); EventQueue *name = &__##name
 
-// for the privates
+// inside a class: for the privates
 #define EQ(size, name) \
 	queue_type name##queue[size]; \
 	EventQueue __##name; \
 	EventQueue *name = &__##name
 
-// for the constructor
+// : for the constructor
 #define EQinit(name) __##name(sizeof(name##queue), name##queue)
 
 #define EQwhenever(event, action, persist) \
@@ -153,7 +154,7 @@ void stopEventQ(EventQueue *event, void *cpp_obj, void *cpp_method);
 
 #else
 
-#define Event  "You can only instatiate an event in C++"
+// #define Event  "You can only instantiate an event in C++"
 typedef struct { int _size, _head, _tail; } EventQueue;
 
 #endif
@@ -162,11 +163,11 @@ typedef struct { int _size, _head, _tail; } EventQueue;
 extern "C"
 {
 #endif
-    void whenEventQ(EventQueue *event, void (*c_handler)());
-    void onceEventQ(EventQueue *event, void (*c_handler)());
-    void stopEventQ(EventQueue *event, void (*c_handler)());
-    void clearEventQ(EventQueue *event);
-    void happenEventQ(EventQueue *event);
+    // void whenEventQ(EventQueue *event, void (*c_handler)());
+    // void onceEventQ(EventQueue *event, void (*c_handler)());
+    // void stopEventQ(EventQueue *event, void (*c_handler)());
+    // void clearEventQ(EventQueue *event);
+    // void happenEventQ(EventQueue *event);
 #ifdef __cplusplus
 }
 #endif

@@ -33,9 +33,15 @@
 		push, pop     stuff, pull
 
 */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "machines.h"
 #include "printers.h"
+}
+
+#include "event.h"
 
 void noaction() {}
 
@@ -56,6 +62,14 @@ void when(Cell * eventq, vector action) {
     }
 }
 
+void when(EventQueue * event, vector action) {
+	event->push((void *)action, 1);
+}
+
+void when(EventQueue * event, void *cpp_obj, void *cpp_method) {
+	event->push(cpp_obj, cpp_method, 1);
+}
+
 void once(Cell * eventq, vector action) {
     if (leftq(eventq))
         stuffq((Cell)action, eventq);
@@ -65,6 +79,14 @@ void once(Cell * eventq, vector action) {
         if ((name = getMachineName((Cell)action)) != NULL)
             print("Trying to eventize:"), print(name);
     }
+}
+
+void once(EventQueue * event, vector action) {
+	event->push((void *)action, 0);
+}
+
+void once(EventQueue * event, void *cpp_obj, void *cpp_method) {
+	event->push(cpp_obj, cpp_method, 0);
 }
 
 // event occurrance
@@ -84,6 +106,14 @@ void happen(Cell * eventq) {
 	do_every(eventq);
 }
 
+void happen(EventQueue * event) {
+	event->happen();
+}
+
 void stopEventAction(Cell * eventq, vector action) {
 	deq((Cell)action, eventq);
 }
+
+// #ifdef __cplusplus
+// }
+// #endif
