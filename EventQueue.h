@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   events.h
  * Author: paul
  *
@@ -26,35 +26,31 @@ public:
         _head = 0;
         _tail = 0;
     }
-    
+
     ~EventQueue() { }
-    
+
     void push(void *cpp_obj, void *cpp_method, char persist)
     {
-        _queue[_head].object = cpp_obj;
-        _queue[_head].method = cpp_method;
-        _queue[_head].persist = persist;
-        _head = (_head + 1) % _size;
+        _queue[_head++]={cpp_obj, cpp_method, persist};
+        _head %= _size;
     }
-    
+
     void push(void *c_handler, char persist)
     {
-        _queue[_head].object = nullptr;
-        _queue[_head].method = c_handler;
-        _queue[_head].persist = persist;
-        _head = (_head + 1) % _size;
+        _queue[_head++]={nullptr, c_handler, persist};
+        _head %= _size;
     }
-    
+
     int stop(void *cpp_obj, void *cpp_method)
     {
         int total = count();
-        
+
         for (int i=0; i<total; i++)
         {
             queue_type e;
-            
+
             if (pop(&e) < 0) return -1;
-            
+
             if (e.object != cpp_obj && e.method != cpp_method)
             {
                 push(e.object, e.method, e.persist);
@@ -62,17 +58,17 @@ public:
         }
         return 0;
     }
-    
+
     int stop(void *c_handler)
     {
         int total = count();
-        
+
         for (int i=0; i<total; i++)
         {
             queue_type e;
-            
+
             if (pop(&e) < 0) return -1;
-            
+
             if (e.method != c_handler)
             {
                 push(e.method, e.persist);
@@ -80,15 +76,15 @@ public:
         }
         return 0;
     }
-    
+
     void happen()
     {
         int total = count();
-        
+
         for (int i=0; i<total; i++)
         {
             queue_type e;
-            
+
             if (pop(&e) == 0)
             {
                 if (e.object == nullptr)
@@ -108,26 +104,26 @@ public:
             }
         }
     }
-    
+
     int pop(queue_type *entry)
     {
         if (_head == _tail) return -1;
-        
+
         memcpy(entry, &_queue[_tail], sizeof(queue_type));
         _tail = (_tail + 1) % _size;
         return 0;
     }
-    
+
     int count()
     {
         return (_head - _tail) % _size;
     }
-    
+
     void clear()
     {
         _head = _tail = 0;
     }
-    
+
 private:
     int _size, _head, _tail;
     queue_type *_queue;
@@ -140,6 +136,20 @@ void onceEventQ(EventQueue *event, void *cpp_obj, void *cpp_method);
 void stopEventQ(EventQueue *event, void *cpp_obj, void *cpp_method);
 
 #define EventQ(n,name) queue_type name##queue[n]; EventQueue __##name(n, name##queue); EventQueue *name = &__##name
+
+// for the privates
+#define EQ(size, name) \
+	queue_type name##queue[size]; \
+	EventQueue __##name; \
+	EventQueue *name = &__##name
+
+// for the constructor
+#define EQinit(name) __##name(sizeof(name##queue), name##queue)
+
+#define EQwhenever(event, action, persist) \
+        event->push((void *) this, (void *) &action, persist)
+#define EQwhen(event, action) EQwhenever(event, action, 1)
+#define EQonce(event, action) EQwhenever(event, action, 0)
 
 #else
 
@@ -162,4 +172,3 @@ extern "C"
 #endif
 
 #endif /* EVENTS_H */
-
