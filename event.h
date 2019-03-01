@@ -10,11 +10,15 @@
 
 #include <string.h>
 #include <stdio.h>
+#include "ttypes.h"
 
 struct queue_type {
   void* object, *method;
   char persist;
 };
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct EventQueue_t {
   unsigned _size, _head, _tail;
@@ -22,6 +26,7 @@ struct EventQueue_t {
 };
 
 #ifdef __cplusplus
+}
 
 class EventQueue : public EventQueue_t {
  public:
@@ -103,16 +108,18 @@ void happen(struct EventQueue_t* event);
 // C++
 #define once(e, h) onceEventQ(e, (void*) this, (void*)&h)
 #define when(e, h) whenEventQ(e, (void*) this, (void*)&h)
-#define stop(e, h) stopEventQ(e, (void*) this, (void*)&h)
+#define stopEventAction(e, h) stopEventQ(e, (void*) this, (void*)&h)
 
 #else
 
 // C
-#define once(e, h) onceEventQ(e, NULL, (void*)&h)
-#define when(e, h) whenEventQ(e, NULL, (void*)&h)
-#define stop(e, h) stopEventQ(e, NULL, (void*)&h)
+struct EventQueue_t;
 
-#define extEvent(event) extern EventQueue_t event[]
+#define once(e, h) onceEventQ(e, NULL, (void*)(Cell)&h)
+#define when(e, h) whenEventQ(e, NULL, (void*)(Cell)&h)
+#define stopEventAction(e, h) stopEventQ(e, NULL, (void*)(Cell)&h)
+
+#define extEvent(event) extern struct EventQueue_t event[]
 
 #endif
 
