@@ -33,87 +33,27 @@
 		push, pop     stuff, pull
 
 */
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "machines.h"
-#include "printers.h"
-}
-
 #include "event.h"
 
-void noaction() {}
+extern "C" {
 
-// event connections
-void clearEvent(Cell * eventq) {
-	zeroq(eventq);
-	pushq((Cell)noaction, eventq);
+void whenEventQ(struct EventQueue_t* event, void* cpp_obj, void* cpp_method) {
+  static_cast<EventQueue*>(event)->push(cpp_obj, cpp_method, 1);
 }
 
-void when(Cell * eventq, vector action) {
-    if (leftq(eventq))
-        pushq((Cell)action, eventq);
-    else {
-    	char * name;
-        print("\nError: eventq full!  ");
-        if ((name = getMachineName((Cell)action)) != NULL)
-            print("Trying to eventize:"), print(name);
-    }
+void onceEventQ(struct EventQueue_t* event, void* cpp_obj, void* cpp_method) {
+  static_cast<EventQueue*>(event)->push(cpp_obj, cpp_method, 0);
 }
 
-void when(EventQueue * event, vector action) {
-	event->push((void *)action, 1);
+void stopEventQ(struct EventQueue_t* event, void* cpp_obj, void* cpp_method) {
+  static_cast<EventQueue*>(event)->remove(cpp_obj, cpp_method);
 }
 
-void when(EventQueue * event, void *cpp_obj, void *cpp_method) {
-	event->push(cpp_obj, cpp_method, 1);
+void never(struct EventQueue_t* event) {
+  static_cast<EventQueue*>(event)->clear();
 }
 
-void once(Cell * eventq, vector action) {
-    if (leftq(eventq))
-        stuffq((Cell)action, eventq);
-    else {
-    	char * name;
-        print("\nError: eventq full!  ");
-        if ((name = getMachineName((Cell)action)) != NULL)
-            print("Trying to eventize:"), print(name);
-    }
+void happen(struct EventQueue_t* event) {
+  static_cast<EventQueue*>(event)->happen();
 }
-
-void once(EventQueue * event, vector action) {
-	event->push((void *)action, 0);
 }
-
-void once(EventQueue * event, void *cpp_obj, void *cpp_method) {
-	event->push(cpp_obj, cpp_method, 0);
-}
-
-// event occurrance
-static void do_once(Cell * eventq) {
-	while(q(eventq) != (Cell)noaction) { next((vector)pullq(eventq)); }
-}
-
-static void do_every(Cell * eventq) {
-	while(p(eventq) != (Cell)noaction) {
-		next((vector)p(eventq)); stuffq(popq(eventq),eventq);
-	}
-	stuffq(popq(eventq),eventq);
-}
-
-void happen(Cell * eventq) {
-	do_once(eventq);
-	do_every(eventq);
-}
-
-void happen(EventQueue * event) {
-	event->happen();
-}
-
-void stopEventAction(Cell * eventq, vector action) {
-	deq((Cell)action, eventq);
-}
-
-// #ifdef __cplusplus
-// }
-// #endif
