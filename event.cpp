@@ -22,30 +22,32 @@
 
 	 create an event structure that has an action for: subscribing, unsubscribing, happened
 	 API:
-	   Event(10, someevent);
+	   Event(10, someevent);	// define
+	   extEvent(event);			// declare
 
-	   when(event, action);
-	   once(event, action);
-	   never(event, action);
+	   once(event, action);		// oneshot
+	   when(event, action);		// connect
+	   never(event, action);	// nothing
+	   stop(event, action);		// prevent
 
-	   could use a queue for when and once. Plant an end of queue sentinal in the queue (increase size by 1 at compile time) the p end of the queue is persistant and is used by when, q is quiet and is used by once
-		    whens pSq onces
-		push, pop     stuff, pull
+	   happen(event);			// moment
 
 */
 #include "event.h"
 
 extern "C" {
 
-void whenEventQ(struct EventQueue_t* event, void* cpp_obj, void* cpp_method) {
-  static_cast<EventQueue*>(event)->push(cpp_obj, cpp_method, 1);
+void whenEvent(struct EventQueue_t* event, void* cpp_obj, void* cpp_method) {
+    queue_type e = {cpp_obj, cpp_method, 1};
+  static_cast<EventQueue*>(event)->push(&e);
 }
 
-void onceEventQ(struct EventQueue_t* event, void* cpp_obj, void* cpp_method) {
-  static_cast<EventQueue*>(event)->push(cpp_obj, cpp_method, 0);
+void onceEvent(struct EventQueue_t* event, void* cpp_obj, void* cpp_method) {
+    queue_type e = {cpp_obj, cpp_method, 0};
+  static_cast<EventQueue*>(event)->push(&e);
 }
 
-void stopEventQ(struct EventQueue_t* event, void* cpp_obj, void* cpp_method) {
+void stopEvent(struct EventQueue_t* event, void* cpp_obj, void* cpp_method) {
   static_cast<EventQueue*>(event)->remove(cpp_obj, cpp_method);
 }
 
