@@ -4,6 +4,26 @@
  *
  * Created on February 26, 2019, 6:54 AM
  */
+// Events can be awaited by multiple actions
+
+/*
+      when(some_event, some_action);
+
+    for events, they have a local store which gets loaded up with machines that
+    subscribe to the event. When the event happens, all the loaded machines get run.
+
+     API:
+       Event(10, someevent);	// define
+       extEvent(event);			// declare
+
+       once(event, action);		// oneshot
+       when(event, action);		// connect
+       never(event, action);	// nothing
+       stop(event, action);		// prevent
+
+       happen(event);			// moment
+
+*/
 
 #ifndef EVENTS_H
 #define EVENTS_H
@@ -17,14 +37,14 @@ struct queue_type {
   char persist;
 };
 
-struct EventQueue_t {
+typedef struct EventQueue {
   unsigned _size, _head, _tail;
   struct queue_type* _queue;
-};
+} EventQueue;
 
 #ifdef __cplusplus
 
-class EventQueue : public EventQueue_t {
+class EventQueueClass : public EventQueue {
  public:
   int count() { return (_head - _tail) % _size; }
 
@@ -38,6 +58,18 @@ class EventQueue : public EventQueue_t {
   void pop(queue_type* entry) {
     memcpy(entry, &_queue[_tail++], sizeof(queue_type));
     _tail %= _size;
+  }
+
+  void remove(void* cpp_obj, void* cpp_method) {
+    for (int i = 0, total = count(); i < total; i++) {
+      queue_type e;
+
+      pop(&e);
+
+      if (e.object != cpp_obj && e.method != cpp_method) {
+        push(&e);
+      }
+    }
   }
 
   void happen() {
@@ -60,19 +92,6 @@ class EventQueue : public EventQueue_t {
     }
   }
 
-  void remove(void* cpp_obj, void* cpp_method) {
-    int total = count();
-
-    for (int i = 0; i < total; i++) {
-      queue_type e;
-
-      pop(&e);
-
-      if (e.object != cpp_obj && e.method != cpp_method) {
-        push(&e);
-      }
-    }
-  }
 };
 
 extern "C" {
@@ -82,14 +101,16 @@ extern "C" {
 
 #define Eventi(size, e)              \
   struct queue_type e##qt[size + 1]; \
-  struct EventQueue_t e[1] = {{size + 1, 0, 0, e##qt}}
+  EventQueue e[1] = {{size + 1, 0, 0, e##qt}}
 
-void onceEvent(struct EventQueue_t* event, void* cpp_obj, void* cpp_method);
-void whenEvent(struct EventQueue_t* event, void* cpp_obj, void* cpp_method);
-void stopEvent(struct EventQueue_t* event, void* cpp_obj, void* cpp_method);
+#define extEvent(event) extern EventQueue event[]
 
-void never(struct EventQueue_t* event);
-void happen(struct EventQueue_t* event);
+void onceEvent(EventQueue* event, void* cpp_obj, void* cpp_method);
+void whenEvent(EventQueue* event, void* cpp_obj, void* cpp_method);
+void stopEvent(EventQueue* event, void* cpp_obj, void* cpp_method);
+
+void never(EventQueue* event);
+void happen(EventQueue* event);
 
 #ifdef __cplusplus
 // C++ in C
@@ -107,7 +128,5 @@ void happen(struct EventQueue_t* event);
 #define stop(e, h) stopEvent(e, NULL, (void*)(Cell)&h)
 
 #endif
-
-#define extEvent(event) extern struct EventQueue_t event[]
 
 #endif /* EVENTS_H */
