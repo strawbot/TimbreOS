@@ -1,7 +1,11 @@
 // take an action after time
 /*
+      TimeAction some_ta;
+
 	  after(ta_msecs(25), some_action);
 	  every(ta_msecs(25), some_action);
+
+      stopTimeAction(some action);
 
 	The interrupt to run the checkTimeouts for all the after's is independant
 	of the timeout times. The timeout times are based on BURTC timer. The
@@ -38,7 +42,7 @@ static void relist(TimeAction * ta);
 // time actions
 static QUEUE(30, timeactionq);
 
-static TimeAction timeactionList = {NULL};
+static TimeAction timeactionList = {NULL, NULL,{0}, FREE_RANGE};
 
 static Integer time_left(Timeout * timer) {
 	Integer elapsed = getTime() - timer->timeset;
