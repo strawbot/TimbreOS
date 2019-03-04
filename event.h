@@ -32,14 +32,14 @@
 #include <string.h>
 
 // structures common to C and C++
-struct queue_type {
+typedef struct Action {
   void* object, *method;
   char persist;
-};
+}Action;
 
 typedef struct EventQueue {
   unsigned _size, _head, _tail;
-  struct queue_type* _queue;
+  Action * _queue;
 } EventQueue;
 
 #ifdef __cplusplus
@@ -50,19 +50,19 @@ class EventQueueClass : public EventQueue {
 
   void clear() { _head = _tail = 0; }
 
-  void push(queue_type* entry) {
-    memcpy(&_queue[_head++], entry, sizeof(queue_type));
+  void push(Action* entry) {
+    memcpy(&_queue[_head++], entry, sizeof(Action));
     _head %= _size;
   }
 
-  void pop(queue_type* entry) {
-    memcpy(entry, &_queue[_tail++], sizeof(queue_type));
+  void pop(Action* entry) {
+    memcpy(entry, &_queue[_tail++], sizeof(Action));
     _tail %= _size;
   }
 
   void remove(void* cpp_obj, void* cpp_method) {
     for (int i = 0, total = count(); i < total; i++) {
-      queue_type e;
+      Action e;
 
       pop(&e);
 
@@ -76,7 +76,7 @@ class EventQueueClass : public EventQueue {
     int total = count();
 
     for (int i = 0; i < total; i++) {
-      queue_type e;
+      Action e;
 
       pop(&e);
       if (e.persist)
@@ -100,7 +100,7 @@ extern "C" {
 #define Event(e) Eventi(3, e)
 
 #define Eventi(size, e)              \
-  struct queue_type e##qt[size + 1]; \
+  Action e##qt[size + 1]; \
   EventQueue e[1] = {{size + 1, 0, 0, e##qt}}
 
 #define extEvent(event) extern EventQueue event[]
@@ -116,6 +116,7 @@ void happen(EventQueue* event);
 // C++ in C
 }
 // C++
+void once(EventQueue* event, void* cpp_obj, void* cpp_method); // possible sol'n for c++ functions; c++ uses 2 for function vector and 3 for object method
 #define once(e, h) onceEvent(e, (void*) this, (void*)&h)
 #define when(e, h) whenEvent(e, (void*) this, (void*)&h)
 #define stop(e, h) stopEvent(e, (void*) this, (void*)&h)
