@@ -34,97 +34,97 @@
 
 // structures common to C and C++
 typedef struct Action {
-	void *object, *method;
-	char persist;
+    void *object, *method;
+    char persist;
 } Action;
 
 typedef struct EventQueue {
-	unsigned _size, _head, _tail;
-	Action *_queue;
+    unsigned _size, _head, _tail;
+    Action* _queue;
 } EventQueue;
 
 #ifdef __cplusplus
 class EventQueueClass : public EventQueue {
 public:
-	unsigned count() { return (_head - _tail) % _size; }
+    unsigned count() { return (_head - _tail) % _size; }
 
-	void clear() { _head = _tail = 0; }
+    void clear() { _head = _tail = 0; }
 
-	void push(Action *entry) {
-		memcpy(&_queue[_head++], entry, sizeof(Action));
-		_head %= _size;
-	}
-
-	void pop(Action *entry) {
-		memcpy(entry, &_queue[_tail++], sizeof(Action));
-		_tail %= _size;
-	}
-
-	void remove(void *cpp_obj, void *cpp_method) {
-		for (unsigned i = 0, total = count(); i < total; i++) {
-			Action e;
-
-			pop(&e);
-
-			if (e.object != cpp_obj && e.method != cpp_method) {
-				push(&e);
-			}
-		}
+    void push(Action* entry) {
+        memcpy(&_queue[_head++], entry, sizeof(Action));
+        _head %= _size;
     }
 
-	void happen() {
-		unsigned total = count();
+    void pop(Action* entry) {
+        memcpy(entry, &_queue[_tail++], sizeof(Action));
+        _tail %= _size;
+    }
 
-		for (unsigned i = 0; i < total; i++) {
-			Action e;
+    void remove(void* cpp_obj, void* cpp_method) {
+        for (unsigned i = 0, total = count(); i < total; i++) {
+            Action e;
 
-			pop(&e);
-			if (e.persist)
-				push(&e);
+            pop(&e);
 
-			void (*method)(void *) = reinterpret_cast<void (*)(void*)>(e.method);
-			method(e.object);
-		}
+            if (e.object != cpp_obj && e.method != cpp_method) {
+                push(&e);
+            }
+        }
+    }
+
+    void happen() {
+        unsigned total = count();
+
+        for (unsigned i = 0; i < total; i++) {
+            Action e;
+
+            pop(&e);
+            if (e.persist)
+                push(&e);
+
+            void (*method)(void*) = reinterpret_cast<void (*)(void*)>(e.method);
+            method(e.object);
+        }
     }
 };
 
 extern "C" {
 #endif
 
-void jump(void *object);
+void jump(void* object);
 
 #define Event(e) Eventi(3, e)
 
-#define Eventi(size, e)                                                        \
-	Action e##qt[size + 1];                                                    \
-	EventQueue e[1] = {{size + 1, 0, 0, e##qt}}
+#define Eventi(size, e)     \
+    Action e##qt[size + 1]; \
+    EventQueue e[1] = { { size + 1, 0, 0, e##qt } }
 
 #define extEvent(event) extern EventQueue event[]
 
-void onceEvent(EventQueue *event, void *cpp_obj, void *cpp_method);
-void whenEvent(EventQueue *event, void *cpp_obj, void *cpp_method);
-void stopEvent(EventQueue *event, void *cpp_obj, void *cpp_method);
+void onceEvent(EventQueue* event, void* cpp_obj, void* cpp_method);
+void whenEvent(EventQueue* event, void* cpp_obj, void* cpp_method);
+void stopEvent(EventQueue* event, void* cpp_obj, void* cpp_method);
 
-void never(EventQueue *event);
-void happen(EventQueue *event);
+void never(EventQueue* event);
+void happen(EventQueue* event);
 
 #ifdef __cplusplus
 // C++ in C
 }
 // C++
-void once(EventQueue *event, void *cpp_obj,
-void *cpp_method); // possible sol'n for c++ functions; c++ uses 2
+void once(EventQueue* event, void* cpp_obj,
+    void* cpp_method); // possible sol'n for c++ functions; c++ uses 2
 // for function vector and 3 for object method
-#define once(e, h) onceEvent(e, (void *) this, (void *)&h)
-#define when(e, h) whenEvent(e, (void *) this, (void *)&h)
-#define stop(e, h) stopEvent(e, (void *) this, (void *)&h)
+#define once(e, h) onceEvent(e, (void*)this, (void*)&h)
+#define when(e, h) whenEvent(e, (void*)this, (void*)&h)
+#define stop(e, h) stopEvent(e, (void*)this, (void*)&h)
 
 #else
 
 // C
-#define once(e, h) onceEvent(e, (void *)(Cell)&h, (void *)(Cell)jump)
-#define when(e, h) whenEvent(e, (void *)(Cell)&h, (void *)(Cell)jump)
-#define stop(e, h) stopEvent(e, (void *)(Cell)&h, (void *)(Cell)jump)
+#define once(e, h) onceEvent(e, (void*)(Cell)&h, (void*)(Cell)jump)
+#define when(e, h) whenEvent(e, (void*)(Cell)&h, (void*)(Cell)jump)
+#define stop(e, h) stopEvent(e, (void*)(Cell)&h, (void*)(Cell)jump)
 
 #endif
 

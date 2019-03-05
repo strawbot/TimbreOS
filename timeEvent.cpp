@@ -1,9 +1,9 @@
 // take an action after time
 /*
-      TimeEvent some_ta;
+      TimeEvent some_te;
 
-          after(ta_msecs(25), some_action);
-          every(ta_msecs(25), some_action);
+          after(te_msecs(25), some_action);
+          every(te_msecs(25), some_action);
 
       stoptimeevent(some action);
 
@@ -42,7 +42,7 @@ extern "C" {
 #include "printers.h"
 #include <string.h>
 
-static void relist(TimeEvent* ta);
+static void relist(TimeEvent* te);
 
 // time actions
 static QUEUE(30, timeeventq);
@@ -50,171 +50,197 @@ static QUEUE(30, timeeventq);
 static TimeEvent timeeventList;
 
 static Integer time_left(Timeout* timer) {
-  Integer elapsed = getTime() - timer->timeset;
-  Integer interval = (Integer)timer->timeout;
+    Integer elapsed = getTime() - timer->timeset;
+    Integer interval = (Integer)timer->timeout;
 
-  return interval - elapsed;
+    return interval - elapsed;
 }
 
 void listtimeevents() {
-  TimeEvent* ta = &timeeventList;
-  print("\nPending timed actions:");
-  while ((ta = ta->link) != NULL) {
-    print("\n ");
-    Cell action = (Cell)&ta->action;
-    printHex(action);
-    char* name = getMachineName(action);
-    if (strlen(name))
-      print(name);
-    print(" in "), printDec(time_left(&ta->to)), print("ms");
-  }
+    TimeEvent* te = &timeeventList;
+    print("\nPending timed actions:");
+    while ((te = te->link) != NULL) {
+        print("\n ");
+        Cell action = (Cell)&te->action;
+        printHex(action);
+        char* name = getMachineName(action);
+        if (strlen(name))
+            print(name);
+        print(" in "), printDec(time_left(&te->to)), print("ms");
+    }
 }
 
 static void inlisttimeevents() {
-  while (queryq(timeeventq)) {
-    TimeEvent* ta = (TimeEvent*)pullq(timeeventq);
+    while (queryq(timeeventq)) {
+        TimeEvent* te = (TimeEvent*)pullq(timeeventq);
 
-    ta->link = timeeventList.link;
-    timeeventList.link = ta;
-  }
+        te->link = timeeventList.link;
+        timeeventList.link = te;
+    }
 }
 
 static void checktimeevents() {
-  TimeEvent* before = &timeeventList;
-  TimeEvent* ta;
+    TimeEvent* before = &timeeventList;
+    TimeEvent* te;
 
-  while ((ta = before->link) != 0) {
-    if (checkTimeout(&ta->to)) {
-      if (!ta->action.persist) {
-        before->link = ta->link;
-        relist(ta);
-      } else {
-          before = ta;
-          repeatTimeout(&ta->to);
-      }
-      void (*method)(void*) = (void (*)(void*))ta->action.method;
-      method(ta->action.object);
-    } else
-      before = ta;
-  }
+    while ((te = before->link) != 0) {
+        if (checkTimeout(&te->to)) {
+            if (!te->action.persist) {
+                before->link = te->link;
+                relist(te);
+            } else {
+                before = te;
+                repeatTimeout(&te->to);
+            }
+            void (*method)(void*) = (void (*)(void*))te->action.method;
+            method(te->action.object);
+        } else
+            before = te;
+    }
 }
 
 void timeevent_IRQ() {
-  inlisttimeevents();
-  checktimeevents();
+    inlisttimeevents();
+    checktimeevents();
 }
 
-__attribute__((weak)) void timeeventError(TimeEvent* ta) {
-  printHex((Cell)ta), print(" is already in timeevent queue!");
+__attribute__((weak)) void timeeventError(TimeEvent* te) {
+    printHex((Cell)te), print(" is already in timeevent queue!");
 }
 
-void timeevent(TimeEvent* ta) {
-  if (ta->link == LINK_SENTINEL && 0 == scanq((Cell)ta, timeeventq)) {
-    ta->link = nullptr;
-    pushq((Cell)ta, timeeventq);
-  } else
-    timeeventError(ta);
-}
-
-void after_time(Long t, TimeEvent* ta) {
-  setTimeout(t, &ta->to);
-  timeevent(ta);
-}
-
-void every_time(TimeEvent* ta) {
-  if (ta->to.off == true)
-    after_time(ta->to.timeout, ta);
-  else {
-    repeatTimeout(&ta->to);
-    timeevent(ta);
-  }
+void timeevent(TimeEvent* te) {
+    if (te->link == LINK_SENTINEL && 0 == scanq((Cell)te, timeeventq)) {
+        te->link = nullptr;
+        pushq((Cell)te, timeeventq);
+    } else
+        timeeventError(te);
 }
 
 #define TOTAL_TA 40
 static TimeEvent timeevents[TOTAL_TA];
 
-void init_ta() {
-  timeeventList.link = nullptr;
-  for (int i = 0; i < TOTAL_TA; i++) {
-    timeevents[i].link = &timeevents[i + 1];
-  }
-  timeevents[TOTAL_TA - 1].link = LINK_SENTINEL;
-}
-
-TimeEvent* getTa() {
-  TimeEvent* ta = timeevents[0].link;
-
-  if (ta != LINK_SENTINEL) {
-    timeevents[0].link = ta->link;
-    ta->link = LINK_SENTINEL;
-    return ta;
-  }
-  print("\nERROR in getTa: No more timeevents left.");
-  return timeevents;
-}
-
-static void relist(TimeEvent* ta) {
-  ta->link = timeevents[0].link;
-  timeevents[0].link = ta;
-}
-
-void stopTa(TimeEvent* ta) {
-  TimeEvent* before = &timeeventList;
-  TimeEvent* tai;
-
-  while ((tai = before->link) != 0) {
-    if (tai == ta) {
-      before->link = ta->link;
-      relist(ta);
-      return;
+void init_te() {
+    timeeventList.link = nullptr;
+    for (int i = 0; i < TOTAL_TA; i++) {
+        timeevents[i].link = &timeevents[i + 1];
     }
-    before = tai;
-  }
-
-  for (int n = queryq(timeeventq); n; n--) {
-    Cell tap = pullq(timeeventq);
-    if (tap == (Cell)ta)
-      relist(ta);
-    else
-      pushq(tap, timeeventq);
-  }
+    timeevents[TOTAL_TA - 1].link = LINK_SENTINEL;
+    zeroq(timeeventq);
 }
 
-void stoptimeevent(vector action) {
-  TimeEvent* before = &timeeventList;
-  TimeEvent* tai;
+TimeEvent* getTe() {
+    TimeEvent* te = timeevents[0].link;
 
-  while ((tai = before->link) != 0) {
-    if (tai->action.method == action) {
-      before->link = tai->link;
-      relist(tai);
-    } else
-      before = tai;
-  }
+    if (te != LINK_SENTINEL) {
+        timeevents[0].link = te->link;
+        te->link = LINK_SENTINEL;
+        return te;
+    }
+    print("\nERROR in getTa: No more timeevents left.");
+    return timeevents;
+}
 
-  for (int n = queryq(timeeventq); n; n--) {
-    TimeEvent* tap = (TimeEvent*)pullq(timeeventq);
-    if (tap->action.method == action) {
-      relist(tap);
-    } else
-      pushq((Cell)tap, timeeventq);
-  }
+static void relist(TimeEvent* te) {
+    te->link = timeevents[0].link;
+    timeevents[0].link = te;
+}
+
+void stopTe(TimeEvent* te) {
+    TimeEvent* before = &timeeventList;
+    TimeEvent* tai;
+
+    while ((tai = before->link) != 0) {
+        if (tai == te) {
+            before->link = te->link;
+            relist(te);
+            return;
+        }
+        before = tai;
+    }
+
+    for (int n = queryq(timeeventq); n; n--) {
+        Cell tap = pullq(timeeventq);
+        if (tap == (Cell)te)
+            relist(te);
+        else
+            pushq(tap, timeeventq);
+    }
+}
+
+void stopTimeEvent(vector action) {
+    TimeEvent* before = &timeeventList;
+    TimeEvent* tai;
+
+    while ((tai = before->link) != 0) {
+        if (tai->action.object == action) {
+            before->link = tai->link;
+            relist(tai);
+        } else
+            before = tai;
+    }
+
+    for (int n = queryq(timeeventq); n; n--) {
+        TimeEvent* tap = (TimeEvent*)pullq(timeeventq);
+        if (tap->action.object == action) {
+            relist(tap);
+        } else
+            pushq((Cell)tap, timeeventq);
+    }
 }
 
 TimeEvent* after(Long time, vector action) {
-  TimeEvent* ta = getTa();
+    TimeEvent* te = getTe();
 
-  setTimeout(time, &ta->to);
-  ta->action.method = (void*)jump;
-  ta->action.object = (void*)action;
-  ta->action.persist = false;
-  timeevent(ta);
-  return ta;
+    setTimeout(time, &te->to);
+    te->action.method = (void*)jump;
+    te->action.object = (void*)action;
+    te->action.persist = false;
+    timeevent(te);
+    return te;
 }
 
 TimeEvent* every(Long time, vector action) {
-  TimeEvent* ta = after(time, action);
-  ta->action.persist = true;
-  return ta;
+    TimeEvent* te = after(time, action);
+    te->action.persist = true;
+    return te;
 }
+
+}
+// C++
+TimeEvent* after(Long time, void* cpp_obj, void (action)(void*)) {
+    TimeEvent* te = getTe();
+
+    setTimeout(time, &te->to);
+    te->action.method = (void*)action;
+    te->action.object = cpp_obj;
+    te->action.persist = false;
+    timeevent(te);
+    return te;
+}
+
+TimeEvent* every(Long time, void* cpp_obj, void (action)(void*)) {
+    TimeEvent* te = after(time, cpp_obj, action);
+    te->action.persist = true;
+    return te;
+}
+
+void stopTimeEvent(void* cpp_obj, void (action)(void*)) {
+    TimeEvent* before = &timeeventList;
+    TimeEvent* tai;
+
+    while ((tai = before->link) != 0) {
+        if (tai->action.object == cpp_obj && tai->action.method == action) {
+            before->link = tai->link;
+            relist(tai);
+        } else
+            before = tai;
+    }
+
+    for (int n = queryq(timeeventq); n; n--) {
+        TimeEvent* tap = (TimeEvent*)pullq(timeeventq);
+        if (tap->action.object == cpp_obj && tap->action.method == action) {
+            relist(tap);
+        } else
+            pushq((Cell)tap, timeeventq);
+    }
 }
