@@ -207,7 +207,7 @@ TimeEvent* every(Long time, vector action) {
 
 }
 // C++
-TimeEvent* after(Long time, void* cpp_obj, void (action)(void*)) {
+TimeEvent* after(Long time, void* cpp_obj, unafun action) {
     TimeEvent* te = getTe();
 
     setTimeout(time, &te->to);
@@ -218,13 +218,13 @@ TimeEvent* after(Long time, void* cpp_obj, void (action)(void*)) {
     return te;
 }
 
-TimeEvent* every(Long time, void* cpp_obj, void (action)(void*)) {
+TimeEvent* every(Long time, void* cpp_obj, unafun action) {
     TimeEvent* te = after(time, cpp_obj, action);
     te->action.persist = true;
     return te;
 }
 
-void stopTimeEvent(void* cpp_obj, void (action)(void*)) {
+void stopTimeEvent(void* cpp_obj, unafun action) {
     TimeEvent* before = &timeeventList;
     TimeEvent* tai;
 

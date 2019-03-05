@@ -32,6 +32,8 @@
 #include <stdio.h>
 #include <string.h>
 
+typedef void (*unafun)(void*); // unary function
+
 // structures common to C and C++
 typedef struct Action {
     void *object, *method;
@@ -60,7 +62,7 @@ public:
         _tail %= _size;
     }
 
-    void remove(void* cpp_obj, void* cpp_method) {
+    void remove(void* cpp_obj, unafun cpp_method) {
         for (unsigned i = 0, total = count(); i < total; i++) {
             Action e;
 
@@ -91,6 +93,8 @@ public:
 extern "C" {
 #endif
 
+#include "ttypes.h"
+
 void jump(void* object);
 
 #define Event(e) Eventi(3, e)
@@ -101,10 +105,6 @@ void jump(void* object);
 
 #define extEvent(event) extern EventQueue event[]
 
-void onceEvent(EventQueue* event, void* cpp_obj, void* cpp_method);
-void whenEvent(EventQueue* event, void* cpp_obj, void* cpp_method);
-void stopEvent(EventQueue* event, void* cpp_obj, void* cpp_method);
-
 void never(EventQueue* event);
 void happen(EventQueue* event);
 
@@ -112,19 +112,20 @@ void happen(EventQueue* event);
 // C++ in C
 }
 // C++
-void once(EventQueue* event, void* cpp_obj,
-    void* cpp_method); // possible sol'n for c++ functions; c++ uses 2
-// for function vector and 3 for object method
-#define once(e, h) onceEvent(e, (void*)this, (void*)&h)
-#define when(e, h) whenEvent(e, (void*)this, (void*)&h)
-#define stop(e, h) stopEvent(e, (void*)this, (void*)&h)
+extern "C"   void once(EventQueue* event, vector action);
+extern "C++" void once(EventQueue* event, void* cpp_obj, unafun cpp_method);
+extern "C"   void when(EventQueue* event, vector action);
+extern "C++" void when(EventQueue* event, void* cpp_obj, unafun cpp_method);
+extern "C"   void stopEvent(EventQueue* event, vector action);
+extern "C++" void stopEvent(EventQueue* event, void* cpp_obj, unafun cpp_method);
+
 
 #else
 
 // C
-#define once(e, h) onceEvent(e, (void*)(Cell)&h, (void*)(Cell)jump)
-#define when(e, h) whenEvent(e, (void*)(Cell)&h, (void*)(Cell)jump)
-#define stop(e, h) stopEvent(e, (void*)(Cell)&h, (void*)(Cell)jump)
+void once(EventQueue* event, vector action);
+void when(EventQueue* event, vector action);
+void stopEvent(EventQueue* event, vector action);
 
 #endif
 

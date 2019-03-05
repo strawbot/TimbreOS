@@ -23,19 +23,27 @@ typedef struct TimeEvent {
 } TimeEvent;
 
 #ifdef __cplusplus
-extern "C++" TimeEvent* after(Long time, void* cpp_obj, void (*action)(void*));
-extern "C++" TimeEvent* every(Long time, void* cpp_obj, void (*action)(void*));
-extern "C++" void stopTimeEvent(void* cpp_obj, void (action)(void*));
+// C++
+extern "C"   TimeEvent* after(Long time, vector action);
+extern "C++" TimeEvent* after(Long time, void* cpp_obj, unafun action);
+
+extern "C"   TimeEvent* every(Long time, vector action);
+extern "C++" TimeEvent* every(Long time, void* cpp_obj, unafun action);
+
+extern "C"   void stopTimeEvent(vector action);
+extern "C++" void stopTimeEvent(void* cpp_obj, unafun action);
+
 extern "C"   void stopTe(TimeEvent* ta);
-extern "C" TimeEvent* after(Long time, vector action);
-extern "C" TimeEvent* every(Long time, vector action);
-extern "C" void stopTimeEvent(vector action);
+
 #else
+// C
 TimeEvent* after(Long time, vector action);
 TimeEvent* every(Long time, vector action);
 void stopTimeEvent(vector action);
 void stopTe(TimeEvent* ta);
+
 #endif
+
 void timeaction(TimeEvent* ta);
 
 TimeEvent* timeToAction(Long time, vector action);

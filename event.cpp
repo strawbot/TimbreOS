@@ -1,23 +1,31 @@
 #include "event.h"
 
+void once(EventQueue* event, void* cpp_obj, unafun cpp_method) {
+    Action e = { cpp_obj, (void *)cpp_method, 0 };
+    static_cast<EventQueueClass*>(event)->push(&e);
+}
+
+void when(EventQueue* event, void* cpp_obj, unafun cpp_method) {
+    Action e = { cpp_obj, (void *)cpp_method, 1 };
+    static_cast<EventQueueClass*>(event)->push(&e);
+}
+
+void stopEvent(EventQueue* event, void* cpp_obj, unafun cpp_method) {
+    static_cast<EventQueueClass*>(event)->remove(cpp_obj, cpp_method);
+}
+
 extern "C" {
 
-void whenEvent(EventQueue* event, void* cpp_obj, void* cpp_method) {
-    Action e = { cpp_obj, cpp_method, 1 };
-    static_cast<EventQueueClass*>(event)->push(&e);
+void once(EventQueue* event, vector action) {
+    once(event, (void*)action, jump);
 }
 
-void onceEvent(EventQueue* event, void* cpp_obj, void* cpp_method) {
-    Action e = { cpp_obj, cpp_method, 0 };
-    static_cast<EventQueueClass*>(event)->push(&e);
+void when(EventQueue* event, vector action) {
+    when(event, (void*)action, jump);
 }
 
-//void once(EventQueue* event, void* cpp_obj, void* cpp_method) {
-//    onceEvent(event, cpp_obj, cpp_method);
-//}
-
-void stopEvent(EventQueue* event, void* cpp_obj, void* cpp_method) {
-    static_cast<EventQueueClass*>(event)->remove(cpp_obj, cpp_method);
+void stopEvent(EventQueue* event, vector action) {
+    static_cast<EventQueueClass*>(event)->remove((void *)action, jump);
 }
 
 void never(EventQueue* event) {
