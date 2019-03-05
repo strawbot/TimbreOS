@@ -12,7 +12,7 @@
 #include "printers.h"
 #include <string.h>
 
-void init_ta();
+void init_te();
 
 QUEUE(MACHINES, machineq); // workers
 QUEUE(ACTIONS, actionq); // now
@@ -242,7 +242,7 @@ void listq(Qtype *q) { // list q items
 	}
 }
 
-void listTimeActions();
+void listTimeEvents();
 
 void listMachines(void) {
 	print("\nmachineq:\n Depth: "), printDec(runDepth);
@@ -252,7 +252,7 @@ void listMachines(void) {
 	if (mmoverflow)
 		print("\n moverflows: "), printDec(mmoverflow);
 	if (queryq(actionq))  print("\nactionq:"), listq(actionq);
-	listTimeActions();
+	listTimeEvents();
 }
 
 void listm(void) { // list machine statuses
@@ -263,7 +263,7 @@ void initMachines(void) {
 	zeroq(actionq);
 	initMachineStats();
 	zeroq(dids);
-	init_ta();
+	init_te();
 }
 
 void killMachine() {

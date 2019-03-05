@@ -56,7 +56,7 @@ static Integer time_left(Timeout* timer) {
     return interval - elapsed;
 }
 
-void listtimeevents() {
+void listTimeEvents() {
     TimeEvent* te = &timeeventList;
     print("\nPending timed actions:");
     while ((te = te->link) != NULL) {

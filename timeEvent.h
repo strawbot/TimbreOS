@@ -11,7 +11,7 @@
  *  every(time, action) // periodic
  *  stop
  */
-#ifndef TIMEEVENTH_
+#ifndef TIMEEVENT_H_
 #define TIMEEVENT_H_
 
 #define LINK_SENTINEL (TimeEvent*)0xFACEF00D
