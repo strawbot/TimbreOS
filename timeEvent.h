@@ -1,39 +1,26 @@
 #include "timeout.h"
 #include "queue.h"
 #include <stdbool.h>
+#include "event.h"
 
-#ifndef _TIMEACTION_H_
-#define _TIMEACTION_H_
+#ifndef TIMEEVENTH_
+#define TIMEEVENT_H_
 
-#define LINK_SENTINEL  (TimeAction *)0xFACEF00D
+#define LINK_SENTINEL  (TimeEvent *)0xFACEF00D
 
-enum {FREE_RANGE, RANCH}; // one from somewhere else or on in this collection
-
-typedef struct TimeAction {
-	struct TimeAction * link;
-	vector action;
+typedef struct TimeEvent {
+	Action action; // first place - inherit structure; Action * for both
+	struct TimeEvent * link;
 	Timeout to;
-	Cell type;
-} TimeAction;
+} TimeEvent;
 
-#define after(t, m) \
-do { \
-	static TimeAction ta = {LINK_SENTINEL, m, {0}, 0}; \
-	after_time(t, &ta); \
-} while (false)
+TimeEvent * after(Long time, vector action);
+TimeEvent * every(Long time, vector action);
 
-#define every(t, m) \
-do { \
-	static TimeAction ta = {LINK_SENTINEL, m, {t,0,true}, 0}; \
-	every_time(&ta); \
-} while (false)
+void timeaction(TimeEvent * ta);
 
-void timeaction(TimeAction * ta);
-void after_time(Long t, TimeAction * ta);
-void every_time(TimeAction * ta);
-
-TimeAction * timeToAction(Long time, vector action);
-void stopTa(TimeAction * ta);
+TimeEvent * timeToAction(Long time, vector action);
+void stopTa(TimeEvent * ta);
 void stopTimeAction(vector action);
 
 // #define ta_usecs()

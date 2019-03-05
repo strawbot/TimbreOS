@@ -15,6 +15,7 @@ void onceEvent(EventQueue* event, void* cpp_obj, void* cpp_method) {
 //void once(EventQueue* event, void* cpp_obj, void* cpp_method) {
 //    onceEvent(event, cpp_obj, cpp_method);
 //}
+
 void stopEvent(EventQueue* event, void* cpp_obj, void* cpp_method) {
   static_cast<EventQueueClass*>(event)->remove(cpp_obj, cpp_method);
 }
@@ -25,5 +26,10 @@ void never(EventQueue* event) {
 
 void happen(EventQueue* event) {
   static_cast<EventQueueClass*>(event)->happen();
+}
+
+void jump(void *object) { // with function pointer as object use this method
+    printf("\nJummping to :%lX",reinterpret_cast<uintptr_t>(object));
+    (reinterpret_cast<void (*)()>(object))();
 }
 }

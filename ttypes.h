@@ -1,7 +1,7 @@
 //! \file Types for portability  Robert Chapman III  Feb 14, 2011
 
-#ifndef _TTYPES_H_
-#define _TTYPES_H_
+#ifndef TTYPES_H_
+#define TTYPES_H_
 
 /* Mostly Byte = 8bit, Word = 16bit, Cell = 32bit */
 // On 64 bit platforms long and pointer are 64 bit while int is 32 bit if it is LP64
