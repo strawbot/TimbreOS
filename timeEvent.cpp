@@ -92,10 +92,10 @@ static void checktimeevents() {
                 before = te;
                 repeatTimeout(&te->to);
             }
-            next(te->action.object, (unafun)te->action.method);
-
-            // void (*method)(void*) = (void (*)(void*))te->action.method;
-            // method(te->action.object);
+            if (te->action.method == jump)
+                next((vector)te->action.object);
+            else
+                next(te->action.object, (unafun)te->action.method);
         } else
             before = te;
     }

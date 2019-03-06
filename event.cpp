@@ -38,7 +38,6 @@ void happen(EventQueue* event) {
 
 #include <cstdint>
 void jump(void* object) { // with function pointer as object use this method
-    printf("\nJummping to :%lX", reinterpret_cast<uintptr_t>(object));
     (reinterpret_cast<void (*)()>(object))();
 }
 }

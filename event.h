@@ -31,8 +31,7 @@
 
 #include <stdio.h>
 #include <string.h>
-typedef void (*unafun)(void*); // unary function
-
+#include "ttypes.h"
 
 // structures common to C and C++
 typedef struct Action {
@@ -46,6 +45,11 @@ typedef struct EventQueue {
 } EventQueue;
 
 #ifdef __cplusplus
+extern "C" {
+
+void next(vector object);
+void jump(void* object);
+}
 extern "C++" void next(void* object, unafun unary);
 
 class EventQueueClass : public EventQueue {
@@ -86,19 +90,16 @@ public:
             if (e.persist)
                 push(&e);
 
-            next(e.object, (unafun)e.method);
-            // void (*method)(void*) = reinterpret_cast<void (*)(void*)>(e.method);
-            // method(e.object);
+            if (e.method == jump)
+                next((vector)e.object);
+            else
+                next(e.object, (unafun)e.method);
         }
     }
 };
 
 extern "C" {
 #endif
-
-#include "ttypes.h"
-
-void jump(void* object);
 
 #define Event(e) Eventi(3, e)
 

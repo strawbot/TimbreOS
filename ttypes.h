@@ -65,6 +65,7 @@ typedef unsigned char  bool;
 // a C funtion address is a vector
 // a vector followed by pointers to other vectors is a threaded code body
 typedef void (*vector)();
+typedef void (*unafun)(void*); // unary function
 
 struct tcbody;
 
