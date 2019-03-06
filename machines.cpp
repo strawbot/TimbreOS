@@ -6,6 +6,7 @@
 // add depth detector for runMachines. Each time it is entered, depth increases by 1
 // each time it is finished, depth decreases by 1
 // add protection to runMachines so it can tell if it is recursive
+extern "C" {
 
 #include "machines.h"
 #include "cli.h"
@@ -20,7 +21,7 @@ QUEUE(ACTIONS, actionq); // now
 Byte mmoverflow = 0, mmunderflow = 0;
 Byte amoverflow = 0;
 
-void activate(vector machine) {
+void later(vector machine) {
 	ATOMIC_SECTION_ENTER;
 	if (leftq(machineq))
 		pushq((Cell)machine, machineq);
@@ -47,7 +48,7 @@ void deactivate(vector machine) { // remove a machine from queue
 void activateMachineOnce(vector machine) // only have one occurrance of a machine running
 {
 	deactivate(machine);
-	activate(machine);
+	later(machine);
 }
 
 static Long runDepth = 0;
@@ -256,7 +257,7 @@ void listMachines(void) {
 }
 
 void listm(void) { // list machine statuses
-	activate(listMachines);
+	later(listMachines);
 }
 void initMachines(void) {
 	zeroq(machineq);
@@ -279,7 +280,7 @@ void activateMachine() {
 	vector mac = getMachine((char *)parseWord(0));
 
 	if (mac)
-		activate(mac);
+		later(mac);
 	else
 		print("Machine not available.\n");
 }
@@ -343,4 +344,25 @@ void machineStats(void) {
 		} else
 			printHex(machine);
 	}
+}
+
+}
+
+// extensions for C++ in the same manner as events
+static QUEUE(2*ACTIONS, unaq);
+
+void runAction() {
+	unafun unary = (unafun)pullq(unaq);
+	void * object = (void *)pullq(unaq);
+	unary(object);
+}
+
+void next(void* object, unafun unary) {
+	pushq((Cell)unary, unaq), pushq((Cell)object, unaq);
+	next(runAction);
+}
+
+void later(void* object, unafun unary) {
+	pushq((Cell)unary, unaq), pushq((Cell)object, unaq);
+	later(runAction);
 }

@@ -3,13 +3,9 @@
 #ifndef _MACHINES_H_
 #define _MACHINES_H_
 
-#include "queue.h"
 #include "timeEvent.h"
-#include "event.h"
 
-void activate (vector machine);
-void next (vector machine);
-#define later(m)    activate(m)
+#define activate(m)    later(m)
 
 void activateMachineOnce(vector machine);
 void deactivate(vector machine);
@@ -39,6 +35,19 @@ void run_slice();
 	#define ATOMIC_SECTION_LEAVE
 #endif
 
+#ifdef __cplusplus
+
+extern "C++" void next(void* object, void* unary);
+extern "C++" void later(void* object, void* unary);
+extern "C"   void later (vector machine);
+extern "C"   void next (vector machine);
+
+#else
+
+void later (vector machine);
+void next (vector machine);
+
+#endif
 /*
 void noop(void);
 
@@ -49,17 +58,17 @@ void noop(void);
 #define enact(machine)		machine##_machine();
 
 	in machine.c
-	
+
 	void machines(void)
 	{
 		enact(machine1);
 		enact(machine2);
 		...
 	}
-	
+
 	in file1.c
 	machine(machine1); // declare
-		
+
 		activate(machine1); // turn on
 		...
 		deactivate(machine1); // turn off
