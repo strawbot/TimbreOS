@@ -358,11 +358,15 @@ void runAction() {
 }
 
 void next(void* object, unafun unary) {
+	ATOMIC_SECTION_ENTER;
 	pushq((Cell)unary, unaq), pushq((Cell)object, unaq);
+	ATOMIC_SECTION_LEAVE;
 	next(runAction);
 }
 
 void later(void* object, unafun unary) {
+	ATOMIC_SECTION_ENTER;
 	pushq((Cell)unary, unaq), pushq((Cell)object, unaq);
+	ATOMIC_SECTION_LEAVE;
 	later(runAction);
 }
