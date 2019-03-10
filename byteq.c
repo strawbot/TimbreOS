@@ -91,6 +91,11 @@ void storeB(Byte b, Cell * a) {
     bq->q[bq->insert] = b;
 }
 
+Byte fetchB(Cell * a) {
+    byteq * bq = (byteq *)a;
+    return bq->q[bq->remove];
+}
+
 void writeB(Byte b, Cell * a) { // stuff item into an array
     byteq * bq = (byteq *)a;
 

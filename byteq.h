@@ -78,6 +78,7 @@ void wrappedbq(Cell * q);
 // use queue structure as an array
 #define BARRAY(size, name) BQUEUE(size,name)
 void storeB(Byte b, Cell * a);
+Byte fetchB(Cell * a);
 void writeB(Byte b, Cell * a);
 Byte readB(Cell * a) ;
 Long usedB(Cell * a);
