@@ -3,6 +3,10 @@
 #ifndef _MACHINES_H_
 #define _MACHINES_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "timeEvent.h"
 
 #define activate(m)    later(m)
@@ -73,5 +77,9 @@ void noop(void);
 		...
 		deactivate(machine1); // turn off
 */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

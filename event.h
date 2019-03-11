@@ -101,7 +101,15 @@ public:
 extern "C" {
 #endif
 
+// class/action - within same class
+// class/object/action - calling methods from other classes, object needed
+
 #define Event(e) Eventi(3, e)
+
+#define classAction(class, method) COM(class, this, method)
+#define COM(class, object, method) object, [](void * o){ ((class *)o)->method(); }
+#define objectAction(method) \
+  this, [](void * o){ (static_cast<decltype(this)>(o))->method(); }
 
 #define Eventi(size, e)     \
     Action e##qt[size + 1]; \
@@ -122,7 +130,6 @@ extern "C"   void when(EventQueue* event, vector action);
 extern "C++" void when(EventQueue* event, void* cpp_obj, unafun cpp_method);
 extern "C"   void stopEvent(EventQueue* event, vector action);
 extern "C++" void stopEvent(EventQueue* event, void* cpp_obj, unafun cpp_method);
-
 
 #else
 
