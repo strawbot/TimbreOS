@@ -106,10 +106,9 @@ extern "C" {
 
 #define Event(e) Eventi(3, e)
 
-#define classAction(class, method) COM(class, this, method)
-#define COM(class, object, method) object, [](void * o){ ((class *)o)->method(); }
-#define objectAction(method) \
-  this, [](void * o){ (static_cast<decltype(this)>(o))->method(); }
+#define ObjectMethod(object, method) object, [](void * o){ (static_cast<decltype(object)>(o))->method(); }
+#define OM(o,m) ObjectMethod(o,m)
+#define Method(method) OM(this, method)
 
 #define Eventi(size, e)     \
     Action e##qt[size + 1]; \
