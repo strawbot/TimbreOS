@@ -56,16 +56,24 @@ static Integer time_left(Timeout* timer) {
     return interval - elapsed;
 }
 
+void printAction(Action * a) {
+    char* name;
+    if (a->method == jump)
+        name = getMachineName((Cell)a->object);
+    else
+        name = getMachineName((Cell)a->method);
+    if (strlen(name))
+        print(name);
+    else
+        printHex((Cell)a->method);
+}
+
 void listTimeEvents() {
     TimeEvent* te = &timeeventList;
     print("\nPending timed actions:");
     while ((te = te->link) != NULL) {
         print("\n ");
-        Cell action = (Cell)&te->action;
-        printHex(action);
-        char* name = getMachineName(action);
-        if (strlen(name))
-            print(name);
+        printAction(&te->action);
         print(" in "), printDec(time_left(&te->to)), print("ms");
     }
 }
