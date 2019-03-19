@@ -126,27 +126,27 @@ void timeevent(TimeEvent* te) {
         timeeventError(te);
 }
 
-#define TOTAL_TA 40
-static TimeEvent timeevents[TOTAL_TA];
+#define TOTAL_TE 40
+static TimeEvent timeevents[TOTAL_TE];
 
 void init_te() {
     timeeventList.link = nullptr;
-    for (int i = 0; i < TOTAL_TA; i++) {
+    for (int i = 0; i < TOTAL_TE; i++) {
         timeevents[i].link = &timeevents[i + 1];
     }
-    timeevents[TOTAL_TA - 1].link = LINK_SENTINEL;
+    timeevents[TOTAL_TE - 1].link = 0;
     zeroq(timeeventq);
 }
 
 TimeEvent* getTe() {
     TimeEvent* te = timeevents[0].link;
 
-    if (te != LINK_SENTINEL) {
+    if (te) {
         timeevents[0].link = te->link;
         te->link = LINK_SENTINEL;
         return te;
     }
-    print("\nERROR in getTa: No more timeevents left.");
+    print("\nERROR in getTe: No more timeevents left.");
     return timeevents;
 }
 
