@@ -259,12 +259,15 @@ void listMachines(void) {
 void listm(void) { // list machine statuses
 	later(listMachines);
 }
+
+void runAction();
 void initMachines(void) {
 	zeroq(machineq);
 	zeroq(actionq);
 	initMachineStats();
 	zeroq(dids);
 	init_te();
+	nameMachine(runAction);
 }
 
 void killMachine() {
@@ -354,7 +357,20 @@ static QUEUE(2*ACTIONS, unaq);
 void runAction() {
 	unafun unary = (unafun)pullq(unaq);
 	void * object = (void *)pullq(unaq);
+
+	Cell * stat = dictAdjunctKey((Cell)unary, &mactimes);
+	if (stat == 0) {
+		stat = dictAdjunctKey((Cell)UNKNOWN, &mactimes);
+		if (leftq(unknownq))
+			pushq((Cell)unary,unknownq);
+	}
+
+	int time = (int)getTicks();
 	unary(object);
+	time = (int)getTicks() - time;
+
+	if (time > (int)*stat) // TODO: consider atomicity of readnwrite
+		*stat = (Cell)time;
 }
 
 void next(void* object, unafun unary) {
