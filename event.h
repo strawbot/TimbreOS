@@ -32,10 +32,12 @@
 #include <stdio.h>
 #include <string.h>
 #include "ttypes.h"
+#define NOT_NAMED "unknown_machines"
 
 // structures common to C and C++
 typedef struct Action {
     void *object, *method;
+    const char *name;
     char persist;
 } Action;
 
@@ -50,7 +52,8 @@ extern "C" {
 void next(vector object);
 void jump(void* object);
 }
-extern "C++" void next(void* object, unafun unary);
+
+#include "next.hpp"
 
 class EventQueueClass : public EventQueue {
 public:
@@ -93,7 +96,7 @@ public:
             if (e.method == jump)
                 next((vector)e.object);
             else
-                next(e.object, (unafun)e.method);
+                next((vector)e.object, (unafun)e.method);
         }
     }
 };
@@ -107,8 +110,7 @@ extern "C" {
 #define Event(e) Eventi(3, e)
 
 #define ObjectMethod(object, method) object, [](void * o){ (static_cast<decltype(object)>(o))->method(); }
-#define OM(o,m) ObjectMethod(o,m)
-#define Method(method) OM(this, method)
+#define Method(method) ObjectMethod(this, method)
 
 #define Eventi(size, e)     \
     Action e##qt[size + 1]; \
@@ -124,9 +126,9 @@ void happen(EventQueue* event);
 }
 // C++
 extern "C"   void once(EventQueue* event, vector action);
-extern "C++" void once(EventQueue* event, void* cpp_obj, unafun cpp_method);
+extern "C++" void once(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name=NOT_NAMED);
 extern "C"   void when(EventQueue* event, vector action);
-extern "C++" void when(EventQueue* event, void* cpp_obj, unafun cpp_method);
+extern "C++" void when(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name=NOT_NAMED);
 extern "C"   void stopEvent(EventQueue* event, vector action);
 extern "C++" void stopEvent(EventQueue* event, void* cpp_obj, unafun cpp_method);
 

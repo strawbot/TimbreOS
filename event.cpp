@@ -1,12 +1,12 @@
 #include "event.h"
 
-void once(EventQueue* event, void* cpp_obj, unafun cpp_method) {
-    Action e = { cpp_obj, (void *)cpp_method, 0 };
+void once(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name) {
+    Action e = { cpp_obj, (void *)cpp_method, name, 0};
     static_cast<EventQueueClass*>(event)->push(&e);
 }
 
-void when(EventQueue* event, void* cpp_obj, unafun cpp_method) {
-    Action e = { cpp_obj, (void *)cpp_method, 1 };
+void when(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name) {
+    Action e = { cpp_obj, (void *)cpp_method, name, 1};
     static_cast<EventQueueClass*>(event)->push(&e);
 }
 

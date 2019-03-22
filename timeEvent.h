@@ -25,10 +25,10 @@ typedef struct TimeEvent {
 #ifdef __cplusplus
 // C++
 extern "C"   TimeEvent* after(Long time, vector action);
-extern "C++" TimeEvent* after(Long time, void* cpp_obj, unafun action);
+extern "C++" TimeEvent* after(Long time, void* cpp_obj, unafun action, const char * name=NOT_NAMED);
 
 extern "C"   TimeEvent* every(Long time, vector action);
-extern "C++" TimeEvent* every(Long time, void* cpp_obj, unafun action);
+extern "C++" TimeEvent* every(Long time, void* cpp_obj, unafun action, const char * name=NOT_NAMED);
 
 extern "C"   void stopTimeEvent(vector action);
 extern "C++" void stopTimeEvent(void* cpp_obj, unafun action);

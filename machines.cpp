@@ -164,8 +164,6 @@ void run_slice() {
 #include "dictionary.h"
 #include "printers.h"
 
-#define UNKNOWN "unknown_machines"
-
 QUEUE(10, unknownq);
 
 HASHDICT(HASH9, macnames); // keep track of machine names
@@ -183,7 +181,7 @@ void initMachineStats() {
 	zeroq(unknownq);
     emptyDict(&macnames);
     emptyDict(&mactimes);
-    machineName((vector)(Cell)UNKNOWN, UNKNOWN);
+    machineName((vector)(Cell)NOT_NAMED, NOT_NAMED);
 }
 
 void zeroMachineTimes() {
@@ -296,7 +294,7 @@ void activateMachine() {
 void machineRun(vector m) {
 	Cell * stat = dictAdjunctKey((Cell)m, &mactimes);
 	if (stat == 0) {
-		stat = dictAdjunctKey((Cell)UNKNOWN, &mactimes);
+		stat = dictAdjunctKey((Cell)NOT_NAMED, &mactimes);
 		if (leftq(unknownq))
 			pushq((Cell)m,unknownq);
 	}
@@ -341,7 +339,7 @@ void machineStats(void) {
 
 		if (name) {
 			print(name);
-			if (name == (char *)UNKNOWN)
+			if (name == (char *)NOT_NAMED)
 				for (int i = queryq(unknownq); i; i--)
 					print(" "), dotnb(0, 0, q(unknownq), 16), rotateq(unknownq, 1);
 		} else
@@ -360,7 +358,7 @@ void runAction() {
 
 	Cell * stat = dictAdjunctKey((Cell)unary, &mactimes);
 	if (stat == 0) {
-		stat = dictAdjunctKey((Cell)UNKNOWN, &mactimes);
+		stat = dictAdjunctKey((Cell)NOT_NAMED, &mactimes);
 		if (leftq(unknownq))
 			pushq((Cell)unary,unknownq);
 	}
@@ -373,16 +371,17 @@ void runAction() {
 		*stat = (Cell)time;
 }
 
-void next(void* object, unafun unary) {
+void next(void* object, unafun unary, const char * name) {
 	ATOMIC_SECTION_ENTER;
 	pushq((Cell)unary, unaq), pushq((Cell)object, unaq);
 	ATOMIC_SECTION_LEAVE;
 	next(runAction);
 }
 
-void later(void* object, unafun unary) {
+void later(void* object, unafun unary, const char * name) {
 	ATOMIC_SECTION_ENTER;
 	pushq((Cell)unary, unaq), pushq((Cell)object, unaq);
 	ATOMIC_SECTION_LEAVE;
 	later(runAction);
+	(void)name;
 }

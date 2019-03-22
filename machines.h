@@ -41,10 +41,7 @@ void run_slice();
 
 #ifdef __cplusplus
 
-extern "C++" void next(void* object, unafun unary);
-extern "C++" void later(void* object, unafun unary);
-extern "C"   void later (vector machine);
-extern "C"   void next (vector machine);
+#include "next.hpp"
 
 #else
 
