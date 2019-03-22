@@ -40,7 +40,7 @@ typedef struct Action {
 } Action;
 
 typedef struct EventQueue {
-    unsigned _size, _head, _tail;
+    Byte _size, _head, _tail;
     Action* _queue;
 } EventQueue;
 
@@ -54,10 +54,12 @@ extern "C++" void next(void* object, unafun unary);
 
 class EventQueueClass : public EventQueue {
 public:
-    unsigned count() { return (_head - _tail) % _size; }
+    Byte count() {
+        return (_head >= _tail) ? (_head - _tail) : (_size - (_tail - _head));
+    }
 
     void clear() { _head = _tail = 0; }
-
+    
     void push(Action* entry) {
         memcpy(&_queue[_head++], entry, sizeof(Action));
         _head %= _size;
@@ -69,7 +71,7 @@ public:
     }
 
     void remove(void* cpp_obj, unafun cpp_method) {
-        for (unsigned i = 0, total = count(); i < total; i++) {
+        for (Byte i = 0, total = count(); i < total; i++) {
             Action e;
 
             pop(&e);
@@ -81,9 +83,9 @@ public:
     }
 
     void happen() {
-        unsigned total = count();
+        Byte total = count();
 
-        for (unsigned i = 0; i < total; i++) {
+        for (Byte i = 0; i < total; i++) {
             Action e;
 
             pop(&e);
