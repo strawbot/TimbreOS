@@ -69,7 +69,7 @@ public:
         memcpy(entry, &_queue[_tail++], sizeof(Action));
         _tail %= _size;
     }
-
+    
     void remove(void* cpp_obj, unafun cpp_method) {
         for (Byte i = 0, total = count(); i < total; i++) {
             Action e;

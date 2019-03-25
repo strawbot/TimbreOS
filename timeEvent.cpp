@@ -156,6 +156,8 @@ static void relist(TimeEvent* te) {
 }
 
 void stopTe(TimeEvent* te) {
+    if (te == nullptr) return;
+    
     TimeEvent* before = &timeeventList;
     TimeEvent* tai;
 

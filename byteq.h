@@ -23,7 +23,6 @@
     0   1   2  []
 */
 
-#include "ttypes.h"
 #include "queue.h"
 
 #ifndef _BYTEQ_

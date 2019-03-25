@@ -20,6 +20,7 @@ typedef struct TimeEvent {
     Action action; // first place - inherit structure; Action * for both
     Timeout to;
     struct TimeEvent* link;
+    enum {INACTIVE, ACTIVE, READY} state;
 } TimeEvent;
 
 #ifdef __cplusplus
