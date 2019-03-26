@@ -87,10 +87,13 @@ static void inlisttimeevents() {
     }
 }
 
+static bool time_ready = true;
+
 static void checktimeevents() {
     TimeEvent* before = &timeeventList;
     TimeEvent* te;
 
+    inlisttimeevents();
     while ((te = before->link) != 0) {
         if (checkTimeout(&te->to)) {
             if (!te->action.persist) {
@@ -107,11 +110,14 @@ static void checktimeevents() {
         } else
             before = te;
     }
+    time_ready = true;
 }
 
 void timeevent_IRQ() {
-    inlisttimeevents();
-    checktimeevents();
+    if (time_ready) {
+        time_ready = false;
+        next(checktimeevents);
+    }
 }
 
 __attribute__((weak)) void timeeventError(TimeEvent* te) {
@@ -157,7 +163,7 @@ static void relist(TimeEvent* te) {
 
 void stopTe(TimeEvent* te) {
     if (te == nullptr) return;
-    
+
     TimeEvent* before = &timeeventList;
     TimeEvent* tai;
 
