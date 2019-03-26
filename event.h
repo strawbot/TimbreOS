@@ -33,13 +33,17 @@
 #include <string.h>
 #include "ttypes.h"
 
+
 // structures common to C and C++
 typedef struct Action {
+    const char * name;
     void *object, *method;
     char persist;
+    bool active;
 } Action;
 
 typedef struct EventQueue {
+    const char * name;
     Byte _size, _head, _tail;
     Action* _queue;
 } EventQueue;
@@ -49,6 +53,8 @@ extern "C" {
 
 void next(vector object);
 void jump(void* object);
+void print(const char *);
+void printTimeDate();
 }
 extern "C++" void next(void* object, unafun unary);
 
@@ -61,8 +67,11 @@ public:
     void clear() { _head = _tail = 0; }
     
     void push(Action* entry) {
-        memcpy(&_queue[_head++], entry, sizeof(Action));
-        _head %= _size;
+        if (count() < _size - 1) {
+          memcpy(&_queue[_head++], entry, sizeof(Action));
+          _head %= _size;
+        } else
+          print("\nERROR: eventq full!"), printTimeDate();
     }
 
     void pop(Action* entry) {
@@ -114,11 +123,11 @@ extern "C" {
 
 #define Eventi(size, e)     \
     Action e##qt[size + 1]; \
-    EventQueue e[1] = { { size + 1, 0, 0, e##qt } }
+    EventQueue e[1] = { { #e, size + 1, 0, 0, e##qt } }
 
 #define extEvent(event) extern EventQueue event[]
 
-void never(EventQueue* event);
+void never(EventQueue* event); // need: never(EventQueue* event, vector action); and unafun 2
 void happen(EventQueue* event);
 
 #ifdef __cplusplus
@@ -126,9 +135,9 @@ void happen(EventQueue* event);
 }
 // C++
 extern "C"   void once(EventQueue* event, vector action);
-extern "C++" void once(EventQueue* event, void* cpp_obj, unafun cpp_method);
+extern "C++" void once(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name = "");
 extern "C"   void when(EventQueue* event, vector action);
-extern "C++" void when(EventQueue* event, void* cpp_obj, unafun cpp_method);
+extern "C++" void when(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name = "");
 extern "C"   void stopEvent(EventQueue* event, vector action);
 extern "C++" void stopEvent(EventQueue* event, void* cpp_obj, unafun cpp_method);
 
