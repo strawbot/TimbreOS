@@ -34,18 +34,18 @@ extern "C++" TimeEvent* every(Long time, void* cpp_obj, unafun action);
 extern "C"   void stopTimeEvent(vector action);
 extern "C++" void stopTimeEvent(void* cpp_obj, unafun action);
 
-extern "C"   void stopTe(TimeEvent* ta);
+extern "C"   void stopTe(TimeEvent* te);
 
 #else
 // C
 TimeEvent* after(Long time, vector action);
 TimeEvent* every(Long time, vector action);
 void stopTimeEvent(vector action);
-void stopTe(TimeEvent* ta);
+void stopTe(TimeEvent* te);
 
 #endif
 
-void timeaction(TimeEvent* ta);
+void timeaction(TimeEvent* te);
 
 TimeEvent* timeToAction(Long time, vector action);
 
