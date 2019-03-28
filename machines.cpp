@@ -25,8 +25,11 @@ void later(vector machine) {
 	ATOMIC_SECTION_ENTER;
 	if (leftq(machineq))
 		pushq((Cell)machine, machineq);
-	else
+	else {
 		mmoverflow++;
+		while (true)
+			;																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																													
+	}
 	ATOMIC_SECTION_LEAVE;
 }
 
@@ -34,8 +37,11 @@ void next(vector machine) { // actions
 	ATOMIC_SECTION_ENTER;
 	if (leftq(actionq))
 		pushq((Cell)machine, actionq);
-	else
+	else {
 		amoverflow++;
+	    while (true)
+            ;
+	}
 	ATOMIC_SECTION_LEAVE;
 }
 
@@ -374,6 +380,10 @@ void runAction() {
 }
 
 void next(void* object, unafun unary) {
+	if (leftq(unaq) < 2) {
+		while (true)
+            ;
+	}
 	ATOMIC_SECTION_ENTER;
 	pushq((Cell)unary, unaq), pushq((Cell)object, unaq);
 	ATOMIC_SECTION_LEAVE;
@@ -381,6 +391,10 @@ void next(void* object, unafun unary) {
 }
 
 void later(void* object, unafun unary) {
+	if (leftq(unaq) < 2) {
+		while (true)
+            ;
+	}
 	ATOMIC_SECTION_ENTER;
 	pushq((Cell)unary, unaq), pushq((Cell)object, unaq);
 	ATOMIC_SECTION_LEAVE;

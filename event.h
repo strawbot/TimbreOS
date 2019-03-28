@@ -70,8 +70,11 @@ public:
         if (count() < _size - 1) {
           memcpy(&_queue[_head++], entry, sizeof(Action));
           _head %= _size;
-        } else
+        } else {
           print("\nERROR: eventq full!"), printTimeDate();
+          while (true)
+            ;
+        }
     }
 
     void pop(Action* entry) {
