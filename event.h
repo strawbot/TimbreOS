@@ -49,6 +49,8 @@ typedef struct EventQueue {
 } EventQueue;
 
 #ifdef __cplusplus
+extern "C++" void next(void* object, unafun unary, const char * name = "");
+
 extern "C" {
 
 void next(vector object);
@@ -56,7 +58,6 @@ void jump(void* object);
 void print(const char *);
 void printTimeDate();
 }
-extern "C++" void next(void* object, unafun unary);
 
 class EventQueueClass : public EventQueue {
 public:

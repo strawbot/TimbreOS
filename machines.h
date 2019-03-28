@@ -34,15 +34,9 @@ void run_slice();
 #define ACTIONS (MACHINES)
 #define EVENTS (MACHINES)
 
-#ifndef ATOMIC_SECTION_ENTER // define if used in interrupts
-	#define ATOMIC_SECTION_ENTER    __asm volatile ("cpsid i\n")
-	#define ATOMIC_SECTION_LEAVE    __asm volatile ("cpsie i\n")
-#endif
-
 #ifdef __cplusplus
 
-extern "C++" void next(void* object, unafun unary);
-extern "C++" void later(void* object, unafun unary);
+extern "C++" void later(void* object, unafun unary, const char * name = "");
 extern "C"   void later (vector machine);
 extern "C"   void next (vector machine);
 
