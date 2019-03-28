@@ -27,8 +27,7 @@ void later(vector machine) {
 		pushq((Cell)machine, machineq);
 	else {
 		mmoverflow++;
-		while (true)
-			;																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																													
+		while (true);
 	}
 	ATOMIC_SECTION_LEAVE;
 }
@@ -39,8 +38,7 @@ void next(vector machine) { // actions
 		pushq((Cell)machine, actionq);
 	else {
 		amoverflow++;
-	    while (true)
-            ;
+		while (true);
 	}
 	ATOMIC_SECTION_LEAVE;
 }
@@ -364,6 +362,9 @@ void runAction() {
 	unafun unary = (unafun)pullq(unaq);
 	void * object = (void *)pullq(unaq);
 
+	if (unary == NULL || object == NULL) 
+	 	while (true);
+
 	Cell * stat = dictAdjunctKey((Cell)unary, &mactimes);
 	if (stat == 0) {
 		stat = dictAdjunctKey((Cell)UNKNOWN, &mactimes);
@@ -380,10 +381,8 @@ void runAction() {
 }
 
 void next(void* object, unafun unary) {
-	if (leftq(unaq) < 2) {
-		while (true)
-            ;
-	}
+	if (leftq(unaq) < 2)
+		while (true);
 	ATOMIC_SECTION_ENTER;
 	pushq((Cell)unary, unaq), pushq((Cell)object, unaq);
 	ATOMIC_SECTION_LEAVE;
@@ -391,10 +390,8 @@ void next(void* object, unafun unary) {
 }
 
 void later(void* object, unafun unary) {
-	if (leftq(unaq) < 2) {
-		while (true)
-            ;
-	}
+	if (leftq(unaq) < 2)
+		while (true);
 	ATOMIC_SECTION_ENTER;
 	pushq((Cell)unary, unaq), pushq((Cell)object, unaq);
 	ATOMIC_SECTION_LEAVE;

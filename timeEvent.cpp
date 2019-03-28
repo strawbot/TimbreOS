@@ -128,8 +128,10 @@ void timeevent(TimeEvent* te) {
     if (te->link == LINK_SENTINEL && 0 == scanq((Cell)te, timeeventq)) {
         te->link = nullptr;
         pushq((Cell)te, timeeventq);
-    } else
+    } else {
         timeeventError(te);
+        while (true);
+    }
 }
 
 #define TOTAL_TE 40
@@ -152,6 +154,7 @@ TimeEvent* getTe() {
         te->link = LINK_SENTINEL;
         return te;
     }
+    while (true);
     print("\nERROR in getTe: No more timeevents left.");
     return timeevents;
 }

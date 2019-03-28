@@ -61,25 +61,31 @@ extern "C++" void next(void* object, unafun unary);
 class EventQueueClass : public EventQueue {
 public:
     Byte count() {
-        return (_head >= _tail) ? (_head - _tail) : (_size - (_tail - _head));
+        ATOMIC_SECTION_ENTER;
+        Byte c = (_head >= _tail) ? (_head - _tail) : (_size - (_tail - _head));
+        ATOMIC_SECTION_LEAVE;
+        return c;
     }
 
     void clear() { _head = _tail = 0; }
     
     void push(Action* entry) {
+        ATOMIC_SECTION_ENTER;
         if (count() < _size - 1) {
           memcpy(&_queue[_head++], entry, sizeof(Action));
           _head %= _size;
         } else {
           print("\nERROR: eventq full!"), printTimeDate();
-          while (true)
-            ;
+          while (true);
         }
+        ATOMIC_SECTION_LEAVE;
     }
 
     void pop(Action* entry) {
+        ATOMIC_SECTION_ENTER;
         memcpy(entry, &_queue[_tail++], sizeof(Action));
         _tail %= _size;
+        ATOMIC_SECTION_LEAVE;
     }
     
     void remove(void* cpp_obj, unafun cpp_method) {

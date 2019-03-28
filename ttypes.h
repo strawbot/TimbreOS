@@ -3,6 +3,9 @@
 #ifndef TTYPES_H_
 #define TTYPES_H_
 
+#define ATOMIC_SECTION_ENTER __asm("cpsid i" : : : "memory")
+#define ATOMIC_SECTION_LEAVE __asm("cpsie i" : : : "memory")
+
 /* Mostly Byte = 8bit, Word = 16bit, Cell = 32bit */
 // On 64 bit platforms long and pointer are 64 bit while int is 32 bit if it is LP64
 // on windows (of course), it is LLP64 so long is 32 but pointers and long long are 64
