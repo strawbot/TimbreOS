@@ -35,8 +35,8 @@ void run_slice();
 #define EVENTS (MACHINES)
 
 #ifndef ATOMIC_SECTION_ENTER // define if used in interrupts
-	#define ATOMIC_SECTION_ENTER
-	#define ATOMIC_SECTION_LEAVE
+	#define ATOMIC_SECTION_ENTER    __asm volatile ("cpsid i\n")
+	#define ATOMIC_SECTION_LEAVE    __asm volatile ("cpsie i\n")
 #endif
 
 #ifdef __cplusplus
