@@ -14,7 +14,7 @@
    run.
 
      API:
-       Event(10, someevent);	// define
+       Eventi(10, someevent);	// define
        extEvent(event);			// declare
 
        once(event, action);		// oneshot
@@ -125,7 +125,7 @@ extern "C" {
 // class/action - within same class
 // class/object/action - calling methods from other classes, object needed
 
-#define Event(e) Eventi(3, e)
+#define Event(e) Eventi(5, e)
 
 #define ObjectMethod(object, method) object, [](void * o){ (static_cast<decltype(object)>(o))->method(); }
 #define OM(o,m) ObjectMethod(o,m)

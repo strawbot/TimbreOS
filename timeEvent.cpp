@@ -144,6 +144,8 @@ void init_te() {
     }
     timeevents[TOTAL_TE - 1].link = 0;
     zeroq(timeeventq);
+    nameMachine(timeevent_IRQ);
+    nameMachine(checktimeevents);
 }
 
 TimeEvent* getTe() {
