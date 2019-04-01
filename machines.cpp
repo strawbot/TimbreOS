@@ -380,9 +380,13 @@ void runAction() {
 		*stat = (Cell)time;
 }
 
+Long nextOverflows = 0, laterOverflows = 0;
+
 void next(void* object, unafun unary, const char * name) {
-	if (leftq(unaq) < 2)
+	if (leftq(unaq) < 2) {
+		nextOverflows++;
 		while (true);
+	}
 	ATOMIC_SECTION_ENTER;
 	pushq((Cell)unary, unaq), pushq((Cell)object, unaq);
 	ATOMIC_SECTION_LEAVE;
@@ -391,8 +395,10 @@ void next(void* object, unafun unary, const char * name) {
 }
 
 void later(void* object, unafun unary, const char * name) {
-	if (leftq(unaq) < 2)
+	if (leftq(unaq) < 2) {
+		laterOverflows++;
 		while (true);
+	}
 	ATOMIC_SECTION_ENTER;
 	pushq((Cell)unary, unaq), pushq((Cell)object, unaq);
 	ATOMIC_SECTION_LEAVE;

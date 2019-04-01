@@ -139,24 +139,18 @@ extern "C" {
 
 void never(EventQueue* event); // need: never(EventQueue* event, vector action); and unafun 2
 void happen(EventQueue* event);
-
-#ifdef __cplusplus
-// C++ in C
-}
-// C++
-extern "C"   void once(EventQueue* event, vector action);
-extern "C++" void once(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name = "");
-extern "C"   void when(EventQueue* event, vector action);
-extern "C++" void when(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name = "");
-extern "C"   void stopEvent(EventQueue* event, vector action);
-extern "C++" void stopEvent(EventQueue* event, void* cpp_obj, unafun cpp_method);
-
-#else
-
-// C
 void once(EventQueue* event, vector action);
 void when(EventQueue* event, vector action);
 void stopEvent(EventQueue* event, vector action);
+
+#ifdef __cplusplus
+}
+
+extern "C++" {
+void once(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name = "");
+void when(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name = "");
+void stopEvent(EventQueue* event, void* cpp_obj, unafun cpp_method);
+}
 
 #endif
 
