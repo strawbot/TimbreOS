@@ -4,14 +4,14 @@
 void once(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name) {
     Action e = {name, (void *)cpp_obj, (void *)cpp_method, 0 };
     ATOMIC_SECTION_ENTER;
-    static_cast<EventQueueClass*>(event)->push(&e);
+    static_cast<EventQueueClass*>(event)->pushOnce(&e);
     ATOMIC_SECTION_LEAVE;
 }
 
 void when(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name) {
     Action e = {name, (void *)cpp_obj, (void *)cpp_method, 1 };
     ATOMIC_SECTION_ENTER;
-    static_cast<EventQueueClass*>(event)->push(&e);
+    static_cast<EventQueueClass*>(event)->pushOnce(&e);
     ATOMIC_SECTION_LEAVE;
 }
 

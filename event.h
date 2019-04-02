@@ -82,6 +82,14 @@ public:
         ATOMIC_SECTION_LEAVE;
     }
 
+    void pushOnce(Action* entry) {
+      Byte n = count();
+      for (int i = _head; n; n-- )
+        if (memcmp(&_queue[i++ % _size], entry, sizeof(Action)) == 0)
+          return;
+      push(entry);
+    }
+
     void pop(Action* entry) {
         ATOMIC_SECTION_ENTER;
         memcpy(entry, &_queue[_tail++], sizeof(Action));
@@ -125,7 +133,7 @@ extern "C" {
 // class/action - within same class
 // class/object/action - calling methods from other classes, object needed
 
-#define Event(e) Eventi(5, e)
+#define Event(e) Eventi(3, e)
 
 #define ObjectMethod(object, method) object, [](void * o){ (static_cast<decltype(object)>(o))->method(); }
 #define OM(o,m) ObjectMethod(o,m)
