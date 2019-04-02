@@ -170,8 +170,6 @@ void run_slice() {
 
 #define UNKNOWN "unknown_machines"
 
-QUEUE(10, unknownq);
-
 HASHDICT(HASH9, macnames); // keep track of machine names
 HASHDICT(HASH9, mactimes); // keep track of machine max execution times
 
@@ -184,7 +182,6 @@ void listMachineNames() {
 }
 
 void initMachineStats() {
-	zeroq(unknownq);
     emptyDict(&macnames);
     emptyDict(&mactimes);
     machineName((vector)(Cell)UNKNOWN, UNKNOWN);
@@ -300,9 +297,8 @@ void activateMachine() {
 void machineRun(vector m) {
 	Cell * stat = dictAdjunctKey((Cell)m, &mactimes);
 	if (stat == 0) {
-		stat = dictAdjunctKey((Cell)UNKNOWN, &mactimes);
-		if (leftq(unknownq))
-			pushq((Cell)m,unknownq);
+		machineName(m, NULL);
+		stat = dictAdjunctKey((Cell)m, &mactimes);
 	}
 
 	int time = (int)getTicks();
@@ -343,12 +339,9 @@ void machineStats(void) {
 		else
 			dotnb(7, 6, CONVERT_TO_NS(time), 10), print(" ns  ");
 
-		if (name) {
+		if (name)
 			print(name);
-			if (name == (char *)UNKNOWN)
-				for (int i = queryq(unknownq); i; i--)
-					print(" "), dotnb(0, 0, q(unknownq), 16), rotateq(unknownq, 1);
-		} else
+		else
 			printHex(machine);
 	}
 }
@@ -367,9 +360,8 @@ void runAction() {
 
 	Cell * stat = dictAdjunctKey((Cell)unary, &mactimes);
 	if (stat == 0) {
-		stat = dictAdjunctKey((Cell)UNKNOWN, &mactimes);
-		if (leftq(unknownq))
-			pushq((Cell)unary,unknownq);
+		machineName((vector)unary, NULL);
+		stat = dictAdjunctKey((Cell)unary, &mactimes);
 	}
 
 	int time = (int)getTicks();
