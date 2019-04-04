@@ -42,7 +42,7 @@ extern "C" {
 #include "printers.h"
 #include <string.h>
 
-static void relist(TimeEvent* te);
+static void putTe(TimeEvent* te);
 
 // time actions
 static TimeEvent timeeventList;
@@ -86,7 +86,7 @@ static void checktimeevents() {
         if (checkTimeout(&te->to)) {
             if (!te->action.persist) {
                 before->link = te->link;
-                relist(te);
+                putTe(te);
             } else {
                 before = te;
                 repeatTimeout(&te->to);
@@ -129,19 +129,23 @@ static TimeEvent timeevents[TOTAL_TE];
 void init_te() {
     timeeventList.link = nullptr;
     for (int i = 0; i < TOTAL_TE; i++) {
-        timeevents[i].link = &timeevents[i + 1];
-        timeevents[i].state = TimeEvent::TE_FREE;
+        TimeEvent* te = &timeevents[i];
+        te->link = &timeevents[i + 1];
+        te->state = TimeEvent::TE_FREE;
+        te->index = i;
+        te->tag = 0;
     }
     timeevents[TOTAL_TE - 1].link = 0;
     nameMachine(timeevent_IRQ);
     nameMachine(checktimeevents);
 }
 
-TimeEvent* getTe() {
+static TimeEvent* getTe() {
     TimeEvent* te = timeevents[0].link;
 
     if (te) {
         timeevents[0].link = te->link;
+        te->tag++;
         return te;
     }
     while (true);
@@ -149,22 +153,35 @@ TimeEvent* getTe() {
     return timeevents;
 }
 
-static void relist(TimeEvent* te) {
+static void putTe(TimeEvent* te) {
     te->state = TimeEvent::TE_FREE;
     te->link = timeevents[0].link;
     timeevents[0].link = te;
 }
 
-void stopTe(TimeEvent* te) {
+static TimeEvent * findTe(Long teid) {
+    TimeEvent t, *te;
+    t.id = teid;
+    if (t.index < TOTAL_TE) {
+        te = &timeevents[t.index];
+        if (te->id == teid)
+            return te;
+    }
+    return nullptr;
+}
+
+void stopTe(Long teid) {
+    TimeEvent* te = findTe(teid);
     if (te == nullptr) return;
+    if (te->state == TimeEvent::TE_FREE) return;
 
     TimeEvent* before = &timeeventList;
     TimeEvent* tai;
 
-    while ((tai = before->link) != 0) {
+    while ((tai = before->link) != nullptr) {
         if (tai == te) {
             before->link = te->link;
-            relist(te);
+            putTe(te);
             return;
         }
         before = tai;
@@ -178,13 +195,13 @@ void stopTimeEvent(vector action) {
     while ((tai = before->link) != 0) {
         if (tai->action.object == action) {
             before->link = tai->link;
-            relist(tai);
+            putTe(tai);
         } else
             before = tai;
     }
 }
 
-TimeEvent* after(Long time, vector action) {
+Long after(Long time, vector action) {
     TimeEvent* te = getTe();
 
     setTimeout(time, &te->to);
@@ -192,18 +209,18 @@ TimeEvent* after(Long time, vector action) {
     te->action.object = (void*)action;
     te->action.persist = false;
     timeevent(te);
-    return te;
+    return te->id;
 }
 
-TimeEvent* every(Long time, vector action) {
-    TimeEvent* te = after(time, action);
-    te->action.persist = true;
-    return te;
+Long every(Long time, vector action) {
+    Long teid = after(time, action);
+    findTe(teid)->action.persist = true;
+    return teid;
 }
 
 }
 // C++
-TimeEvent* after(Long time, void* cpp_obj, unafun action, const char * name) {
+Long after(Long time, void* cpp_obj, unafun action, const char * name) {
     TimeEvent* te = getTe();
 
     setTimeout(time, &te->to);
@@ -212,13 +229,13 @@ TimeEvent* after(Long time, void* cpp_obj, unafun action, const char * name) {
     te->action.object = cpp_obj;
     te->action.persist = false;
     timeevent(te);
-    return te;
+    return te->id;
 }
 
-TimeEvent* every(Long time, void* cpp_obj, unafun action, const char * name) {
-    TimeEvent* te = after(time, cpp_obj, action, name);
-    te->action.persist = true;
-    return te;
+Long every(Long time, void* cpp_obj, unafun action, const char * name) {
+    Long teid = after(time, cpp_obj, action, name);
+    findTe(teid)->action.persist = true;
+    return teid;
 }
 
 void stopTimeEvent(void* cpp_obj, unafun action) {
@@ -228,7 +245,7 @@ void stopTimeEvent(void* cpp_obj, unafun action) {
     while ((tai = before->link) != 0) {
         if (tai->action.object == cpp_obj && tai->action.method == action) {
             before->link = tai->link;
-            relist(tai);
+            putTe(tai);
         } else
             before = tai;
     }

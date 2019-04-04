@@ -19,6 +19,13 @@ typedef struct TimeEvent {
     Timeout to;
     struct TimeEvent* link;
     enum {TE_FREE, TE_USED} state;
+    union {
+    	Long id;
+    	struct {
+    		Long index : 8;
+    		Long tag   : 24;
+    	};
+    };
 } TimeEvent;
 
 #ifdef __cplusplus
@@ -26,17 +33,17 @@ typedef struct TimeEvent {
 extern "C" {
 #endif
 
-TimeEvent* after(Long time, vector action);
-TimeEvent* every(Long time, vector action);
+Long after(Long time, vector action);
+Long every(Long time, vector action);
 void stopTimeEvent(vector action);
-void stopTe(TimeEvent* te);
+void stopTe(Long teid);
 
 #ifdef __cplusplus
 }
 
 extern "C++" {
-TimeEvent* after(Long time, void* cpp_obj, unafun action, const char * name = "");
-TimeEvent* every(Long time, void* cpp_obj, unafun action, const char * name = "");
+Long after(Long time, void* cpp_obj, unafun action, const char * name = "");
+Long every(Long time, void* cpp_obj, unafun action, const char * name = "");
 void stopTimeEvent(void* cpp_obj, unafun action);
 }
 
@@ -44,7 +51,7 @@ void stopTimeEvent(void* cpp_obj, unafun action);
 
 void timeaction(TimeEvent* te);
 
-TimeEvent* timeToAction(Long time, vector action);
+Long timeToAction(Long time, vector action);
 
 // #define ta_usecs()
 #define ta_msecs(t) (((long long)(t) * 128) / 125)
