@@ -45,8 +45,6 @@ extern "C" {
 static void relist(TimeEvent* te);
 
 // time actions
-static QUEUE(30, timeeventq);
-
 static TimeEvent timeeventList;
 
 static Integer time_left(Timeout* timer) {
@@ -78,22 +76,12 @@ void listTimeEvents() {
     }
 }
 
-static void inlisttimeevents() {
-    while (queryq(timeeventq)) {
-        TimeEvent* te = (TimeEvent*)pullq(timeeventq);
-
-        te->link = timeeventList.link;
-        timeeventList.link = te;
-    }
-}
-
 static bool time_ready = true;
 
 static void checktimeevents() {
     TimeEvent* before = &timeeventList;
     TimeEvent* te;
 
-    inlisttimeevents();
     while ((te = before->link) != 0) {
         if (checkTimeout(&te->to)) {
             if (!te->action.persist) {
@@ -125,9 +113,10 @@ __attribute__((weak)) void timeeventError(TimeEvent* te) {
 }
 
 void timeevent(TimeEvent* te) {
-    if (te->link == LINK_SENTINEL && 0 == scanq((Cell)te, timeeventq)) {
-        te->link = nullptr;
-        pushq((Cell)te, timeeventq);
+    if (te->state == TimeEvent::TE_FREE) {
+        te->state = TimeEvent::TE_USED;
+        te->link = timeeventList.link;
+        timeeventList.link = te;
     } else {
         timeeventError(te);
 		while (true);
@@ -141,9 +130,9 @@ void init_te() {
     timeeventList.link = nullptr;
     for (int i = 0; i < TOTAL_TE; i++) {
         timeevents[i].link = &timeevents[i + 1];
+        timeevents[i].state = TimeEvent::TE_FREE;
     }
     timeevents[TOTAL_TE - 1].link = 0;
-    zeroq(timeeventq);
     nameMachine(timeevent_IRQ);
     nameMachine(checktimeevents);
 }
@@ -153,7 +142,6 @@ TimeEvent* getTe() {
 
     if (te) {
         timeevents[0].link = te->link;
-        te->link = LINK_SENTINEL;
         return te;
     }
     while (true);
@@ -162,6 +150,7 @@ TimeEvent* getTe() {
 }
 
 static void relist(TimeEvent* te) {
+    te->state = TimeEvent::TE_FREE;
     te->link = timeevents[0].link;
     timeevents[0].link = te;
 }
@@ -180,14 +169,6 @@ void stopTe(TimeEvent* te) {
         }
         before = tai;
     }
-
-    for (int n = queryq(timeeventq); n; n--) {
-        Cell tap = pullq(timeeventq);
-        if (tap == (Cell)te)
-            relist(te);
-        else
-            pushq(tap, timeeventq);
-    }
 }
 
 void stopTimeEvent(vector action) {
@@ -200,14 +181,6 @@ void stopTimeEvent(vector action) {
             relist(tai);
         } else
             before = tai;
-    }
-
-    for (int n = queryq(timeeventq); n; n--) {
-        TimeEvent* tap = (TimeEvent*)pullq(timeeventq);
-        if (tap->action.object == action) {
-            relist(tap);
-        } else
-            pushq((Cell)tap, timeeventq);
     }
 }
 
@@ -258,13 +231,5 @@ void stopTimeEvent(void* cpp_obj, unafun action) {
             relist(tai);
         } else
             before = tai;
-    }
-
-    for (int n = queryq(timeeventq); n; n--) {
-        TimeEvent* tap = (TimeEvent*)pullq(timeeventq);
-        if (tap->action.object == cpp_obj && tap->action.method == action) {
-            relist(tap);
-        } else
-            pushq((Cell)tap, timeeventq);
     }
 }
