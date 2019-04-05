@@ -5,7 +5,7 @@
 #ifndef _TIMEACTION_H_
 #define _TIMEACTION_H_
 
-#define LINK_SENTINEL  (TimeAction *)0xFACEF00D
+#define LINK_SENTINEL  (TimeAction *)0xFACEF00B
 
 typedef struct TimeAction {
 	struct TimeAction * link;
