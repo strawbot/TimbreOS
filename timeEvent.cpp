@@ -154,6 +154,7 @@ static TimeEvent* getTe() {
 }
 
 static void putTe(TimeEvent* te) {
+    te->tag++;
     te->state = TimeEvent::TE_FREE;
     te->link = timeevents[0].link;
     timeevents[0].link = te;
@@ -173,7 +174,6 @@ static TimeEvent * findTe(Long teid) {
 void stopTe(Long teid) {
     TimeEvent* te = findTe(teid);
     if (te == nullptr) return;
-    if (te->state == TimeEvent::TE_FREE) return;
 
     TimeEvent* before = &timeeventList;
     TimeEvent* tai;
@@ -199,6 +199,12 @@ void stopTimeEvent(vector action) {
         } else
             before = tai;
     }
+}
+
+void change(Long time, Long id) {
+    TimeEvent* te = findTe(id);
+    if (te == nullptr) return;
+    setTimeout(time, &te->to);
 }
 
 Long after(Long time, vector action) {

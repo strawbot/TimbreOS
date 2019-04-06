@@ -29,7 +29,6 @@ typedef struct TimeEvent {
 } TimeEvent;
 
 #ifdef __cplusplus
-// C++
 extern "C" {
 #endif
 
@@ -37,6 +36,7 @@ Long after(Long time, vector action);
 Long every(Long time, vector action);
 void stopTimeEvent(vector action);
 void stopTe(Long teid);
+void change(Long time, Long id);
 
 #ifdef __cplusplus
 }

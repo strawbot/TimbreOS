@@ -51,6 +51,6 @@ void happen(EventQueue* event) {
 
 #include <cstdint>
 void jump(void* object) { // with function pointer as object use this method
-    (reinterpret_cast<void (*)()>(object))();
+    (reinterpret_cast<vector>(object))();
 }
 }
