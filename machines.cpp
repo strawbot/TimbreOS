@@ -21,6 +21,17 @@ QUEUE(ACTIONS, actionq); // now
 Byte mmoverflow = 0, mmunderflow = 0;
 Byte amoverflow = 0;
 
+void next(vector machine) { // actions
+	ATOMIC_SECTION_ENTER;
+	if (leftq(actionq))
+		pushq((Cell)machine, actionq);
+	else {
+		amoverflow++;
+		while (true);
+	}
+	ATOMIC_SECTION_LEAVE;
+}
+
 void later(vector machine) {
 	ATOMIC_SECTION_ENTER;
 	if (leftq(machineq))
@@ -32,14 +43,9 @@ void later(vector machine) {
 	ATOMIC_SECTION_LEAVE;
 }
 
-void next(vector machine) { // actions
+void stopAction(vector action) {
 	ATOMIC_SECTION_ENTER;
-	if (leftq(actionq))
-		pushq((Cell)machine, actionq);
-	else {
-		amoverflow++;
-		while (true);
-	}
+	deq((Cell)action, actionq);
 	ATOMIC_SECTION_LEAVE;
 }
 
@@ -397,3 +403,18 @@ void later(void* object, unafun unary, const char * name) {
 	later(runAction);
 	(void)name;
 }
+
+void stopAction(void* object, unafun unary) {
+	ATOMIC_SECTION_ENTER;
+	for (Long n = queryq(unaq)/2; n; n--) {
+		Cell u = pullq(unaq), o = pullq(unaq);
+		
+		if (o == (Cell)object, u == (Cell)unary)
+			stopAction(runAction);
+		else
+			pushq(u, unaq), pushq(o, unaq);
+	}
+	ATOMIC_SECTION_LEAVE;
+}
+
+

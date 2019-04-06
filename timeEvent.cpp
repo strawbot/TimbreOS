@@ -192,6 +192,7 @@ void stopTimeEvent(vector action) {
     TimeEvent* before = &timeeventList;
     TimeEvent* tai;
 
+    stopAction(action);
     while ((tai = before->link) != 0) {
         if (tai->action.object == action) {
             before->link = tai->link;
@@ -244,12 +245,13 @@ Long every(Long time, void* cpp_obj, unafun action, const char * name) {
     return teid;
 }
 
-void stopTimeEvent(void* cpp_obj, unafun action) {
+void stopTimeEvent(void* object, unafun unary) {
     TimeEvent* before = &timeeventList;
     TimeEvent* tai;
 
+    stopAction(object, unary);
     while ((tai = before->link) != 0) {
-        if (tai->action.object == cpp_obj && tai->action.method == action) {
+        if (tai->action.object == object && tai->action.method == unary) {
             before->link = tai->link;
             putTe(tai);
         } else

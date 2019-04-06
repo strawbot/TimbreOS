@@ -37,12 +37,13 @@ void run_slice();
 #ifdef __cplusplus
 
 extern "C++" void later(void* object, unafun unary, const char * name = "");
+extern "C++" void stopAction(void* object, unafun unary);
 
 #endif
 
 void later (vector machine);
 void next (vector machine);
-
+void stopAction(vector action);
 /*
 void noop(void);
 
