@@ -409,7 +409,7 @@ void stopAction(void* object, unafun unary) {
 	for (Long n = queryq(unaq)/2; n; n--) {
 		Cell u = pullq(unaq), o = pullq(unaq);
 		
-		if (o == (Cell)object, u == (Cell)unary)
+		if (o == (Cell)object && u == (Cell)unary)
 			stopAction(runAction);
 		else
 			pushq(u, unaq), pushq(o, unaq);
