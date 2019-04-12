@@ -267,7 +267,8 @@ void listm(void) { // list machine statuses
 	later(listMachines);
 }
 
-void runAction();
+static void runAction();
+
 void initMachines(void) {
 	zeroq(machineq);
 	zeroq(actionq);
@@ -357,10 +358,14 @@ void machineStats(void) {
 // extensions for C++ in the same manner as events
 static QUEUE(2*ACTIONS, unaq);
 
-void runAction() {
+static void runAction() {
 	unafun unary = (unafun)pullq(unaq);
 	void * object = (void *)pullq(unaq);
 
+	callUnary(object, unary);
+}
+
+void callUnary(void * object, unafun unary) {
 	if (unary == NULL || object == NULL) 
 	 	while (true);
 

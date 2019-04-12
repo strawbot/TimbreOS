@@ -33,7 +33,6 @@
 #include <string.h>
 #include "ttypes.h"
 
-
 // structures common to C and C++
 typedef struct Action {
     const char * name;
@@ -53,6 +52,7 @@ extern "C++" void next(void* object, unafun unary, const char * name = "");
 
 extern "C" {
 
+void callUnary(void * object, unafun unary);
 void next(vector object);
 void jump(void* object);
 void print(const char *);
@@ -109,7 +109,7 @@ public:
         }
     }
 
-    void happen() {
+    void happen() { // actions queued
         Byte total = count();
 
         for (Byte i = 0; i < total; i++) {
@@ -123,6 +123,23 @@ public:
                 next((vector)e.object);
             else
                 next(e.object, (unafun)e.method);
+        }
+    }
+
+    void now() { // actions now
+        Byte total = count();
+
+        for (Byte i = 0; i < total; i++) {
+            Action e;
+
+            pop(&e);
+            if (e.persist)
+                push(&e);
+
+            if (e.method == jump)
+                ((vector)e.object)();
+            else
+                callUnary(e.object, (unafun)e.method);
         }
     }
 };
@@ -147,6 +164,8 @@ extern "C" {
 
 void never(EventQueue* event); // need: never(EventQueue* event, vector action); and unafun 2
 void happen(EventQueue* event);
+void now(EventQueue* event);
+
 void once(EventQueue* event, vector action);
 void when(EventQueue* event, vector action);
 void stopEvent(EventQueue* event, vector action);

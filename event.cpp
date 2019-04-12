@@ -44,9 +44,11 @@ void never(EventQueue* event) {
 }
 
 void happen(EventQueue* event) {
-    ATOMIC_SECTION_ENTER;
     static_cast<EventQueueClass*>(event)->happen();
-    ATOMIC_SECTION_LEAVE;
+}
+
+void now(EventQueue* event) {
+    static_cast<EventQueueClass*>(event)->now();
 }
 
 #include <cstdint>
