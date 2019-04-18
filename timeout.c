@@ -8,12 +8,12 @@
 bool checkTimeout(Timeout *timer) // see if it has timed out
 {
 	if (timer->off == true) // see if it is enalbed
-		return false;
+		return true; // a timer off is condidered don
 	
 	Integer elapsed = getTime() - timer->timeset;
 	Integer interval = (Integer)timer->timeout;
 
-	return elapsed >= interval;
+	return (timer->off = elapsed >= interval);
 }
 
 void setTimeout(Cell time, Timeout *timer) // set the timeout time and turn on the timeout
