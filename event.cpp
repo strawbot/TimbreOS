@@ -2,14 +2,14 @@
 #include "machines.h"
 
 void once(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name) {
-    Action e = {name, (void *)cpp_obj, (void *)cpp_method, 0 };
+    Action e = {.name=name, .object=(void *)cpp_obj, .method=(void *)cpp_method, .persist=0, .active=0 };
     ATOMIC_SECTION_ENTER;
     static_cast<EventQueueClass*>(event)->pushOnce(&e);
     ATOMIC_SECTION_LEAVE;
 }
 
 void when(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name) {
-    Action e = {name, (void *)cpp_obj, (void *)cpp_method, 1 };
+    Action e = {.name=name, .object=(void *)cpp_obj, .method=(void *)cpp_method, .persist=1, .active=0 };
     ATOMIC_SECTION_ENTER;
     static_cast<EventQueueClass*>(event)->pushOnce(&e);
     ATOMIC_SECTION_LEAVE;
