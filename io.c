@@ -18,13 +18,13 @@ void setOutputq(byteq_t * q) {
 }
 
 void output() {
-	if (qbq(outputq) && (USART_StatusGet(UART1) & USART_STATUS_TXBL))
-		USART_Tx(UART1, pullbq(outputq));
+//	if (qbq(outputq) && (USART_StatusGet(UART1) & USART_STATUS_TXBL))
+//		USART_Tx(UART1, pullbq(outputq));
 }
 
 void input() {
-	if (USART_StatusGet(UART1) & USART_STATUS_RXDATAV)
-		pushbq(USART_RxDataGet(UART1), inputq);
+//	if (USART_StatusGet(UART1) & USART_STATUS_RXDATAV)
+//		pushbq(USART_RxDataGet(UART1), inputq);
 }
 
 // machinery
