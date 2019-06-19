@@ -166,6 +166,7 @@ void never(EventQueue* event); // need: never(EventQueue* event, vector action);
 void happen(EventQueue* event);
 void now(EventQueue* event);
 
+void only(EventQueue* event, vector action);
 void once(EventQueue* event, vector action);
 void when(EventQueue* event, vector action);
 void stopEvent(EventQueue* event, vector action);

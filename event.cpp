@@ -43,6 +43,11 @@ void never(EventQueue* event) {
     ATOMIC_SECTION_LEAVE;
 }
 
+void only(EventQueue* event, vector action) {
+    never(event);
+    once(event, (void*)action, jump);
+}
+
 void happen(EventQueue* event) {
     static_cast<EventQueueClass*>(event)->happen();
 }
