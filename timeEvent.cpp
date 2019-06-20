@@ -63,7 +63,7 @@ void printAction(Action * a) {
     if (strlen(name))
         print(name);
     else
-        printHex((Cell)a->method);
+        printHex(a->method == jump ? (Cell)a->object : (Cell)a->method);
 }
 
 void listTimeEvents() {
