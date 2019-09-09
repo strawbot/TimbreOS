@@ -59,7 +59,7 @@ wordlistCheader = ''' \
 #define END_NAMES ""}; // empty string to cover empty array
 
 #define NONAMES(name) PROGMEM char name[] = {""};
-#define NOBODIES(functions) vector functions[] = {NULL};
+#define NOBODIES(functions) struct constantCall functions[] = {NULL};
 
 #define BODIES(functions) vector functions[] = {
 #define CBODIES struct constantCall constantbodies[] = {

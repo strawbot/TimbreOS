@@ -22,8 +22,11 @@
 #define safe(atomic)	{protectCli(); atomic; unprotectCli();}
 #endif
 
+#ifndef protectCli
 void protectCli();
 void unprotectCli();
+#endif
+
 void output();
 
 // stream tokens
