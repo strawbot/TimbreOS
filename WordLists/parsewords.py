@@ -86,7 +86,7 @@ static char *filter;
 void printif(char *s)
 {
 	if (strstr(s, filter) != NULL)
-		print(s);
+		print(s), printCr();
 }
 
 void help(void) {
@@ -263,7 +263,7 @@ def printLine(string): # print a line given a string
 	string = string.rstrip()
 	string = string.replace('\\', '\\\\')
 	string = string.replace('"', '\\\"')
-	return '    printif("'+string+'\\n");\n'
+	return '    printif("'+string+'");\n'
 
 def generateHelp(file): # sorted list of words in a c file
 	dict = [['', words],[' [i]',immediates],[' [v]',constants]]
