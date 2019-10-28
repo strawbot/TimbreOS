@@ -61,8 +61,8 @@ wordlistCheader = ''' \
 #define NONAMES(name) PROGMEM char name[] = {""};
 #define NOBODIES(functions) struct constantCall functions[] = {NULL};
 
-#define BODIES(functions) vector functions[] = {
-#define CBODIES struct constantCall constantbodies[] = {
+#define BODIES(functions) const vector functions[] = {
+#define CBODIES const struct constantCall constantbodies[] = {
 #define BODY(f) (vector)f,
 #define CONSTANTBODY(f)  { cii, &f },
 #define CONSTANTNUMBER(n)  { cii, (Byte *)n },
