@@ -61,9 +61,9 @@ typedef struct header {
 struct constantCall { vector v; Byte * b; };
 #endif
 
-extern const vector wordbodies[];
-extern const struct constantCall constantbodies[];
-extern const vector immediatebodies[];
+extern vector wordbodies[];
+extern struct constantCall constantbodies[];
+extern vector immediatebodies[];
 
 // These are character arrays with a zero between strings; C inserts a final string zero - But only if there is a string
 extern PROGMEM char wordnames[];

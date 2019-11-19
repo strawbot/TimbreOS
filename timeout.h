@@ -8,25 +8,6 @@
 // Note: 16 bits max 1 minute; 32 bits max 49 days; 48 bits max 8900 years; 64 bits max forever
 // based in uS, 64 bits would give 584 million years; 48 bits would give 8.9 years
 // 32 bits for us and 32 bits for seconds goes up to 49000 years
-#define TO_MILLISECOND / LOCALTIME_TICK
-#define TO_SECOND * (1000UL TO_MILLISECONDS)
-#define TO_MINUTE * (60UL TO_SECONDS)
-#define TO_HOUR * (60UL TO_MINUTES)
-#define TO_DAY * (24UL TO_HOURS)
-
-// and plurals for sytactic sugar
-#define TO_MILLISECONDS TO_MILLISECOND
-#define TO_SECONDS TO_SECOND
-#define TO_MINUTES TO_MINUTE
-#define TO_HOURS TO_HOUR
-#define TO_DAYS TO_DAY
-
-// and shorts
-#define TO_MSECS TO_MILLISECOND
-#define TO_SECS TO_SECOND
-#define TO_MINS TO_MINUTE
-#define TO_HOURS TO_HOUR
-#define TO_DAYS TO_DAY
 
 /* evolves:
  o switch for 16 bit, 32 bit, 64 bit support for different time length support
@@ -56,6 +37,12 @@ typedef struct {
 //#define setTimeout(time, timer) timer = getTime() + time
 //#define elapsedTime(timer) (timer - getTime())
 // Note: (getTime() - rtcto.timeset) will give elapsed time from start of timeout
+
+// #define ta_usecs()
+// Define ta_msecs in a modified timestamp.h file
+#define ta_secs(t) (ta_msecs((t) * 1000))
+#define ta_mins(t) (ta_secs((t) * 60))
+#define ta_hours(t) (ta_mins((t) * 60))
 
 #endif
 

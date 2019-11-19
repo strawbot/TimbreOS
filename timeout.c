@@ -1,7 +1,6 @@
 // Timeouts  Rob Chapman  Apr 14, 2011
 
 #include "timeout.h"
-#include "timestamp.h"
 #include "machines.h"
 #include "cli.h"
 
@@ -72,9 +71,9 @@ void showTime(void)
 
 void sdotms(Long time)
 {
-	Long ms = time%(1 TO_SECOND);
+	Long ms = time%(ta_secs(1));
 
-	printDec0(time/(1 TO_SECOND));
+	printDec0(time/(ta_secs(1)));
 	print(".");
 	printDec0(ms/100);
 	printDec0((ms%100)/10);
@@ -96,5 +95,5 @@ Long cliEndTime(void)
 }
 
 void cliSleep() {
-    timeoutWait(ret() TO_SECONDS);
+    timeoutWait(ta_secs(ret()));
 }

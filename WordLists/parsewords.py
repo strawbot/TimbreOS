@@ -61,8 +61,8 @@ wordlistCheader = ''' \
 #define NONAMES(name) PROGMEM char name[] = {""};
 #define NOBODIES(functions) struct constantCall functions[] = {NULL};
 
-#define BODIES(functions) const vector functions[] = {
-#define CBODIES const struct constantCall constantbodies[] = {
+#define BODIES(functions) vector functions[] = {
+#define CBODIES struct constantCall constantbodies[] = {
 #define BODY(f) (vector)f,
 #define CONSTANTBODY(f)  { cii, &f },
 #define CONSTANTNUMBER(n)  { cii, (Byte *)n },
@@ -86,7 +86,7 @@ static char *filter;
 void printif(char *s)
 {
 	if (strstr(s, filter) != NULL)
-		print(s), printCr();
+		print(s);
 }
 
 void help(void) {
@@ -263,7 +263,7 @@ def printLine(string): # print a line given a string
 	string = string.rstrip()
 	string = string.replace('\\', '\\\\')
 	string = string.replace('"', '\\\"')
-	return '    printif("'+string+'");\n'
+	return '    printif("'+string+'\\n");\n'
 
 def generateHelp(file): # sorted list of words in a c file
 	dict = [['', words],[' [i]',immediates],[' [v]',constants]]

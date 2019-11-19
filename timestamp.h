@@ -13,4 +13,7 @@ Long getTime(void);
 #define LOCALTIME_TICK 1 	// milliseconds per tick
 #define ACKNOWLEDGE_TICK // PCSR0 = PCSR0;
 
+// copy file and replace if different
+#define ta_msecs(t) ((Long)(t))
+
 #endif
