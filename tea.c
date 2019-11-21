@@ -72,7 +72,7 @@ static void init_time() {
 // Events
 // Event test;
 // when(test, act1);
-// if (now)  *test();  else  later(*test);
+// if (immediate)  now(*test);  else  later(*test);
 // never(test);
 
 typedef vector Event[1];

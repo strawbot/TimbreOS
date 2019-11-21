@@ -6,7 +6,7 @@
 
 #define BLACK_HOLE()	while(true) ; // DEBUGGING
 
-#define now(action) (*action)()
+#define now(action) (action)()
 void later(vector a);
 
 typedef vector Event[1];
