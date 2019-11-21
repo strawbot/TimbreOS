@@ -1,5 +1,6 @@
 #include "ttypes.h"
 #include "clocks.h"
+#include "project_defs.h"
 
 #ifndef TEA_H_
 #define TEA_H_
