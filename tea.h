@@ -6,11 +6,15 @@
 
 #define BLACK_HOLE()	while(true) ; // DEBUGGING
 
-void after(Short t, vector action);
+#define now(action) (*action)()
 void later(vector a);
+
 typedef vector Event[1];
+
 void when(Event e, vector a);
 void never(Event e);
+
+void after(Short t, vector action);
 
 void run();
 void init_tea();
