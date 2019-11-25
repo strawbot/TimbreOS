@@ -4,7 +4,7 @@
 #include "em_core.h"
 
 // Time
-#define NUM_TE 20
+#define NUM_TE 40
 
 static TimeEvent tes[NUM_TE], te_done, te_todo; // time events and todo and done lists
 
@@ -20,7 +20,7 @@ static TimeEvent* te_borrow() {
 	return te;
 }
 
-static void add_dueDate(TimeEvent* te) {
+static void schedule_te(TimeEvent* te) {
 	TimeEvent * te_next, * te_curr = &te_todo;
 	Short last_dueDate = get_last_dueDate();
 	Short delta = last_dueDate - te->dueDate;
@@ -36,14 +36,27 @@ static void add_dueDate(TimeEvent* te) {
 	set_dueDate(te_todo.next->dueDate);
 }
 
-void after(Short t, vector action) {
+void after(Long t, vector action) {
 	CORE_ATOMIC_SECTION(
 	TimeEvent* te = te_borrow();
 	if (te) {
-		te->dueDate = get_dueDate(t);
 		te->action = action;
-		add_dueDate(te);
+		if (t > secs(1)) {
+			te->seconds = t/secs(1);
+			te->dueDate = get_dueDate(t%secs(1));
+		} else {
+			te->seconds = 0;
+			te->dueDate = get_dueDate(t);
+		}
+		
+		schedule_te(te);
 	} else BLACK_HOLE();)
+}
+
+static void do_action(TimeEvent * te) {
+		vector action = te->action;
+		te_return(te);
+		action();
 }
 
 void check_dueDates(Short last_dueDate) {
@@ -52,12 +65,14 @@ void check_dueDates(Short last_dueDate) {
 			set_dueDate(te_todo.next->dueDate);
 			return;
 		}
-
 		TimeEvent* te = te_todo.next;
 		te_todo.next = te->next;
-		vector action = te->action;
-		te_return(te);
-		action();
+		if (te->seconds) {
+			te->seconds--;
+			te->dueDate = get_dueDate(ONE_SECOND);
+			schedule_te(te);
+		} else
+			do_action(te);
 	}
 }
 

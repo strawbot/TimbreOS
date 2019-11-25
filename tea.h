@@ -15,7 +15,7 @@ typedef vector Event[1];
 void when(Event e, vector a);
 void never(Event e);
 
-void after(Short t, vector action);
+void after(Long t, vector action);
 
 void run();
 void init_tea();
@@ -23,7 +23,8 @@ void init_tea();
 typedef struct TimeEvent {
 	struct TimeEvent * next;
 	vector action;
-	Short dueDate;
+	Short seconds;
+	Short dueDate; // up to 1000 ms
 }TimeEvent;
 
 #endif
