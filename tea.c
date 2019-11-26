@@ -3,7 +3,22 @@
 #include "queue.h"
 #include "em_core.h"
 
-// Time
+// 16 bit time tracker; ms and S
+static Long uptime = 0;
+static Short last_dueDate, zero_ms; // points on the number wheel
+
+static void one_second() {
+	uptime++;
+	zero_ms = last_dueDate;
+	after(secs(1), one_second);
+}
+
+Long getTime() { 
+	Short ms = to_msec(zero_ms - get_dueDate(0));
+	return uptime*1000 + ms;
+}
+
+// Time Events
 #define NUM_TE 40
 
 static TimeEvent tes[NUM_TE], te_done, te_todo; // time events and todo and done lists
@@ -15,18 +30,20 @@ static void te_return(TimeEvent* te) {
 
 static TimeEvent* te_borrow() {
 	TimeEvent* te = te_done.next;
-	if (te) te_done.next = te->next;
-	te->next = NULL;
+	if (te) {
+		te_done.next = te->next;
+		te->next = NULL;	
+	} 
 	return te;
 }
 
 static void schedule_te(TimeEvent* te) {
 	TimeEvent * te_next, * te_curr = &te_todo;
-	Short last_dueDate = get_last_dueDate();
-	Short delta = last_dueDate - te->dueDate;
+	Short ref = last_dueDate; // time reference
+	Short delta = ref - te->dueDate;
 
 	while ((te_next = te_curr->next) != NULL) {
-		Short width = last_dueDate - te_next->dueDate;
+		Short width = ref - te_next->dueDate;
 		if (delta < width)
 			break;
 		te_curr = te_next;
@@ -39,18 +56,17 @@ static void schedule_te(TimeEvent* te) {
 void after(Long t, vector action) {
 	CORE_ATOMIC_SECTION(
 	TimeEvent* te = te_borrow();
-	if (te) {
-		te->action = action;
-		if (t > secs(1)) {
-			te->seconds = t/secs(1);
-			te->dueDate = get_dueDate(t%secs(1));
-		} else {
-			te->seconds = 0;
-			te->dueDate = get_dueDate(t);
-		}
-		
-		schedule_te(te);
-	} else BLACK_HOLE();)
+	if (te == NULL)  BLACK_HOLE();
+
+	te->action = action;
+	if (t > secs(1)) {
+		te->seconds = t/secs(1);
+		te->dueDate = get_dueDate(t%secs(1));
+	} else {
+		te->seconds = 0;
+		te->dueDate = get_dueDate(t);
+	}
+	schedule_te(te);)
 }
 
 static void do_action(TimeEvent * te) {
@@ -59,7 +75,9 @@ static void do_action(TimeEvent * te) {
 		action();
 }
 
-void check_dueDates(Short last_dueDate) {
+void check_dueDates(Short dueDate) {
+	last_dueDate = dueDate;
+	
 	while (te_todo.next) {
 		if (te_todo.next->dueDate != last_dueDate) {
 			set_dueDate(te_todo.next->dueDate);
@@ -82,16 +100,11 @@ static void init_time() {
 	for (Byte i = 0; i < NUM_TE; i++) {
 		te_return(&tes[i]);
 	}
+	zero_ms = last_dueDate = get_dueDate(0);
+	later(one_second);
 }
 
 // Events
-// Event test;
-// when(test, act1);
-// if (immediate)  now(*test);  else  later(*test);
-// never(test);
-
-typedef vector Event[1];
-
 void when(Event e, vector a) { *e = a; }
 static void no_action() {}
 void never(Event e) { when(e, no_action); }
