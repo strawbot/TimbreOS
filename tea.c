@@ -106,7 +106,7 @@ static void init_time() {
 
 // Events
 void when(Event e, vector a) { *e = a; }
-static void no_action() {}
+void no_action() {}
 void never(Event e) { when(e, no_action); }
 
 // Actions

@@ -39,6 +39,7 @@ void after(Long t, vector action);
 #define now(action) (action)()
 void later(vector a);
 void run();
+void no_action();
 
 void init_tea();
 

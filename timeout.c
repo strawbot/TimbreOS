@@ -1,7 +1,6 @@
 // Timeouts  Rob Chapman  Apr 14, 2011
 
 #include "timeout.h"
-#include "machines.h"
 #include "cli.h"
 
 bool checkTimeout(Timeout *timer) // see if it has timed out

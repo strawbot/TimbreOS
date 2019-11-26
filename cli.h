@@ -1,6 +1,6 @@
 // Header file for CLI
 
-#include "ttypes.h"
+#include "tea.h"
 
 #ifndef _CLI_H_
 #define _CLI_H_
@@ -64,6 +64,8 @@ struct constantCall { vector v; Byte * b; };
 extern vector wordbodies[];
 extern struct constantCall constantbodies[];
 extern vector immediatebodies[];
+
+extern Event EmitEvent; // called when character emitted
 
 // These are character arrays with a zero between strings; C inserts a final string zero - But only if there is a string
 extern PROGMEM char wordnames[];

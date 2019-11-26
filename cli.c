@@ -3,10 +3,11 @@
 
 #include "cli.h"
 #include "byteq.h"
-#include "machines.h"
 
 #include <string.h>
 #include <ctype.h>
+
+Event EmitEvent = {no_action};
 
 // structures
 static QUEUE(DCELLS, dataStack);
@@ -419,6 +420,7 @@ void safeEmit(Byte c)
         alreadyHere = false;
     }
     safe(pushbq(c, emitq));
+    now(*EmitEvent);
 }
 
 void emitByte(Byte c)

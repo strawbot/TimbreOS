@@ -2,7 +2,7 @@
 
 #include "byteq.h"
 #include "cli.h"
-#include "machines.h"
+#include "tea.h"
 #include <string.h>
 
 void print(const char *message) { msg((char *)message); }
