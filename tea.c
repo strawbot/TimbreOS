@@ -112,7 +112,10 @@ void never(Event e) { when(e, no_action); }
 // Actions
 static QUEUE(20, actionq);
 
-void later(vector a) { CORE_ATOMIC_SECTION( pushq((Cell)a, actionq);) }
+void later(vector a) {
+	if (leftq(actionq) == 0) BLACK_HOLE();
+	CORE_ATOMIC_SECTION( pushq((Cell)a, actionq);)
+}
 
 void run() {
 	while (queryq(actionq)) {
