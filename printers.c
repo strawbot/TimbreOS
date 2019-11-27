@@ -70,7 +70,7 @@ void printBin(unsigned int bin) { lit(bin), dotb(); }
 
 void printChar(unsigned char ch) { emitByte(ch); }
 
-void printHex2(unsigned int hex) { dotnb(3, 2, hex, 16); }
+void printHex2(unsigned int hex) { printChar(' '); dotnb(2, 2, hex, 16); }
 
 void flush(void) {
     while (qbq(emitq))
