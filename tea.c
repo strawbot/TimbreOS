@@ -33,7 +33,8 @@ static TimeEvent* te_borrow() {
 	if (te) {
 		te_done.next = te->next;
 		te->next = NULL;	
-	} 
+	} else
+		BLACK_HOLE();
 	return te;
 }
 
@@ -56,7 +57,6 @@ static void schedule_te(TimeEvent* te) {
 void after(Long t, vector action) {
 	CORE_ATOMIC_SECTION(
 	TimeEvent* te = te_borrow();
-	if (te == NULL)  BLACK_HOLE();
 
 	te->action = action;
 	if (t > secs(1)) {
@@ -105,8 +105,9 @@ static void init_time() {
 }
 
 // Events
-void when(Event e, vector a) { *e = a; }
 void no_action() {}
+
+void when(Event e, vector a) { *e = a; }
 void never(Event e) { when(e, no_action); }
 
 // Actions
