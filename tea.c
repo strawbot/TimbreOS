@@ -1,7 +1,7 @@
 #include "clocks.h"
 #include "tea.h"
 #include "queue.h"
-#include "em_core.h"
+#include "printers.h"
 
 // 16 bit time tracker; ms and S
 static Long uptime = 0;
@@ -16,6 +16,14 @@ static void one_second() {
 Long getTime() { 
 	Short ms = to_msec(zero_ms - get_dueDate(0));
 	return uptime*1000 + ms;
+}
+
+uint32_t getUptime() {
+	return uptime;
+}
+
+void printUptime() {
+    printDec(getUptime());
 }
 
 // Time Events
