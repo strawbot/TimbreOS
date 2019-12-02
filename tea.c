@@ -67,20 +67,14 @@ void after(Long t, vector action) {
 	TimeEvent* te = te_borrow();
 
 	te->action = action;
-	if (t > secs(1)) {
-		te->seconds = t/secs(1);
-		te->dueDate = get_dueDate(t%secs(1));
-	} else {
-		te->seconds = 0;
-		te->dueDate = get_dueDate(t);
-	}
+	te->dueDate = get_dueDate(t);
 	schedule_te(te);)
 }
 
 static void do_action(TimeEvent * te) {
-		vector action = te->action;
-		te_return(te);
-		action();
+	vector action = te->action;
+	te_return(te);
+	action();
 }
 
 void check_dueDates(Short dueDate) {
@@ -93,12 +87,7 @@ void check_dueDates(Short dueDate) {
 		}
 		TimeEvent* te = te_todo.next;
 		te_todo.next = te->next;
-		if (te->seconds) {
-			te->seconds--;
-			te->dueDate = get_dueDate(ONE_SECOND);
-			schedule_te(te);
-		} else
-			do_action(te);
+		do_action(te);
 	}
 }
 

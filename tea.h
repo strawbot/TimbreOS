@@ -11,15 +11,14 @@
 typedef struct TimeEvent {
 	struct TimeEvent * next;
 	vector action;
-	Short seconds; // up to 64k seconds = 18 hours
-	Short dueDate; // up to 1000 ms
+	Short dueDate; // up to 65000 ms
 } TimeEvent;
 
 // time base
 Long get_uptime();  // seconds since startup
 Long getTime();		// ms time stamp; 49 day rollover
 
-#define msec(t)  (t*ONE_SECOND/1000)
+#define msec(t) ((Long)(((Octet)(t) * ONE_SECOND) / 1000))
 #define secs(t) msec(t*1000)
 #define to_msec(n) (to_secs((n)*1000))
 #define to_secs(n) ((n)/ONE_SECOND)
