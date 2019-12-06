@@ -5,6 +5,10 @@
 #include "tea.h"
 #include <string.h>
 
+#define ESC 0x1B
+#define CR 0x0D
+#define LF 0x0A
+
 void print(const char *message) { msg((char *)message); }
 
 void printCr(void) { print("\n"); }
@@ -95,6 +99,29 @@ void pdump(unsigned char *a, unsigned int lines) {
             printChar(a[i] > 31 && a[i] < 128 ? a[i] : '.');
         a += 16;
     }
+}
+
+void printAt(char x) {
+    if ((x >= ' ' && x <= '~') || (x == 0xD || x == LF))
+        printChar(x);
+    else if (x == ESC)
+        print("<ESC>");
+    else
+        print("<"), dotnb(2,2,x,16), print(">");
+}
+
+void printAscii(char x) {
+    if (x == CR)
+        print("<CR>");
+    else if (x == LF)
+        print("<LF>");
+    else
+        printAt(x);
+}
+
+void printAsciiString(char * string, Long length) {
+	while (*string)
+		printAscii(*string++);
 }
 
 // CLI
