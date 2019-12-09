@@ -11,6 +11,7 @@
 typedef struct TimeEvent {
 	struct TimeEvent * next;
 	vector action;
+	bool asap;
 	Short dueDate; // up to 65000 ms
 } TimeEvent;
 
@@ -33,6 +34,7 @@ typedef vector Event[1];
 void when(Event e, vector a);
 void never(Event e);
 void after(Long t, vector action);
+void in(Long t, vector action);
 
 // actions
 #define now(action) (action)()

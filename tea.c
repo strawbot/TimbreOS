@@ -62,19 +62,26 @@ static void schedule_te(TimeEvent* te) {
 	set_dueDate(te_todo.next->dueDate);
 }
 
-void after(Long t, vector action) {
+static void in_after(Long t, vector action, bool asap) {
 	CORE_ATOMIC_SECTION(
 	TimeEvent* te = te_borrow();
 
 	te->action = action;
 	te->dueDate = get_dueDate(t);
+	te->asap = asap;
 	schedule_te(te);)
+
 }
 
+void after(Long t, vector action) { in_after(t, action, false); }
+void in   (Long t, vector action) { in_after(t, action, true); }
+
 static void do_action(TimeEvent * te) {
-	vector action = te->action;
+	if (te->asap)
+		now(te->action);
+	else
+		later(te->action);
 	te_return(te);
-	action();
 }
 
 void check_dueDates(Short dueDate) {
