@@ -40,8 +40,13 @@ void in(Long t, vector action);
 #define now(action) (action)()
 void later(vector a);
 void run();
-void no_action();
 
-void init_tea();
+// inactions
+void no_action();
+void stop_te(vector v);
+void stop_action(vector v);
+void stop(vector v); // all places; 
+
+void init_te();
 
 #endif

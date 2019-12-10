@@ -119,7 +119,7 @@ void printAscii(char x) {
         printAt(x);
 }
 
-void printAsciiString(char * string, Long length) {
+void printAsciiString(char * string) {
 	while (*string)
 		printAscii(*string++);
 }
