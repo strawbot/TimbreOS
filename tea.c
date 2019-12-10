@@ -27,8 +27,6 @@ void printUptime() {
 }
 
 // Time Events
-#define NUM_TE 40
-
 static TimeEvent tes[NUM_TE], te_done, te_todo; // time events and todo and done lists
 
 static void te_return(TimeEvent* te) {
@@ -115,7 +113,7 @@ void when(Event e, vector a) { *e = a; }
 void never(Event e) { when(e, no_action); }
 
 // Actions
-static QUEUE(20, actionq);
+static QUEUE(NUM_ACTIONS, actionq);
 
 void later(vector a) {
 	if (leftq(actionq) == 0) BLACK_HOLE();

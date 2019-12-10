@@ -61,6 +61,8 @@ void timeoutWait(Cell time) // timed delay loop
 
 // CLI for timing
 #include "printers.h"
+#include "tea.h"
+
 static Long startingTime;
 
 void showTime(void)
@@ -70,9 +72,9 @@ void showTime(void)
 
 void sdotms(Long time)
 {
-	Long ms = time%(ta_secs(1));
+	Long ms = time%(secs(1));
 
-	printDec0(time/(ta_secs(1)));
+	printDec0(time/(secs(1)));
 	print(".");
 	printDec0(ms/100);
 	printDec0((ms%100)/10);
@@ -94,5 +96,5 @@ Long cliEndTime(void)
 }
 
 void cliSleep() {
-    timeoutWait(ta_secs(ret()));
+    timeoutWait(secs(ret()));
 }

@@ -10,8 +10,8 @@
       when(some_event, some_action);
 
     for events, they have a local store which gets loaded up with machines that
-	subscribe to the event. When the event happens, all the loaded machines get
-   run.
+        subscribe to the event. When the event happens, all the loaded machines
+   get run.
 
      API:
        Eventi(10, someevent);	// define
@@ -29,38 +29,38 @@
 #ifndef EVENTS_H
 #define EVENTS_H
 
+#include "ttypes.h"
 #include <stdio.h>
 #include <string.h>
-#include "ttypes.h"
 
 // structures common to C and C++
 typedef struct Action {
-    const char * name;
+    const char *name;
     void *object, *method;
     char persist;
     bool active;
 } Action;
 
 typedef struct EventQueue {
-    const char * name;
+    const char *name;
     Byte _size, _head, _tail;
-    Action* _queue;
+    Action *_queue;
 } EventQueue;
 
 #ifdef __cplusplus
-extern "C++" void next(void* object, unafun unary, const char * name = "");
+extern "C++" void next(void *object, unafun unary, const char *name = "");
 
 extern "C" {
 
-void callUnary(void * object, unafun unary);
+void callUnary(void *object, unafun unary);
 void next(vector object);
-void jump(void* object);
+void jump(void *object);
 void print(const char *);
 void printTimeDate();
 }
 
 class EventQueueClass : public EventQueue {
-public:
+  public:
     Byte count() {
         ATOMIC_SECTION_ENTER;
         Byte c = (_head >= _tail) ? (_head - _tail) : (_size - (_tail - _head));
@@ -69,35 +69,36 @@ public:
     }
 
     void clear() { _head = _tail = 0; }
-    
-    void push(Action* entry) {
+
+    void push(Action *entry) {
         ATOMIC_SECTION_ENTER;
         if (count() < _size - 1) {
-          memcpy(&_queue[_head++], entry, sizeof(Action));
-          _head %= _size;
+            memcpy(&_queue[_head++], entry, sizeof(Action));
+            _head %= _size;
         } else {
-          print("\nERROR: eventq full!"), printTimeDate();
-          while (true);
+            print("\nERROR: eventq full!"), printTimeDate();
+            while (true)
+                ;
         }
         ATOMIC_SECTION_LEAVE;
     }
 
-    void pushOnce(Action* entry) {
-      Byte n = count();
-      for (int i = _head; n; n-- )
-        if (memcmp(&_queue[i++ % _size], entry, sizeof(Action)) == 0)
-          return;
-      push(entry);
+    void pushOnce(Action *entry) {
+        Byte n = count();
+        for (int i = _head; n; n--)
+            if (memcmp(&_queue[i++ % _size], entry, sizeof(Action)) == 0)
+                return;
+        push(entry);
     }
 
-    void pop(Action* entry) {
+    void pop(Action *entry) {
         ATOMIC_SECTION_ENTER;
         memcpy(entry, &_queue[_tail++], sizeof(Action));
         _tail %= _size;
         ATOMIC_SECTION_LEAVE;
     }
-    
-    void remove(void* cpp_obj, unafun cpp_method) {
+
+    void remove(void *cpp_obj, unafun cpp_method) {
         for (Byte i = 0, total = count(); i < total; i++) {
             Action e;
 
@@ -152,32 +153,36 @@ extern "C" {
 
 #define Event(e) Eventi(3, e)
 
-#define ObjectMethod(object, method) object, [](void * o){ (static_cast<decltype(object)>(o))->method(); }
-#define OM(o,m) ObjectMethod(o,m)
+#define ObjectMethod(object, method)                                           \
+    object, [](void *o) { (static_cast<decltype(object)>(o))->method(); }
+#define OM(o, m) ObjectMethod(o, m)
 #define Method(method) OM(this, method)
 
-#define Eventi(size, e)     \
-    Action e##qt[size + 1]; \
-    EventQueue e[1] = { { #e, size + 1, 0, 0, e##qt } }
+#define Eventi(size, e)                                                        \
+    Action e##qt[size + 1];                                                    \
+    EventQueue e[1] = {{#e, size + 1, 0, 0, e##qt}}
 
 #define extEvent(event) extern EventQueue event[]
 
-void never(EventQueue* event); // need: never(EventQueue* event, vector action); and unafun 2
-void happen(EventQueue* event);
-void now(EventQueue* event);
+void never(EventQueue *event); // need: never(EventQueue* event, vector action);
+                               // and unafun 2
+void happen(EventQueue *event);
+void now(EventQueue *event);
 
-void only(EventQueue* event, vector action);
-void once(EventQueue* event, vector action);
-void when(EventQueue* event, vector action);
-void stopEvent(EventQueue* event, vector action);
+void only(EventQueue *event, vector action);
+void once(EventQueue *event, vector action);
+void when(EventQueue *event, vector action);
+void stopEvent(EventQueue *event, vector action);
 
 #ifdef __cplusplus
 }
 
 extern "C++" {
-void once(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name = "");
-void when(EventQueue* event, void* cpp_obj, unafun cpp_method, const char * name = "");
-void stopEvent(EventQueue* event, void* cpp_obj, unafun cpp_method);
+void once(EventQueue *event, void *cpp_obj, unafun cpp_method,
+          const char *name = "");
+void when(EventQueue *event, void *cpp_obj, unafun cpp_method,
+          const char *name = "");
+void stopEvent(EventQueue *event, void *cpp_obj, unafun cpp_method);
 }
 
 #endif
