@@ -54,15 +54,15 @@ wordlistCheader = ''' \
 // names are kept in flash; arrays are used; reduces space requirements
 #include "cli.h"
 
-#define NAMES(name) PROGMEM char name[] = {
+#define NAMES(name) const char name[] = {
 #define NAME(s) s "\\000"
 #define END_NAMES ""}; // empty string to cover empty array
 
-#define NONAMES(name) PROGMEM char name[] = {""};
+#define NONAMES(name) const char name[] = {""};
 #define NOBODIES(functions) struct constantCall functions[] = {NULL};
 
-#define BODIES(functions) vector functions[] = {
-#define CBODIES struct constantCall constantbodies[] = {
+#define BODIES(functions) const vector functions[] = {
+#define CBODIES const struct constantCall constantbodies[] = {
 #define BODY(f) (vector)f,
 #define CONSTANTBODY(f)  { cii, &f },
 #define CONSTANTNUMBER(n)  { cii, (Byte *)n },

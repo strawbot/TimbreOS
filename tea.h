@@ -5,6 +5,10 @@
 #ifndef TEA_H_
 #define TEA_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define BLACK_HOLE()                                                           \
     while (true)                                                               \
         ; // DEBUGGING
@@ -37,7 +41,7 @@ void never(Event e);
 
 // actions
 #define now(action) (action)()
-void later(vector a);
+void later(void (*a)());
 void run();
 
 // inactions
@@ -50,7 +54,7 @@ void init_te();
 
 // C++ support
 #ifdef __cplusplus
-
+}
 // This beast will convert an object and method into a vector
 #define ObjectMethod(object, method) \
 	([](void * o){ \

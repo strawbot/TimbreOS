@@ -61,9 +61,9 @@ typedef struct header {
 struct constantCall { vector v; Byte * b; };
 #endif
 
-extern vector wordbodies[];
-extern struct constantCall constantbodies[];
-extern vector immediatebodies[];
+extern const vector wordbodies[];
+extern const struct constantCall constantbodies[];
+extern const vector immediatebodies[];
 
 extern Event EmitEvent; // called when character emitted
 
