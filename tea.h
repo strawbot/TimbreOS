@@ -27,6 +27,9 @@ Long getTime(void);    // ms time stamp; 49 day rollover
 
 #define msec(t) ((Long)(((Octet)(t)*ONE_SECOND) / 1000))
 #define secs(t) msec(t * 1000)
+#define mins(t) secs(t*60)
+#define hours(t) mins(t*60)
+#define days(t) hours(t*24)
 #define to_msec(n) (to_secs((n)*1000))
 #define to_secs(n) ((n) / ONE_SECOND)
 
@@ -43,6 +46,7 @@ void never(Event e);
 #define now(action) (action)()
 void later(void (*a)());
 void run();
+void runMachines();
 
 // inactions
 void no_action();

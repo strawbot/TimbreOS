@@ -5,7 +5,7 @@
 
 // 16 bit time tracker; ms and S
 static Long uptime = 0;
-static Short last_dueDate, zero_ms; // points on the number wheel
+static Long last_dueDate, zero_ms; // points on the number wheel
 
 static void one_second() {
 	uptime++;
@@ -14,7 +14,7 @@ static void one_second() {
 }
 
 Long getTime() { 
-	Short ms = to_msec(zero_ms - get_dueDate(0));
+	Long ms = to_msec(get_dueDate(0)) - zero_ms;
 	return uptime*1000 + ms;
 }
 
@@ -46,11 +46,11 @@ static TimeEvent* te_borrow() {
 
 static void schedule_te(TimeEvent* te) {
 	TimeEvent * te_next, * te_curr = &te_todo;
-	Short ref = last_dueDate; // time reference
-	Short delta = ref - te->dueDate;
+	Long ref = last_dueDate; // time reference
+	Long delta = te->dueDate - ref;
 
 	while ((te_next = te_curr->next) != NULL) {
-		Short width = ref - te_next->dueDate;
+		Long width = te_next->dueDate - ref;
 		if (delta < width)
 			break;
 		te_curr = te_next;
@@ -82,7 +82,7 @@ static void do_action(TimeEvent * te) {
 	te_return(te);
 }
 
-void check_dueDates(Short dueDate) {
+void check_dueDates(Long dueDate) {
 	last_dueDate = dueDate;
 	
 	while (te_todo.next) {
@@ -116,7 +116,8 @@ void never(Event e) { when(e, no_action); }
 static QUEUE(NUM_ACTIONS, actionq);
 
 void later(vector a) {
-	if (leftq(actionq) == 0) BLACK_HOLE();
+	if (leftq(actionq) == 0)
+		BLACK_HOLE();
 	CORE_ATOMIC_SECTION( pushq((Cell)a, actionq);)
 }
 
@@ -125,6 +126,11 @@ void run() {
 		vector action = (vector)pullq(actionq);
 		action();
 	}
+}
+
+void runMachines() { // like run but only once through the queued actions
+	Long n = queryq(actionq);
+	while (n--) ( (vector)pullq(actionq) )();
 }
 
 void stop_te(vector v) {
