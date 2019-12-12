@@ -10,7 +10,7 @@ static Long last_dueDate, zero_ms; // points on the number wheel
 static void one_second() {
 	uptime++;
 	zero_ms = last_dueDate;
-	after(secs(1), one_second);
+	in(secs(1), one_second);
 }
 
 Long getTime() { 
