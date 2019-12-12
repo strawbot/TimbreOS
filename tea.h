@@ -18,7 +18,7 @@ typedef struct TimeEvent {
     struct TimeEvent *next;
     vector action;
     bool asap;
-    Short dueDate; // up to 65000 ms
+    Long dueDate; // up to 65000 ms
 } TimeEvent;
 
 // time base
@@ -54,7 +54,7 @@ void stop_te(vector v);
 void stop_action(vector v);
 void stop(vector v); // all places;
 
-void init_te();
+void init_tea();
 
 // C++ support
 #ifdef __cplusplus
