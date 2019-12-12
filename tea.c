@@ -44,6 +44,25 @@ static TimeEvent* te_borrow() {
 	return te;
 }
 
+static void do_action(TimeEvent * te) {
+	if (te->asap)
+		now(te->action);
+	else
+		later(te->action);
+	te_return(te);
+}
+
+static void run_dueDate() {
+	TimeEvent* te = te_todo.next;
+	te_todo.next = te->next;
+	do_action(te);
+}
+
+static void set_next_dueDate() {
+	while (false == set_dueDate(te_todo.next->dueDate))
+		run_dueDate();
+}
+
 static void schedule_te(TimeEvent* te) {
 	TimeEvent * te_next, * te_curr = &te_todo;
 	Long ref = last_dueDate; // time reference
@@ -57,7 +76,7 @@ static void schedule_te(TimeEvent* te) {
 	}
 	te->next = te_next;
 	te_curr->next = te;
-	set_dueDate(te_todo.next->dueDate);
+	set_next_dueDate();
 }
 
 static void in_after(Long t, vector action, bool asap) {
@@ -74,25 +93,15 @@ static void in_after(Long t, vector action, bool asap) {
 void after(Long t, vector action) { in_after(t, action, false); }
 void in   (Long t, vector action) { in_after(t, action, true); }
 
-static void do_action(TimeEvent * te) {
-	if (te->asap)
-		now(te->action);
-	else
-		later(te->action);
-	te_return(te);
-}
-
 void check_dueDates(Long dueDate) {
 	last_dueDate = dueDate;
 	
 	while (te_todo.next) {
 		if (te_todo.next->dueDate != last_dueDate) {
-			set_dueDate(te_todo.next->dueDate);
+			set_next_dueDate();
 			return;
 		}
-		TimeEvent* te = te_todo.next;
-		te_todo.next = te->next;
-		do_action(te);
+		run_dueDate();
 	}
 }
 
