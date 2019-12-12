@@ -59,7 +59,7 @@ wordlistCheader = ''' \
 #define END_NAMES ""}; // empty string to cover empty array
 
 #define NONAMES(name) const char name[] = {""};
-#define NOBODIES(functions) const struct constantCall functions[] = {NULL};
+#define NOBODIES(functions) const struct constantCall functions[] = {{NULL}};
 
 #define BODIES(functions) const vector functions[] = {
 #define CBODIES const struct constantCall constantbodies[] = {
