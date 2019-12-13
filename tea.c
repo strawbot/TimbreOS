@@ -29,80 +29,76 @@ void printUptime() {
 // Time Events
 static TimeEvent tes[NUM_TE], te_done, te_todo; // time events and todo and done lists
 
-static void te_return(TimeEvent* te) {
-	te->next = te_done.next;
-	te_done.next = te;
+static void append(TimeEvent * curr, TimeEvent * te) {
+	te->next = curr->next;
+	curr->next = te;
 }
 
-static TimeEvent* te_borrow() {
-	TimeEvent* te = te_done.next;
-	if (te) {
-		te_done.next = te->next;
-		te->next = NULL;	
-	} else
-		BLACK_HOLE();
+static TimeEvent * remove(TimeEvent * curr) {
+	TimeEvent * te = curr->next;
+	curr->next = te->next;
+	te->next = NULL;
 	return te;
 }
 
-static void do_action(TimeEvent * te) {
-	if (te->asap)
-		now(te->action);
-	else
-		later(te->action);
-	te_return(te);
+static void te_return(TimeEvent* te) { append(&te_done, te); }
+
+static TimeEvent* te_borrow() {
+	if (te_done.next == NULL)
+		BLACK_HOLE();
+
+	return remove(&te_done);	
 }
 
-static void run_dueDate() {
-	TimeEvent* te = te_todo.next;
-	te_todo.next = te->next;
-	do_action(te);
+static void do_action(TimeEvent * te) {
+	bool asap = te->asap;
+	vector action = te->action;
+	te_return(te);
+
+	if (asap)
+		now(action);
+	else
+		later(action);
 }
+
+static void run_dueDate() { do_action(remove(&te_todo)); }
 
 static void set_next_dueDate() {
-	while (false == set_dueDate(te_todo.next->dueDate))
+	while (te_todo.next && !set_dueDate(te_todo.next->dueDate))
 		run_dueDate();
 }
 
 static void schedule_te(TimeEvent* te) {
-	TimeEvent * te_next, * te_curr = &te_todo;
+	TimeEvent * curr = &te_todo, * next;
 	Long ref = last_dueDate; // time reference
-	Long delta = te->dueDate - ref;
+	int dueDate = te->dueDate - ref;
 
-	while ((te_next = te_curr->next) != NULL) {
-		Long width = te_next->dueDate - ref;
-		if (delta < width)
+	while ((next = curr->next) != NULL) {
+		int date = next->dueDate - ref;
+		if (dueDate > date)
 			break;
-		te_curr = te_next;
+		curr = next;
 	}
-	te->next = te_next;
-	te_curr->next = te;
+	append(curr, te);
 	set_next_dueDate();
 }
 
 static void in_after(Long t, vector action, bool asap) {
 	CORE_ATOMIC_SECTION(
-	TimeEvent* te = te_borrow();
+	TimeEvent * te = te_borrow();
 
 	te->action = action;
 	te->dueDate = get_dueDate(t);
 	te->asap = asap;
 	schedule_te(te);)
-
 }
 
 void after(Long t, vector action) { in_after(t, action, false); }
-void in   (Long t, vector action) { in_after(t, action, true); }
+void in   (Long t, vector action) { in_after(t, action, true);  }
 
 void check_dueDates(Long dueDate) {
 	last_dueDate = dueDate;
-	
-	while (te_todo.next) {
-		if (te_todo.next->dueDate != last_dueDate) {
-			set_next_dueDate();
-			return;
-		}
-		run_dueDate();
-	}
+	set_next_dueDate();
 }
 
 static void init_time() {
@@ -137,7 +133,7 @@ void run() {
 	}
 }
 
-void runMachines() { // like run but only once through the queued actions
+void runMachines() { // like run but only once through the queued actions; full slice
 	Long n = queryq(actionq);
 	while (n--) ( (vector)pullq(actionq) )();
 }
@@ -168,4 +164,16 @@ void init_tea() {
 	zeroq(actionq);
 	init_time();
 	init_clocks();
+}
+
+void print_te() {
+	TimeEvent * curr = te_todo.next;
+	print("\nCNT:"), printDec(BURTC->CNT);
+	print("  COMP:"), printDec(BURTC->COMP0);
+	while (curr) {
+		print("\nDD:"), printDec(curr->dueDate);
+		print("  asap:"), printDec(curr->asap);
+		print("  action:"), printHex((Cell)curr->action - 1);
+		curr = curr->next;
+	}
 }
