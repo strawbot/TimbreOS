@@ -75,7 +75,7 @@ static void schedule_te(TimeEvent* te) {
 
 	while ((next = curr->next) != NULL) {
 		int date = next->dueDate - ref;
-		if (dueDate > date)
+		if (dueDate < date)
 			break;
 		curr = next;
 	}

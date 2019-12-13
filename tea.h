@@ -17,8 +17,8 @@ extern "C" {
 typedef struct TimeEvent {
     struct TimeEvent *next;
     vector action;
+    Long dueDate; // up to 48.5 days
     bool asap;
-    Long dueDate; // up to 65000 ms
 } TimeEvent;
 
 // time base
