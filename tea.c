@@ -177,3 +177,8 @@ void print_te() {
 		curr = curr->next;
 	}
 }
+
+void print_actions() {
+	int n = queryq(actionq);
+	print("\n#actions:"), printDec(n);
+}
