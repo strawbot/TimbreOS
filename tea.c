@@ -168,8 +168,8 @@ void init_tea() {
 
 void print_te() {
 	TimeEvent * curr = te_todo.next;
-	print("\nCNT:"), printDec(BURTC->CNT);
-	print("  COMP:"), printDec(BURTC->COMP0);
+	print("\ncounter:"), printDec(get_counter());
+	print("  compare:"), printDec(get_compare());
 	while (curr) {
 		print("\nDD:"), printDec(curr->dueDate);
 		print("  asap:"), printDec(curr->asap);
