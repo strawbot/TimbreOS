@@ -56,6 +56,10 @@ void stop(vector v); // all places;
 
 void init_tea();
 
+void actor(vector action, const char * name);
+
+#define namedAction(m) actor(m, #m)
+
 // C++ support
 #ifdef __cplusplus
 }

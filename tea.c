@@ -2,6 +2,7 @@
 #include "tea.h"
 #include "queue.h"
 #include "printers.h"
+#include "dictionary.h"
 
 // 16 bit time tracker; ms and S
 static Long uptime = 0;
@@ -164,6 +165,36 @@ void init_tea() {
 	zeroq(actionq);
 	init_time();
 	init_clocks();
+	namedAction(one_second);
+}
+
+// names for actions
+HASHDICT(HASH9, teanames); // keep track of machine names
+
+void actor(vector action, const char * name) // give name to machine
+{
+	dictAddKey((Cell)action, &teanames);
+	*dictAdjunctKey((Cell)action, &teanames) = (Cell)name;
+}
+
+void printActionName(Cell x) {
+	char * name = *(char **)dictAdjunctKey(x, &teanames);
+	if (name)
+		print(name);
+	else
+		printHex(x-1);
+}
+
+void printDueDate(Long dd) {
+	dd = dd - get_dueDate(0);
+	if (dd < secs(1))
+		printDec(to_msec(dd)), print("msec  ");
+	else if (dd < mins(10))
+		printDec(to_secs(dd)), print("secs  ");
+	else if (dd < hours(10))
+		printDec(dd/mins(1)), print("mins  ");
+	else
+		printDec(dd/hours(1)), print("hours  ");
 }
 
 void print_te() {
@@ -171,9 +202,9 @@ void print_te() {
 	print("\ncounter:"), printDec(get_counter());
 	print("  compare:"), printDec(get_compare());
 	while (curr) {
-		print("\nDD:"), printDec(curr->dueDate);
-		print("  asap:"), printDec(curr->asap);
-		print("  action:"), printHex((Cell)curr->action - 1);
+		print (curr->asap ? "\nin " : "\nafter ");
+		printDueDate(curr->dueDate);
+		printActionName((Cell)curr->action);
 		curr = curr->next;
 	}
 }
@@ -181,4 +212,10 @@ void print_te() {
 void print_actions() {
 	int n = queryq(actionq);
 	print("\n#actions:"), printDec(n);
+	while(n) {
+		printCr();
+		printActionName(q(actionq));
+		rotateq(actionq, 1);
+		n--;
+	}
 }
