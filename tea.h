@@ -65,12 +65,11 @@ void actor(vector action, const char * name);
 }
 // This beast will convert an object and method into a vector
 #define ObjectMethod(object, method) \
-	([](void * o){ \
-		static void * obj = o; \
-		return [](){ \
-			(static_cast<decltype(object)>(obj))->method(); \
-			}; } \
-	)(object)
+    ( [](decltype(object) o) { \
+            static decltype(object) obj = o; \
+            return [](){ obj->method(); }; \
+        } \
+    )(object)
 
 #define Method(method) ObjectMethod(this, method)
 
