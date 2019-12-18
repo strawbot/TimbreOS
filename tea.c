@@ -189,9 +189,9 @@ void printDueDate(Long dd) {
 	dd = dd - get_dueDate(0);
 	if (dd < secs(1))
 		printDec(to_msec(dd)), print("msec  ");
-	else if (dd < mins(10))
+	else if (dd < mins(5))
 		printDec(to_secs(dd)), print("secs  ");
-	else if (dd < hours(10))
+	else if (dd < hours(5))
 		printDec(dd/mins(1)), print("mins  ");
 	else
 		printDec(dd/hours(1)), print("hours  ");
@@ -204,6 +204,7 @@ void print_te() {
 	while (curr) {
 		print (curr->asap ? "\nin " : "\nafter ");
 		printDueDate(curr->dueDate);
+		tabTo(17);
 		printActionName((Cell)curr->action);
 		curr = curr->next;
 	}
