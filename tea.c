@@ -178,9 +178,9 @@ void actor(vector action, const char * name) // give name to machine
 }
 
 void printActionName(Cell x) {
-	char * name = *(char **)dictAdjunctKey(x, &teanames);
+	char ** name = (char **)dictAdjunctKey(x, &teanames);
 	if (name)
-		print(name);
+		printHex(x-1),print(*name);
 	else
 		printHex(x-1);
 }
@@ -219,4 +219,10 @@ void print_actions() {
 		rotateq(actionq, 1);
 		n--;
 	}
+}
+
+void dumpTeaNames() {
+	for(int i = 0; i < HASH9; i++)
+		if (teanamesadjunct[i])
+			printCr(), printHex(teanamesadjunct[i]), print((char *)teanamesadjunct[i]);
 }
