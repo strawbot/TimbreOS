@@ -66,7 +66,7 @@ static void run_dueDate() { do_action(remove(&te_todo)); }
 
 static void set_next_dueDate() {
 	while (te_todo.next && !set_dueDate(te_todo.next->dueDate))
-		run_dueDate();
+		now(run_dueDate);
 }
 
 Long end1, end2, end3;
@@ -116,7 +116,7 @@ static void in_after(Long t, vector action, bool asap) {
 
 	safe(schedule_te(te);)
 	end2 = max(end2, getTicks() - time);
-	set_next_dueDate();
+	now(set_next_dueDate);
 	end3 = max(end3, getTicks() - time);
 }
 
@@ -126,7 +126,7 @@ void in   (Long t, vector action) { in_after(t, action, false);  }
 
 void check_dueDates(Long dueDate) {
 	last_dueDate = dueDate;
-	set_next_dueDate();
+	now(set_next_dueDate);
 }
 
 static void init_time() {
@@ -137,6 +137,7 @@ static void init_time() {
 	}
 	zero_ms = last_dueDate = get_dueDate(0);
 	later(one_second);
+	namedAction(set_next_dueDate);
 }
 
 // Events
@@ -313,4 +314,5 @@ void init_tea() {
 	init_clocks();
 	namedAction(one_second);
 	namedAction(no_action);
+	namedAction(run_dueDate);
 }
