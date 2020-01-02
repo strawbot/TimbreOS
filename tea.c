@@ -2,7 +2,7 @@
 #include "tea.h"
 #include "queue.h"
 #include "printers.h"
-#include "dictionary.h"
+#include <stdlib.h>
 
 // 16 bit time tracker; ms and S
 static Long uptime = 0;
@@ -69,6 +69,10 @@ static void set_next_dueDate() {
 		run_dueDate();
 }
 
+Long end1, end2, end3;
+#include "codeStats.c"
+#define max(a,b) a > b ? a : b
+
 static void schedule_te(TimeEvent* te) {
 	TimeEvent * curr = &te_todo, * next;
 	Long ref = last_dueDate; // time reference
@@ -81,21 +85,44 @@ static void schedule_te(TimeEvent* te) {
 		curr = next;
 	}
 	append(curr, te);
-	set_next_dueDate();
+}
+
+void print_ste() {
+	print("E1:"), print_elapsed_time(end1);
+	print("E2:"), print_elapsed_time(end2-end1);
+	print("E3:"), print_elapsed_time(end3-end2);
+}
+
+void print_elapsed_time(Cell time) {
+	Long us = CONVERT_TO_US(time);
+	if (us > 9999)
+		dotnb(7, 6, CONVERT_TO_MS(time), 10), print(" ms  ");
+	else if (us)
+		dotnb(7, 6, us, 10), print(" us  ");
+	else
+		dotnb(7, 6, CONVERT_TO_NS(time), 10), print(" ns  ");
 }
 
 static void in_after(Long t, vector action, bool asap) {
-	CORE_ATOMIC_SECTION(
-	TimeEvent * te = te_borrow();
+	Long time = getTicks();
+	TimeEvent * te;
+
+	safe( te = te_borrow(); )
+	end1 = max(end1, getTicks() - time);
 
 	te->action = action;
 	te->dueDate = get_dueDate(t);
 	te->asap = asap;
-	schedule_te(te);)
+
+	safe(schedule_te(te);)
+	end2 = max(end2, getTicks() - time);
+	set_next_dueDate();
+	end3 = max(end3, getTicks() - time);
 }
 
 void after(Long t, vector action) { in_after(t, action, false); }
-void in   (Long t, vector action) { in_after(t, action, true);  }
+void in   (Long t, vector action) { in_after(t, action, false);  }
+// void in   (Long t, vector action) { in_after(t, action, true);  }
 
 void check_dueDates(Long dueDate) {
 	last_dueDate = dueDate;
@@ -128,15 +155,12 @@ void later(vector a) {
 }
 
 void run() {
-	while (queryq(actionq)) {
-		vector action = (vector)pullq(actionq);
-		action();
-	}
+	while (queryq(actionq))  actionRun((vector)pullq(actionq));
 }
 
 void runMachines() { // like run but only once through the queued actions; full slice
 	Long n = queryq(actionq);
-	while (n--) ( (vector)pullq(actionq) )();
+	while (n--) actionRun((vector)pullq(actionq));
 }
 
 void stop_te(vector v) {
@@ -161,26 +185,21 @@ void stop(vector v) {
 	stop_action(v);
 }
 
-void init_tea() {
-	zeroq(actionq);
-	init_time();
-	init_clocks();
-	namedAction(one_second);
-}
-
 // names for actions
 HASHDICT(HASH9, teanames); // keep track of machine names
+HASHDICT(HASH9, teatimes); // keep track of machine max execution times
 
-void actor(vector action, const char * name) // give name to machine
-{
+void actor(vector action, const char * name) { // give name to machine
 	dictAddKey((Cell)action, &teanames);
+	dictAddKey((Cell)action, &teatimes);
 	*dictAdjunctKey((Cell)action, &teanames) = (Cell)name;
+//	printHex(action), print(name), printCr();
 }
 
 void printActionName(Cell x) {
 	char ** name = (char **)dictAdjunctKey(x, &teanames);
 	if (name)
-		printHex(x-1),print(*name);
+		print(*name);
 	else
 		printHex(x-1);
 }
@@ -192,9 +211,9 @@ void printDueDate(Long dd) {
 	else if (dd < mins(5))
 		printDec(to_secs(dd)), print("secs  ");
 	else if (dd < hours(5))
-		printDec(dd/mins(1)), print("mins  ");
+		printDec(dd/mins(1)),  print("mins  ");
 	else
-		printDec(dd/hours(1)), print("hours  ");
+		printDec(dd/hours(1)), print("hours ");
 }
 
 void print_te() {
@@ -225,4 +244,73 @@ void dumpTeaNames() {
 	for(int i = 0; i < HASH9; i++)
 		if (teanamesadjunct[i])
 			printCr(), printHex(teanamesadjunct[i]), print((char *)teanamesadjunct[i]);
+}
+
+static int indexCompare(const void *a,const void *b) {
+	Short *x = (Short *) a;
+	Short *y = (Short *) b;
+	return teatimes.adjunct[*y] - teatimes.adjunct[*x];
+}
+
+void machineStats(void) {
+	Short indexes[teatimes.capacity];
+	Short j=0;
+
+	for (Short i=0; i<teatimes.capacity; i++)
+		if (teatimes.adjunct[i] != 0)
+			indexes[j++] = i;
+
+	qsort(indexes, j, sizeof(Short), indexCompare);
+
+	print(" mstats ");
+	for (Short i=0; i<j; i++) {
+		Cell machine = (Cell)teatimes.table[indexes[i]];
+		char * name = (char *)teanames.adjunct[indexes[i]];
+		printCr();
+		print_elapsed_time(teatimes.adjunct[indexes[i]]);
+		if (name)
+			print(name);
+		else
+			printHex(machine - 1);
+	}
+}
+
+void zeroMachineTimes() {
+    for (Short i=0; i<teatimes.capacity; i++)
+        teatimes.adjunct[i] = 0;
+}
+
+#define UNKNOWN "unknown_machines"
+
+void initMachineStats() {
+    emptyDict(&teanames);
+    emptyDict(&teatimes);
+//    actor((vector)(Cell)UNKNOWN, UNKNOWN);
+	zeroMachineTimes();
+}
+
+void actionRun(vector m) {
+	Cell * stat = dictAdjunctKey((Cell)m, &teatimes);
+	if (stat == 0) {
+		// printHex(m), printCr();
+		actor(m, NULL);
+		stat = dictAdjunctKey((Cell)m, &teatimes);
+	}
+
+	int time = (int)getTicks();
+	m();
+	time = (int)getTicks() - time;
+
+	if (time > (int)*stat) // TODO: consider atomicity of readnwrite
+		*stat = (Cell)time;
+}
+
+// init
+void init_tea() {
+	initMachineStats();
+	zeroq(actionq);
+	init_time();
+	init_clocks();
+	namedAction(one_second);
+	namedAction(no_action);
 }

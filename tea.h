@@ -1,6 +1,7 @@
 #include "clocks.h"
 #include "project_defs.h"
 #include "ttypes.h"
+#include "dictionary.h"
 
 #ifndef TEA_H_
 #define TEA_H_
@@ -43,10 +44,18 @@ void when(Event e, vector a);
 void never(Event e);
 
 // actions
-#define now(action) (action)()
+#define now(action) actionRun(action)
 void later(void (*a)());
 void run();
 void runMachines();
+
+// measure execution time
+extern dictionary_t teanames, teatimes;
+
+#define UNKNOWN "unknown_machines"
+
+void actionRun(vector m);
+void print_elapsed_time(Cell time);
 
 // inactions
 void no_action();
