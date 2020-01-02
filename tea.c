@@ -69,7 +69,6 @@ static void set_next_dueDate() {
 		now(run_dueDate);
 }
 
-Long end1, end2, end3;
 #include "codeStats.c"
 #define max(a,b) a > b ? a : b
 
@@ -87,12 +86,6 @@ static void schedule_te(TimeEvent* te) {
 	append(curr, te);
 }
 
-void print_ste() {
-	print("E1:"), print_elapsed_time(end1);
-	print("E2:"), print_elapsed_time(end2-end1);
-	print("E3:"), print_elapsed_time(end3-end2);
-}
-
 void print_elapsed_time(Cell time) {
 	Long us = CONVERT_TO_US(time);
 	if (us > 9999)
@@ -103,21 +96,31 @@ void print_elapsed_time(Cell time) {
 		dotnb(7, 6, CONVERT_TO_NS(time), 10), print(" ns  ");
 }
 
+static Cell * get_stat(vector m) {
+	Cell * stat = dictAdjunctKey((Cell)m, &teatimes);
+	if (stat == 0) {
+		actor(m, NULL);
+		stat = dictAdjunctKey((Cell)m, &teatimes);
+	}
+	return stat;
+}
+
 static void in_after(Long t, vector action, bool asap) {
-	Long time = getTicks();
 	TimeEvent * te;
 
 	safe( te = te_borrow(); )
-	end1 = max(end1, getTicks() - time);
 
 	te->action = action;
 	te->dueDate = get_dueDate(t);
 	te->asap = asap;
 
+	Cell * stat = get_stat(schedule_te);
+	int time = (int)getTicks();
 	safe(schedule_te(te);)
-	end2 = max(end2, getTicks() - time);
+	time = (int)getTicks() - time;
+	* stat = max(time, *stat);
+
 	now(set_next_dueDate);
-	end3 = max(end3, getTicks() - time);
 }
 
 void after(Long t, vector action) { in_after(t, action, false); }
@@ -194,7 +197,6 @@ void actor(vector action, const char * name) { // give name to machine
 	dictAddKey((Cell)action, &teanames);
 	dictAddKey((Cell)action, &teatimes);
 	*dictAdjunctKey((Cell)action, &teanames) = (Cell)name;
-//	printHex(action), print(name), printCr();
 }
 
 void printActionName(Cell x) {
@@ -219,8 +221,7 @@ void printDueDate(Long dd) {
 
 void print_te() {
 	TimeEvent * curr = te_todo.next;
-	print("\ncounter:"), printDec(get_counter());
-	print("  compare:"), printDec(get_compare());
+	show_timer();
 	while (curr) {
 		print (curr->asap ? "\nin " : "\nafter ");
 		printDueDate(curr->dueDate);
@@ -286,24 +287,15 @@ void zeroMachineTimes() {
 void initMachineStats() {
     emptyDict(&teanames);
     emptyDict(&teatimes);
-//    actor((vector)(Cell)UNKNOWN, UNKNOWN);
 	zeroMachineTimes();
 }
 
 void actionRun(vector m) {
-	Cell * stat = dictAdjunctKey((Cell)m, &teatimes);
-	if (stat == 0) {
-		// printHex(m), printCr();
-		actor(m, NULL);
-		stat = dictAdjunctKey((Cell)m, &teatimes);
-	}
-
+	Cell * stat = get_stat(m);
 	int time = (int)getTicks();
 	m();
 	time = (int)getTicks() - time;
-
-	if (time > (int)*stat) // TODO: consider atomicity of readnwrite
-		*stat = (Cell)time;
+	* stat = max(time, *stat);
 }
 
 // init
@@ -315,4 +307,5 @@ void init_tea() {
 	namedAction(one_second);
 	namedAction(no_action);
 	namedAction(run_dueDate);
+	namedAction(schedule_te);
 }
