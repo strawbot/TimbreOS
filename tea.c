@@ -167,7 +167,7 @@ void actor(vector action, const char * name) { // give name to action
 
 static void printActionName(Cell x) {
 	char ** name = (char **)dictAdjunctKey(x, &teanames);
-	if (name)
+	if (name && name[0] != 0)
 		print(*name);
 	else
 		printHex(x-1);
