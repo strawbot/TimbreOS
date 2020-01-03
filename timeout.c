@@ -56,7 +56,7 @@ void timeoutWait(Cell time) // timed delay loop
 
 	setTimeout(time, timer);
 	while (!checkTimeout(timer))
-		runMachines();
+		action_slice();
 }
 
 // CLI for timing

@@ -18,27 +18,28 @@ extern "C" {
 typedef struct TimeEvent {
     struct TimeEvent *next;
     vector action;
-    Long dueDate; // up to 48.5 days
+    Long dueDate; // 1ms resolution; up to 48.5 days
     bool asap;
 } TimeEvent;
 
 // time base
-Long get_uptime(); // seconds since startup
+Long get_uptime(); // seconds since startup; 136 year rollover
 Long getTime(void);    // ms time stamp; 49 day rollover
 
+// note use of 8 byte intermediate precision; accomodate range of values for ONE_SECOND
 #define msec(t) ((Long)(((Octet)(t)*ONE_SECOND) / 1000))
 #define secs(t) msec(t * 1000)
 #define mins(t) secs(t*60)
 #define hours(t) mins(t*60)
 #define days(t) hours(t*24)
-#define to_msec(n) (to_secs((n)*1000))
+#define to_msec(n) ((Long)to_secs((n*1000ULL)))
 #define to_secs(n) ((n) / ONE_SECOND)
 
 // time
 void after(Long t, vector action);
 void in(Long t, vector action);
 
-// Events
+// events
 typedef vector Event[1];
 void when(Event e, vector a);
 void never(Event e);
@@ -47,15 +48,14 @@ void never(Event e);
 #define now(action) actionRun(action)
 void later(void (*a)());
 void run();
-void runMachines();
+void action_slice();
 
 // measure execution time
-extern dictionary_t teanames, teatimes;
+#define namedAction(m) actor(m, #m)
 
-#define UNKNOWN "unknown_machines"
-
+void actor(vector action, const char * name);
 void actionRun(vector m);
-void print_elapsed_time(Cell time);
+Cell * action_stat(vector m);
 
 // inactions
 void no_action();
@@ -65,14 +65,10 @@ void stop(vector v); // all places;
 
 void init_tea();
 
-void actor(vector action, const char * name);
-
-#define namedAction(m) actor(m, #m)
-
 // C++ support
 #ifdef __cplusplus
 }
-// This beast will convert an object and method into a vector
+// This beast will convert an object and method into a function vector
 #define ObjectMethod(object, method) \
     ( [](decltype(object) o) { \
             static decltype(object) obj = o; \

@@ -1,10 +1,12 @@
+// Time Event Action interface
+
 #include "clocks.h"
 #include "tea.h"
 #include "queue.h"
 #include "printers.h"
 #include <stdlib.h>
 
-// 16 bit time tracker; ms and S
+// time tracker; ms and S
 static Long uptime = 0;
 static Long last_dueDate, zero_ms; // points on the number wheel
 
@@ -15,7 +17,7 @@ static void one_second() {
 }
 
 Long getTime() { 
-	Long ms = to_msec(get_dueDate(0)) - zero_ms;
+	Long ms = to_msec(get_dueDate(0) - zero_ms);
 	return uptime*1000 + ms;
 }
 
@@ -27,9 +29,8 @@ void printUptime() {
     printDec(getUptime());
 }
 
-// Time Events
+// primitives
 static TimeEvent tes[NUM_TE], te_done, te_todo; // time events and todo and done lists
-
 static void append(TimeEvent * curr, TimeEvent * te) {
 	te->next = curr->next;
 	curr->next = te;
@@ -42,6 +43,7 @@ static TimeEvent * remove(TimeEvent * curr) {
 	return te;
 }
 
+// list access
 static void te_return(TimeEvent* te) { append(&te_done, te); }
 
 static TimeEvent* te_borrow() {
@@ -51,6 +53,7 @@ static TimeEvent* te_borrow() {
 	return remove(&te_done);	
 }
 
+// make it happen
 static void do_action(TimeEvent * te) {
 	bool asap = te->asap;
 	vector action = te->action;
@@ -66,11 +69,8 @@ static void run_dueDate() { do_action(remove(&te_todo)); }
 
 static void set_next_dueDate() {
 	while (te_todo.next && !set_dueDate(te_todo.next->dueDate))
-		now(run_dueDate);
+		run_dueDate();
 }
-
-#include "codeStats.c"
-#define max(a,b) a > b ? a : b
 
 static void schedule_te(TimeEvent* te) {
 	TimeEvent * curr = &te_todo, * next;
@@ -86,25 +86,6 @@ static void schedule_te(TimeEvent* te) {
 	append(curr, te);
 }
 
-void print_elapsed_time(Cell time) {
-	Long us = CONVERT_TO_US(time);
-	if (us > 9999)
-		dotnb(7, 6, CONVERT_TO_MS(time), 10), print(" ms  ");
-	else if (us)
-		dotnb(7, 6, us, 10), print(" us  ");
-	else
-		dotnb(7, 6, CONVERT_TO_NS(time), 10), print(" ns  ");
-}
-
-static Cell * get_stat(vector m) {
-	Cell * stat = dictAdjunctKey((Cell)m, &teatimes);
-	if (stat == 0) {
-		actor(m, NULL);
-		stat = dictAdjunctKey((Cell)m, &teatimes);
-	}
-	return stat;
-}
-
 static void in_after(Long t, vector action, bool asap) {
 	TimeEvent * te;
 
@@ -114,33 +95,17 @@ static void in_after(Long t, vector action, bool asap) {
 	te->dueDate = get_dueDate(t);
 	te->asap = asap;
 
-	Cell * stat = get_stat(schedule_te);
-	int time = (int)getTicks();
 	safe(schedule_te(te);)
-	time = (int)getTicks() - time;
-	* stat = max(time, *stat);
-
-	now(set_next_dueDate);
+	set_next_dueDate();
 }
 
+// Time Events
 void after(Long t, vector action) { in_after(t, action, false); }
-void in   (Long t, vector action) { in_after(t, action, false);  }
-// void in   (Long t, vector action) { in_after(t, action, true);  }
+void in   (Long t, vector action) { in_after(t, action, true);  }
 
 void check_dueDates(Long dueDate) {
 	last_dueDate = dueDate;
-	now(set_next_dueDate);
-}
-
-static void init_time() {
-	te_todo.next = te_done.next = NULL;
-
-	for (Byte i = 0; i < NUM_TE; i++) {
-		te_return(&tes[i]);
-	}
-	zero_ms = last_dueDate = get_dueDate(0);
-	later(one_second);
-	namedAction(set_next_dueDate);
+	set_next_dueDate();
 }
 
 // Events
@@ -162,11 +127,12 @@ void run() {
 	while (queryq(actionq))  actionRun((vector)pullq(actionq));
 }
 
-void runMachines() { // like run but only once through the queued actions; full slice
+void action_slice() { // like run but only once through the queued actions; full slice
 	Long n = queryq(actionq);
 	while (n--) actionRun((vector)pullq(actionq));
 }
 
+// reductions
 void stop_te(vector v) {
 	CORE_ATOMIC_SECTION(
 	TimeEvent* te = te_todo.next;
@@ -189,17 +155,17 @@ void stop(vector v) {
 	stop_action(v);
 }
 
-// names for actions
+// names for actions 
 HASHDICT(HASH9, teanames); // keep track of machine names
 HASHDICT(HASH9, teatimes); // keep track of machine max execution times
 
-void actor(vector action, const char * name) { // give name to machine
-	dictAddKey((Cell)action, &teanames);
+void actor(vector action, const char * name) { // give name to action
 	dictAddKey((Cell)action, &teatimes);
+	dictAddKey((Cell)action, &teanames);
 	*dictAdjunctKey((Cell)action, &teanames) = (Cell)name;
 }
 
-void printActionName(Cell x) {
+static void printActionName(Cell x) {
 	char ** name = (char **)dictAdjunctKey(x, &teanames);
 	if (name)
 		print(*name);
@@ -207,7 +173,7 @@ void printActionName(Cell x) {
 		printHex(x-1);
 }
 
-void printDueDate(Long dd) {
+static void printDueDate(Long dd) {
 	dd = dd - get_dueDate(0);
 	if (dd < secs(1))
 		printDec(to_msec(dd)), print("msec  ");
@@ -254,6 +220,19 @@ static int indexCompare(const void *a,const void *b) {
 	return teatimes.adjunct[*y] - teatimes.adjunct[*x];
 }
 
+#include "codeStats.c"
+#define max(a,b) a > b ? a : b
+
+static void print_elapsed_time(Cell time) {
+	Long us = CONVERT_TO_US(time);
+	if (us > 9999)
+		dotnb(7, 6, CONVERT_TO_MS(time), 10), print(" ms  ");
+	else if (us)
+		dotnb(7, 6, us, 10), print(" us  ");
+	else
+		dotnb(7, 6, CONVERT_TO_NS(time), 10), print(" ns  ");
+}
+
 void machineStats(void) {
 	Short indexes[teatimes.capacity];
 	Short j=0;
@@ -277,12 +256,27 @@ void machineStats(void) {
 	}
 }
 
+Cell * action_stat(vector m) {
+	Cell * stat = dictAdjunctKey((Cell)m, &teatimes);
+	if (stat == 0) {
+		actor(m, NULL);
+		stat = dictAdjunctKey((Cell)m, &teatimes);
+	}
+	return stat;
+}
+
+void actionRun(vector m) {
+	Cell * stat = action_stat(m);
+	int time = (int)getTicks();
+	m();
+	time = (int)getTicks() - time;
+	* stat = max(time, *stat);
+}
+
 void zeroMachineTimes() {
     for (Short i=0; i<teatimes.capacity; i++)
         teatimes.adjunct[i] = 0;
 }
-
-#define UNKNOWN "unknown_machines"
 
 void initMachineStats() {
     emptyDict(&teanames);
@@ -290,22 +284,20 @@ void initMachineStats() {
 	zeroMachineTimes();
 }
 
-void actionRun(vector m) {
-	Cell * stat = get_stat(m);
-	int time = (int)getTicks();
-	m();
-	time = (int)getTicks() - time;
-	* stat = max(time, *stat);
-}
-
 // init
 void init_tea() {
 	initMachineStats();
 	zeroq(actionq);
-	init_time();
+	te_todo.next = te_done.next = NULL;
+
+	for (Byte i = 0; i < NUM_TE; i++)
+		te_return(&tes[i]);
+
+	zero_ms = last_dueDate = get_dueDate(0);
+	later(one_second);
 	init_clocks();
+
+	namedAction(set_next_dueDate);
 	namedAction(one_second);
 	namedAction(no_action);
-	namedAction(run_dueDate);
-	namedAction(schedule_te);
 }
