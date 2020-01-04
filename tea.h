@@ -32,8 +32,8 @@ Long getTime(void);    // ms time stamp; 49 day rollover
 #define mins(t) secs(t*60)
 #define hours(t) mins(t*60)
 #define days(t) hours(t*24)
-#define to_msec(n) ((Long)to_secs((n*1000ULL)))
-#define to_secs(n) ((n) / ONE_SECOND)
+#define to_msec(n) ((Long)((Octet)(n)*1000/ONE_SECOND))
+#define to_secs(n) (to_msec(n)/1000)
 
 // time
 void after(Long t, vector action);

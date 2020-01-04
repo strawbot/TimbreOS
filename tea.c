@@ -12,12 +12,12 @@ static Long last_dueDate, zero_ms; // points on the number wheel
 
 static void one_second() {
 	uptime++;
-	zero_ms = last_dueDate;
+	zero_ms = raw_time();
 	in(secs(1), one_second);
 }
 
 Long getTime() { 
-	Long ms = to_msec(get_dueDate(0) - zero_ms);
+	Long ms = to_msec(raw_time() - zero_ms);
 	return uptime*1000 + ms;
 }
 
@@ -293,7 +293,9 @@ void init_tea() {
 	for (Byte i = 0; i < NUM_TE; i++)
 		te_return(&tes[i]);
 
-	zero_ms = last_dueDate = get_dueDate(0);
+	zero_ms = raw_time();
+	last_dueDate = get_dueDate(0);
+
 	later(one_second);
 	init_clocks();
 
@@ -301,3 +303,26 @@ void init_tea() {
 	namedAction(one_second);
 	namedAction(no_action);
 }
+
+// test vector
+#include "timeout.h"
+#include "cli.h"
+
+void test_time() {
+	Long s = ret();
+	Long tick = getTicks();
+	Long time = getTime();
+	timeoutWait(secs(s));
+	tick = getTicks() - tick;
+	time = getTime() - time; 
+	print("\n"), printDec0(s), print(" second in ticks to ms: "), printDec(CONVERT_TO_MS(tick));
+	print("  in time(ms):"), printDec(time);
+}
+
+void get_tick_time() {
+	Long tick = getTicks();
+	Long time = getTime();
+	printDec(tick), printDec(time);
+}
+
+void ticks_ms() { lit(CONVERT_TO_MS(ret())); }
