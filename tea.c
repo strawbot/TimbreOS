@@ -312,11 +312,14 @@ void test_time() {
 	Long s = ret();
 	Long tick = getTicks();
 	Long time = getTime();
+	Long raw = raw_time();
 	timeoutWait(secs(s));
 	tick = getTicks() - tick;
-	time = getTime() - time; 
+	time = getTime() - time;
+	raw = raw_time() - raw;
 	print("\n"), printDec0(s), print(" second in ticks to ms: "), printDec(CONVERT_TO_MS(tick));
 	print("  in time(ms):"), printDec(time);
+	print("  in raw:"), printDec(raw);
 }
 
 void get_tick_time() {

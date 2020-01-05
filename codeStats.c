@@ -10,9 +10,9 @@
 #define getTicks() (DWT->CYCCNT) // cortex-M3 cycle counter from ETM
 // #define getTicks() 0
 
-#define CONVERT_TO_NS(n) ((long long)(n)*1024/CLOCK_MHZ)
+#define CONVERT_TO_NS(n) ((unsigned long long)(n)*1000/CLOCK_MHZ)
 #define CONVERT_TO_US(n) ((n)/CLOCK_MHZ)
-#define CONVERT_TO_MS(n) ((long long)(n)/(CLOCK_MHZ*1024))
+#define CONVERT_TO_MS(n) ((unsigned long long)(n)/(CLOCK_MHZ*1000))
 #define US_TO_TICKS(n)	 ((n)*CLOCK_MHZ)
 
 #ifdef FOR_EACH_STAT
