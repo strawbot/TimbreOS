@@ -31,6 +31,7 @@ void printUptime() {
 
 // primitives
 static TimeEvent tes[NUM_TE], te_done, te_todo; // time events and todo and done lists
+
 static void append(TimeEvent * curr, TimeEvent * te) {
 	te->next = curr->next;
 	curr->next = te;
