@@ -4,7 +4,7 @@
 #include "queue.h"
 #include "printers.h"
 #include <stdlib.h>
-#include "statCtrs.h"
+#include "clocks.h"
 
 extern Event alarmEvent;
 
@@ -85,6 +85,8 @@ static void run_dueDate() {
 
 static Long get_dueDate(Long t) { return raw_time() + t; }
 
+static Long max_delta = 0;
+
 static bool set_dueDate(Long t) {
 	 // must be signed since item might be overdue
 	int delta = t - raw_time();
@@ -92,8 +94,10 @@ static bool set_dueDate(Long t) {
 	if (delta > 0) {
 		set_alarm(delta);
 		return true;
-	} else if (delta < 0)
-		incCtr(overDueTea);
+	} else if (delta < 0) {
+		max_delta = -delta > max_delta ? -delta : max_delta;
+		over_due();
+	}
 	return false;
 }
 
@@ -365,3 +369,31 @@ void get_tick_time() {
 }
 
 void ticks_ms() { lit(CONVERT_TO_MS(ret())); }
+
+#if 0 // can use for tracing events
+QUEUE(1000, eventq);
+static bool playback = false;
+
+void record_event(Long n) {
+	if (playback)
+		return;
+	Long e;
+	safe(
+		e = queryq(eventq);
+		if (e == 0 && n == 1  || e != 0) {
+			if (e == 0)
+				after(secs(5), play_events);
+			pushq(n, eventq);
+			pushq(getTime(), eventq);
+		}
+	)
+}
+
+void play_events() {
+	playback = true;
+	while (queryq(eventq)) 
+		printCr(), printDec(pullq(eventq)), printDec(pullq(eventq));
+	playback = false;
+}
+
+#endif

@@ -80,4 +80,7 @@ void init_tea();
 
 #endif
 
+void record_event(Long n);
+void play_events();
+
 #endif
