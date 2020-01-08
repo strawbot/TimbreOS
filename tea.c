@@ -1,10 +1,12 @@
 // Time Event Action interface
 
-#include "clocks.h"
 #include "tea.h"
 #include "queue.h"
 #include "printers.h"
 #include <stdlib.h>
+#include "statCtrs.h"
+
+extern Event alarmEvent;
 
 // time tracker; ms and S
 static Long uptime = 0;
@@ -32,14 +34,24 @@ void printUptime() {
 // primitives
 static TimeEvent tes[NUM_TE], te_done, te_todo; // time events and todo and done lists
 
+static void verify_todo() {
+	TimeEvent * te = &te_todo;
+	while ((te = te->next)) ;
+}
+
 static void append(TimeEvent * curr, TimeEvent * te) {
-	te->next = curr->next;
-	curr->next = te;
+	safe(
+		te->next = curr->next;
+		curr->next = te;
+	)
 }
 
 static TimeEvent * remove(TimeEvent * curr) {
-	TimeEvent * te = curr->next;
-	curr->next = te->next;
+	TimeEvent * te;
+	safe(
+		te = curr->next;
+		curr->next = te->next;
+	)
 	te->next = NULL;
 	return te;
 }
@@ -66,10 +78,27 @@ static void do_action(TimeEvent * te) {
 		later(action);
 }
 
-static void run_dueDate() { do_action(remove(&te_todo)); }
+static void run_dueDate() {
+	do_action(remove(&te_todo));
+	verify_todo();
+}
+
+static Long get_dueDate(Long t) { return raw_time() + t; }
+
+static bool set_dueDate(Long t) {
+	 // must be signed since item might be overdue
+	int delta = t - raw_time();
+
+	if (delta > 0) {
+		set_alarm(delta);
+		return true;
+	} else if (delta < 0)
+		incCtr(overDueTea);
+	return false;
+}
 
 static void set_next_dueDate() {
-	while (te_todo.next && !set_dueDate(te_todo.next->dueDate))
+	while (te_todo.next && !set_dueDate(te_todo.next->dueDate)) // atomicity issue?
 		run_dueDate();
 }
 
@@ -85,6 +114,7 @@ static void schedule_te(TimeEvent* te) {
 		curr = next;
 	}
 	append(curr, te);
+	verify_todo();
 }
 
 static void in_after(Long t, vector action, bool asap) {
@@ -102,10 +132,12 @@ static void in_after(Long t, vector action, bool asap) {
 
 // Time Events
 void after(Long t, vector action) { in_after(t, action, false); }
-void in   (Long t, vector action) { in_after(t, action, true);  }
+void in   (Long t, vector action) { in_after(t, action, true); }
+// void in   (Long t, vector action) { in_after(t, action, false); }
 
-void check_dueDates(Long dueDate) {
-	last_dueDate = dueDate;
+static void check_dueDates() {
+	last_dueDate = raw_time();
+	run_dueDate();
 	set_next_dueDate();
 }
 
@@ -121,7 +153,7 @@ static QUEUE(NUM_ACTIONS, actionq);
 void later(vector a) {
 	if (leftq(actionq) == 0)
 		BLACK_HOLE();
-	CORE_ATOMIC_SECTION( pushq((Cell)a, actionq);)
+	safe( pushq((Cell)a, actionq);)
 }
 
 void run() {
@@ -130,12 +162,13 @@ void run() {
 
 void action_slice() { // like run but only once through the queued actions; full slice
 	Long n = queryq(actionq);
-	while (n--) actionRun((vector)pullq(actionq));
+	while (n-- && queryq(actionq))
+		actionRun((vector)pullq(actionq));
 }
 
 // reductions
 void stop_te(vector v) {
-	CORE_ATOMIC_SECTION(
+	safe(
 	TimeEvent* te = te_todo.next;
 	while (te) {
 		if (te->action == v)  te->action = no_action;
@@ -144,7 +177,7 @@ void stop_te(vector v) {
 }
 
 void stop_action(vector v) {
-	CORE_ATOMIC_SECTION(
+	safe(
 	for (Long n = queryq(actionq); n; n--) {
 		Cell a = pullq(actionq);
 		if (a != (Cell)v)  pushq(a, actionq); // develop iter q tool to read and write without moving items
@@ -299,10 +332,12 @@ void init_tea() {
 
 	later(one_second);
 	init_clocks();
+	when(alarmEvent, check_dueDates);
 
 	namedAction(set_next_dueDate);
 	namedAction(one_second);
 	namedAction(no_action);
+	namedAction(check_dueDates);
 }
 
 // test vector
