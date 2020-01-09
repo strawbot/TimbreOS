@@ -87,17 +87,17 @@ static Long get_dueDate(Long t) { return raw_time() + t; }
 
 static Long max_delta = 0;
 
-static bool set_dueDate(Long t) {
-	 // must be signed since item might be overdue
-	int delta = t - raw_time();
+static bool set_dueDate(Long due) {
+	 // must be signed since for overdue items
+	int delta = due - raw_time();
 
 	if (delta > 0) {
 		set_alarm(delta);
 		return true;
-	} else if (delta < 0) {
-		max_delta = -delta > max_delta ? -delta : max_delta;
-		over_due();
 	}
+	
+	max_delta = -delta > max_delta ? -delta : max_delta;
+	over_due();
 	return false;
 }
 
@@ -233,6 +233,8 @@ void print_te() {
 		printActionName((Cell)curr->action);
 		curr = curr->next;
 	}
+	print("\nmax overdue: "), printDec(max_delta);
+	max_delta = 0;
 }
 
 void print_actions() {
