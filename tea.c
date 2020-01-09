@@ -96,7 +96,7 @@ static bool set_dueDate(Long due) {
 		return true;
 	}
 	
-	max_delta = -delta > max_delta ? -delta : max_delta;
+	max_delta = (Long) -delta > max_delta ? (Long) -delta : max_delta;
 	over_due();
 	return false;
 }
@@ -310,7 +310,7 @@ void actionRun(vector m) {
 	int time = (int)getTicks();
 	m();
 	time = (int)getTicks() - time;
-	* stat = max(time, *stat);
+	* stat = max((Cell) time, *stat);
 }
 
 void zeroMachineTimes() {
