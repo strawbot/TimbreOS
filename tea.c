@@ -313,6 +313,8 @@ Cell * action_stat(vector m) {
 }
 
 void actionRun(vector m) {
+	if (m == 0)
+		BLACK_HOLE();
 	Cell * stat = action_stat(m);
 	int time = (int)getTicks();
 	m();
