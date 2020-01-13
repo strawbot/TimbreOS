@@ -193,7 +193,25 @@ void stop(vector v) {
 	stop_action(v);
 }
 
-// names for actions 
+// Tools
+
+// times
+void print_time(Long time) {
+	if (time < secs(1))
+		printDec(to_msec(time)), print("msec  ");
+	else if (time < mins(5))
+		printDec(to_secs(time)), print("secs  ");
+	else if (time < hours(5))
+		printDec(time/mins(1)),  print("mins  ");
+	else
+		printDec(time/hours(1)), print("hours ");
+}
+
+static void printDueDate(Long dd) {
+	print_time(dd - get_dueDate(0));
+}
+
+// named actions 
 HASHDICT(HASH9, teanames); // keep track of machine names
 HASHDICT(HASH9, teatimes); // keep track of machine max execution times
 
@@ -209,18 +227,6 @@ static void printActionName(Cell x) {
 		print(*name);
 	else
 		printHex(x-1);
-}
-
-static void printDueDate(Long dd) {
-	dd = dd - get_dueDate(0);
-	if (dd < secs(1))
-		printDec(to_msec(dd)), print("msec  ");
-	else if (dd < mins(5))
-		printDec(to_secs(dd)), print("secs  ");
-	else if (dd < hours(5))
-		printDec(dd/mins(1)),  print("mins  ");
-	else
-		printDec(dd/hours(1)), print("hours ");
 }
 
 void print_te() {
@@ -254,14 +260,15 @@ void dumpTeaNames() {
 			printCr(), printHex(teanamesadjunct[i]), print((char *)teanamesadjunct[i]);
 }
 
+// ns 32 bit clock @ native MHz. Clock.h
+#include "codeStats.c"
+#define max(a,b) a > b ? a : b
+
 static int indexCompare(const void *a,const void *b) {
 	Short *x = (Short *) a;
 	Short *y = (Short *) b;
 	return teatimes.adjunct[*y] - teatimes.adjunct[*x];
 }
-
-#include "codeStats.c"
-#define max(a,b) a > b ? a : b
 
 static void print_elapsed_time(Cell time) {
 	Long us = CONVERT_TO_US(time);
@@ -377,16 +384,17 @@ QUEUE(1000, eventq);
 static bool playback = false;
 
 void record_event(Long n) {
-	if (playback)
-		return;
+	if (playback)  return;
+	
 	Long e;
 	safe(
 		e = queryq(eventq);
-		if (e == 0 && n == 1  || e != 0) {
-			if (e == 0)
-				after(secs(5), play_events);
+		if ( e != 0 || e == 0 && n == 1) {
 			pushq(n, eventq);
 			pushq(getTime(), eventq);
+
+			if (e == 0) // auto playback from trigger
+				after(secs(5), play_events);
 		}
 	)
 }
