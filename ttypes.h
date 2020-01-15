@@ -40,13 +40,7 @@ typedef signed long long Sock; // really long and signed
 #if ( defined __STDC__ && defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L ) || (defined __cplusplus)
 /* have a C99 compiler */
 
-#ifndef bool
-#ifdef _Bool // C99 options in codewarrior
-#define bool _Bool
-#else
 #include <stdbool.h>
-#endif
-#endif
 
 #else
 

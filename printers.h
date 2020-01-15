@@ -20,7 +20,7 @@ void printHex2(unsigned int hex);
 void flush(void);
 void printAt(char x);
 void printAscii(char x);
-void printAsciiString(char * string);
+void printAsciiString(const char * string);
 void pdump(unsigned char * a, unsigned int lines);
 
 #ifndef PRINTERS_H
