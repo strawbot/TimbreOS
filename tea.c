@@ -232,13 +232,17 @@ static void printActionName(Cell x) {
 void print_te() {
 	TimeEvent * curr = te_todo.next;
 	show_timer();
-	while (curr) {
+	while (curr &&
+		  (curr->action != NULL) && 
+		  (curr->dueDate - get_dueDate(0) < days(24))) {
 		print (curr->asap ? "\nin " : "\nafter ");
 		printDueDate(curr->dueDate);
 		tabTo(17);
 		printActionName((Cell)curr->action);
 		curr = curr->next;
 	}
+	if (curr)
+		print("\n  Stopped. TE list changed while printing it.");
 	print("\nmax overdue: "), printDec(max_delta);
 	max_delta = 0;
 }
