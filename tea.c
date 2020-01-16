@@ -19,8 +19,7 @@ static void one_second() {
 }
 
 Long getTime() { 
-	Long ms = to_msec(raw_time() - zero_ms);
-	return uptime*1000 + ms;
+	return to_msec(raw_time());
 }
 
 uint32_t getUptime() {
@@ -141,7 +140,6 @@ void in   (Long t, vector action) { in_after(t, action, true); }
 
 static void check_dueDates() {
 	last_dueDate = raw_time();
-	run_dueDate();
 	set_next_dueDate();
 }
 
@@ -389,20 +387,22 @@ void ticks_ms() { lit(CONVERT_TO_MS(ret())); }
 QUEUE(1000, eventq);
 static bool playback = false;
 
-void record_event(Long n) {
-	if (playback)  return;
-	
-	Long e;
-	safe(
-		e = queryq(eventq);
-		if ( e != 0 || e == 0 && n == 1) {
-			pushq(n, eventq);
-			pushq(getTime(), eventq);
+static void record(Long n) {
+	Long e = queryq(eventq);
+	if ( (e != 0) || (e == 0 && n == 1)) { // 1 should be a macro START_RECORDING - perhaps specify playback time
+		pushq(n, eventq);
+		pushq(getTime(), eventq);
 
-			if (e == 0) // auto playback from trigger
-				after(secs(5), play_events);
-		}
-	)
+		if (e == 0) // auto playback from trigger
+			after(secs(5), play_events);
+	}
+}
+
+void record_event(Long n) {
+	if (playback)
+		return;
+	
+	safe(record(n);)
 }
 
 void play_events() {
