@@ -76,7 +76,19 @@ void init_tea();
         } \
     )(object)
 
-#define Method(method) ObjectMethod(this, method)
+#define ObjectMethodName(object, method, name) \
+    ( [](decltype(object) o){ vector action = ObjectMethod(o, method); \
+     actor(action, name); \
+     return action; \
+    } \
+    )(object)
+
+#define MethodName(method, name) ObjectMethodName(this, method, name)
+
+#define MethodThis(method) MethodName(method, "this->" #method)
+
+#define GET_MACRO(_1,_2,NAME,...) NAME
+#define Method(...) GET_MACRO(__VA_ARGS__, MethodName, MethodThis)(__VA_ARGS__)
 
 #endif
 
