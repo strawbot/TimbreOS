@@ -83,6 +83,8 @@ void init_tea();
     } \
     )(object)
 
+// investigate: #include <typeinfo> , typeid(this).name()
+
 #define MethodName(method, name) ObjectMethodName(this, method, name)
 
 #define MethodThis(method) MethodName(method, "this->" #method)
@@ -92,6 +94,14 @@ void init_tea();
 
 #endif
 
+#ifndef N_EVENTS
+#define N_EVENTS 500
+#endif
+
+#ifndef FIRST_EVENT
+#define FIRST_EVENT secs(5)
+#endif
+ 
 void record_event(Long n);
 void play_events();
 

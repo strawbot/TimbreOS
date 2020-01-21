@@ -383,32 +383,36 @@ void get_tick_time() {
 
 void ticks_ms() { lit(CONVERT_TO_MS(ret())); }
 
-#if 0 // can use for tracing events
-QUEUE(1000, eventq);
+#if 1 // can use for tracing events; override defaults as needed
+
+QUEUE(N_EVENTS * 2, eventq);
 static bool playback = false;
 
-static void record(Long n) {
-	Long e = queryq(eventq);
-	if ( (e != 0) || (e == 0 && n == 1)) { // 1 should be a macro START_RECORDING - perhaps specify playback time
-		pushq(n, eventq);
-		pushq(getTime(), eventq);
+static void record(Long e) {
+	if (queryq(eventq) == 0) {
+		if (e != FIRST_EVENT)
+			return;
 
-		if (e == 0) // auto playback from trigger
-			after(secs(5), play_events);
+		after(FIRST_EVENT, play_events);
 	}
+	pushq(e, eventq);
+	pushq(getTime(), eventq);
 }
 
 void record_event(Long n) {
-	if (playback)
-		return;
-	
-	safe(record(n);)
+	if (playback == false)
+		safe(record(n);)
 }
 
 void play_events() {
 	playback = true;
-	while (queryq(eventq)) 
-		printCr(), printDec(pullq(eventq)), printDec(pullq(eventq));
+	while (queryq(eventq)) {
+		printCr();
+		Long e = pullq(eventq);
+		if (e == FIRST_EVENT)
+			e = 0;
+		printDec(e), printDec(pullq(eventq));
+	}
 	playback = false;
 }
 
