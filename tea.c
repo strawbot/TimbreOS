@@ -388,30 +388,32 @@ void ticks_ms() { lit(CONVERT_TO_MS(ret())); }
 QUEUE(N_EVENTS * 2, eventq);
 static bool playback = false;
 
-static void record(Long e) {
+static void record(const char * e) {
 	if (queryq(eventq) == 0) {
 		if (e != FIRST_EVENT)
 			return;
 
-		after(FIRST_EVENT, play_events);
+		after((Cell)FIRST_EVENT, play_events);
 	}
-	pushq(e, eventq);
-	pushq(getTime(), eventq);
+	if (leftq(eventq) > 2) {
+		pushq((Cell)e, eventq);
+		pushq(getTime(), eventq);
+	} else
+		playback = true;
 }
 
-void record_event(Long n) {
+void record_event(const char * e) {
 	if (playback == false)
-		safe(record(n);)
+		safe(record(e);)
 }
 
 void play_events() {
 	playback = true;
 	while (queryq(eventq)) {
 		printCr();
-		Long e = pullq(eventq);
-		if (e == FIRST_EVENT)
-			e = 0;
-		printDec(e), printDec(pullq(eventq));
+		char * e = (char *)pullq(eventq);
+		printDec(pullq(eventq));
+		print(e == FIRST_EVENT ? "FIRST_EVENT" : e);
 	}
 	playback = false;
 }

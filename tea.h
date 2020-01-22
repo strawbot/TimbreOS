@@ -99,10 +99,10 @@ void init_tea();
 #endif
 
 #ifndef FIRST_EVENT
-#define FIRST_EVENT secs(5)
+#define FIRST_EVENT (const char *)secs(3)
 #endif
  
-void record_event(Long n);
+void record_event(const char * e);
 void play_events();
 
 #endif
