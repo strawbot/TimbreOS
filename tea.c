@@ -408,14 +408,22 @@ void record_event(const char * e) {
 }
 
 void play_events() {
+	static Long zero = 0;
 	playback = true;
 	while (queryq(eventq)) {
 		printCr();
 		char * e = (char *)pullq(eventq);
-		printDec(pullq(eventq));
-		print(e == FIRST_EVENT ? "FIRST_EVENT" : e);
+		Long t = pullq(eventq);
+
+		if (e == FIRST_EVENT) {
+			zero = t;
+			e = "FIRST_EVENT";
+		}
+
+		printDec(t-zero);
+		tabTo(6);
+		print(e);
 	}
 	playback = false;
 }
-
 #endif
