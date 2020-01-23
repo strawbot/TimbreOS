@@ -416,7 +416,8 @@ void play_events() {
 		Long t = pullq(eventq);
 
 		if (e == FIRST_EVENT) {
-			zero = t;
+			if (zero == 0)
+				zero = t;
 			e = "FIRST_EVENT";
 		}
 
@@ -425,5 +426,6 @@ void play_events() {
 		print(e);
 	}
 	playback = false;
+	zero = 0;
 }
 #endif
