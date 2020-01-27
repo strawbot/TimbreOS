@@ -68,6 +68,27 @@ void init_tea();
 // C++ support
 #ifdef __cplusplus
 }
+// possible workaround for multiple instances
+#define OMV(object, method, variable) \
+( [ob = &variable](decltype(object) o) { \
+        *ob = o; \
+        return [ob](){ *ob->method(); }; \
+    } \
+)(object)
+
+// template with class and method for array of struct
+#define OMVI(method) \
+    ( [this](decltype(this) o) { \
+            static decltype(this) obj[cups]; \
+            obj[cup] = o; \
+            vector lambs[cups] = { \
+                [](){ obj[0]->method(); }, \
+                [](){ obj[1]->method(); }, \
+                [](){ obj[2]->method(); } }; \
+            return lambs[cup]; \
+        } \
+    )(this)
+
 // This beast will convert an object and method into a function vector
 #define ObjectMethod(object, method) \
     ( [](decltype(object) o) { \
