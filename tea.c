@@ -383,7 +383,7 @@ void get_tick_time() {
 
 void ticks_ms() { lit(CONVERT_TO_MS(ret())); }
 
-#if 1 // can use for tracing events; override defaults as needed
+#ifdef N_EVENTS // can use for tracing events; override defaults as needed
 
 QUEUE(N_EVENTS * 2, eventq);
 static bool playback = false;
