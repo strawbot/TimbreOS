@@ -65,17 +65,28 @@ void stop(vector v); // all places;
 
 void init_tea();
 
-// C++ support
+// event recorder
+#ifndef N_EVENTS
+#define N_EVENTS 500
+#endif
+
+#ifndef FIRST_EVENT
+#define FIRST_EVENT (const char *)secs(3)
+#endif
+ 
+void record_event(const char * e);
+void play_events();
+
 #ifdef __cplusplus
 }
-// possible workaround for multiple instances
-#define OMV(object, method, variable) \
-( [ob = &variable](decltype(object) o) { \
-        *ob = o; \
-        return [ob](){ *ob->method(); }; \
-    } \
-)(object)
+// C++ support
+class TeaCup {
+    public:
+    static const Byte cups = 3;
+    Byte cup;
+};
 
+// possible workaround for multiple instances
 // template with class and method for array of struct
 #define OMVI(method) \
     ( [this](decltype(this) o) { \
@@ -85,6 +96,7 @@ void init_tea();
                 [](){ obj[0]->method(); }, \
                 [](){ obj[1]->method(); }, \
                 [](){ obj[2]->method(); } }; \
+            actor(lambs[cup], "this->" #method); \
             return lambs[cup]; \
         } \
     )(this)
@@ -108,22 +120,12 @@ void init_tea();
 
 #define MethodName(method, name) ObjectMethodName(this, method, name)
 
-#define MethodThis(method) MethodName(method, "this->" #method)
+#define MethodThis(method) OMVI(method)
+// #define MethodThis(method) MethodName(method, "this->" #method)
 
 #define GET_MACRO(_1,_2,NAME,...) NAME
 #define Method(...) GET_MACRO(__VA_ARGS__, MethodName, MethodThis)(__VA_ARGS__)
 
 #endif
-
-#ifndef N_EVENTS
-#define N_EVENTS 500
-#endif
-
-#ifndef FIRST_EVENT
-#define FIRST_EVENT (const char *)secs(3)
-#endif
- 
-void record_event(const char * e);
-void play_events();
 
 #endif

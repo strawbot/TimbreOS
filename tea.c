@@ -5,6 +5,7 @@
 #include "printers.h"
 #include <stdlib.h>
 #include "clocks.h"
+#include "project_defs.h"
 
 extern Event alarmEvent;
 
@@ -408,10 +409,9 @@ void record_event(const char * e) {
 }
 
 void play_events() {
-	static Long zero = 0;
+	Long zero = 0, last = ~0;
 	playback = true;
 	while (queryq(eventq)) {
-		printCr();
 		char * e = (char *)pullq(eventq);
 		Long t = pullq(eventq);
 
@@ -421,11 +421,16 @@ void play_events() {
 			e = "FIRST_EVENT";
 		}
 
-		printDec(t-zero);
-		tabTo(6);
+		if (t != last) {
+			printCr();
+			printDec(t-zero);
+			tabTo(6);
+		} else{ 
+			last = t;
+			print("  ");
+		}
 		print(e);
 	}
 	playback = false;
-	zero = 0;
 }
 #endif
