@@ -80,10 +80,18 @@ void play_events();
 #ifdef __cplusplus
 }
 // C++ support
+struct emptyClass { };
+
+template <class T = emptyClass, int n = 2>
 class TeaCup {
     public:
     static const Byte cups = 3;
     Byte cup;
+
+    TeaCup() { cup = thiscup;  ++thiscup; }
+
+    private:
+    static Byte thiscup;
 };
 
 // possible workaround for multiple instances
