@@ -122,7 +122,7 @@ def parseFile(line): # parse line from file
 
 def readWordLists(file): # read in word lists
 	global parseLine
-	print "reading: "+file
+	print ("reading: "+file)
 	lines = open(file, 'r').readlines()
 	parseLine = parseFile
 	for line in lines:
@@ -147,7 +147,7 @@ def addEntry(line):
 			current.append((fields[0], fields[1], comment))	
 	except:
 		traceback.print_exc(file=sys.stderr)
-		print 'line: %s' % line
+		print ('line: %s' % line)
 
 def setDictionary(dict):
 	global parseLine, current
@@ -316,16 +316,16 @@ def needUpdate(checkfile):
 		modtime = fileModTime(ctarget)
 		for file in inputFiles + [checkfile]:
 			if fileModTime(file) > modtime:
-				print file + ' newer than ' + ctarget
+				print (file + ' newer than ' + ctarget)
 				return True
 		return False
 	except:
-		print 'Updates triggered by "%s" not existing'%file
+		print ('Updates triggered by "%s" not existing'%file)
 		return True
 
 def generateWordlists(file):
 	readWordLists(file)
-	print 'generating %s, %s and %s' % (ctarget, txttarget, helptarget)
+	print ('generating %s, %s and %s' % (ctarget, txttarget, helptarget))
 	generateCode(ctarget)
 	generateText(txttarget)
 	generateHelp(helptarget)
@@ -340,7 +340,7 @@ if __name__ == '__main__':
 			if needUpdate(file): # update all if one is affected
 				generateWordlists(file)
 		else:
-			print "Error: no '.txt' file specified."
+			print ("Error: no '.txt' file specified.")
 
 	except Exception as message:
 		print (type(message))    # the exception instance
