@@ -88,41 +88,33 @@ class TeaCup {
 
 // possible workaround for multiple instances
 // template with class and method for array of struct
-#define OMVI(method) \
+// This beast will convert an object and method into an array of function vectors
+#define OMVI(method, name) \
     ( [this](decltype(this) o) { \
             static decltype(this) obj[cups]; \
             obj[cup] = o; \
             vector lambs[cups] = { \
-                [](){ obj[0]->method(); }, \
-                [](){ obj[1]->method(); }, \
-                [](){ obj[2]->method(); } }; \
-            actor(lambs[cup], "this->" #method); \
+                []{ obj[0]->method(); }, \
+                []{ obj[1]->method(); }, \
+                []{ obj[2]->method(); } }; \
+            actor(lambs[cup], name #method); \
             return lambs[cup]; \
         } \
     )(this)
 
-// This beast will convert an object and method into a function vector
-#define ObjectMethod(object, method) \
+#define ObjectMethodName(object, method, name) \
     ( [](decltype(object) o) { \
-            static decltype(object) obj = o; \
-            return [](){ obj->method(); }; \
+            static decltype(object) obj; \
+            obj = o; \
+            vector action = []{ obj->method(); }; \
+            actor(action, name "->" #method); \
+            return  action; \
         } \
     )(object)
 
-#define ObjectMethodName(object, method, name) \
-    ( [](decltype(object) o){ vector action = ObjectMethod(o, method); \
-     actor(action, name); \
-     return action; \
-    } \
-    )(object)
-
-// investigate: #include <typeinfo> , typeid(this).name()
-
-#define MethodName(method, name) ObjectMethodName(this, method, name)
-
-#define MethodThis(method) OMVI(method)
-// #define MethodThis(method) MethodName(method, "this->" #method)
-
+#define ObjectMethod(object, method) ObjectMethodName(object, method, #object)
+#define MethodName(method, name) OMVI(method, name)
+#define MethodThis(method) OMVI(method, "this->")
 #define GET_MACRO(_1,_2,NAME,...) NAME
 #define Method(...) GET_MACRO(__VA_ARGS__, MethodName, MethodThis)(__VA_ARGS__)
 
