@@ -1,14 +1,14 @@
-#include "clocks.h"
-#include "project_defs.h"
-#include "ttypes.h"
-#include "dictionary.h"
-
 #ifndef TEA_H_
 #define TEA_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "clocks.h"
+#include "project_defs.h"
+#include "ttypes.h"
+#include "dictionary.h"
 
 #define BLACK_HOLE()                                                           \
     while (true)                                                               \
