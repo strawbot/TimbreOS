@@ -154,6 +154,8 @@ void never(Event e) { when(e, no_action); }
 static QUEUE(NUM_ACTIONS, actionq);
 
 void later(vector a) {
+	if (a == NULL)
+		BLACK_HOLE();
 	if (leftq(actionq) == 0)
 		BLACK_HOLE();
 	safe( pushq((Cell)a, actionq);)
