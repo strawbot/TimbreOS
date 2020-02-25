@@ -122,6 +122,9 @@ static void schedule_te(TimeEvent* te) {
 }
 
 static void in_after(Long t, vector action, bool asap) {
+	if (action == no_action)
+		BLACK_HOLE();
+
 	TimeEvent * te;
 
 	safe( te = te_borrow(); )

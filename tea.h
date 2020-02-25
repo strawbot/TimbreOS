@@ -10,9 +10,11 @@ extern "C" {
 #include "ttypes.h"
 #include "dictionary.h"
 
-#define BLACK_HOLE()                                                           \
-    while (true)                                                               \
-        ; // DEBUGGING
+void system_failure(); // application defines signal_failure();
+// void system_failure() { while (true); } // DEBUGGING
+
+#define BLACK_HOLE() system_failure()
+
 
 // time
 typedef struct TimeEvent {
@@ -74,6 +76,9 @@ void init_tea();
 #define FIRST_EVENT (const char *)secs(3)
 #endif
  
+#define RE() record_event(__func__)
+#define RE1() record_event(FIRST_EVENT)
+
 void record_event(const char * e);
 void play_events();
 
