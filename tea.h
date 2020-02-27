@@ -76,6 +76,7 @@ void init_tea();
 #define FIRST_EVENT (const char *)secs(3)
 #endif
  
+#define RC() record_event(__PRETTY_FUNCTION__)
 #define RE() record_event(__func__)
 #define RE1() record_event(FIRST_EVENT)
 
