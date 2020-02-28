@@ -121,8 +121,21 @@ static void schedule_te(TimeEvent* te) {
 	verify_todo();
 }
 
+static bool already_there(vector action) {
+	TimeEvent *te = te_todo.next;
+
+	while (te) {
+		if (te->action == action)
+			return true;
+		te = te->next;
+	}
+	return false;
+}
+
 static void in_after(Long t, vector action, bool asap) {
 	if (action == no_action)
+		BLACK_HOLE();
+	if (already_there(action))
 		BLACK_HOLE();
 
 	TimeEvent * te;
