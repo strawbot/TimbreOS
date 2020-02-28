@@ -67,7 +67,6 @@ void stop(vector v); // all places;
 
 void init_tea();
 
-// event recorder
 #ifndef N_EVENTS
 #define N_EVENTS 500
 #endif
@@ -75,9 +74,14 @@ void init_tea();
 #ifndef FIRST_EVENT
 #define FIRST_EVENT (const char *)secs(3)
 #endif
- 
-#define RC() record_event(__PRETTY_FUNCTION__)
-#define RE() record_event(__func__)
+
+#ifdef __GNUC__
+    #define RC() record_event(__PRETTY_FUNCTION__)
+#else
+    #define RC() record_event(__func__)
+#endif
+
+#define RE() RC()
 #define RE1() record_event(FIRST_EVENT)
 
 void record_event(const char * e);
