@@ -92,6 +92,11 @@ class TeaCup {
     Byte cup;
 };
 
+#define Timebox(time, event, action) \
+    { static vector box_action = action; \
+      static vector box = []{ stop(box); box_action(); }; \
+      when(event, box); after(time, box); }
+
 // possible workaround for multiple instances
 // template with class and method for array of struct
 // This beast will convert an object and method into an array of function vectors
