@@ -98,7 +98,7 @@ class TeaCup {
 
 #define Timebox(time, event, action) \
     { static vector box_action = action; \
-      static vector box = []{ stop(box); box_action(); }; \
+      static vector box = []{ never(event); stop(box); box_action(); }; \
       when(event, box); after(time, box); }
 
 // possible workaround for multiple instances
