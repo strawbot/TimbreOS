@@ -421,6 +421,8 @@ static void record(const char * e) {
 		playback = true;
 }
 
+void record_event_off() { playback = true; }
+
 void record_event(const char * e) {
 	if (playback == false)
 		safe(record(e);)

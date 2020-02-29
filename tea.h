@@ -86,6 +86,7 @@ void init_tea();
 
 void record_event(const char * e);
 void play_events();
+void record_event_off();
 
 #ifdef __cplusplus
 }
