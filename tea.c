@@ -121,26 +121,28 @@ static void schedule_te(TimeEvent* te) {
 	verify_todo();
 }
 
-static bool already_there(vector action) {
-	TimeEvent *te = te_todo.next;
+static TimeEvent * already_there(vector action) {
+	TimeEvent *te, *tep = &te_todo;
 
-	while (te) {
-		if (te->action == action)
-			return true;
-		te = te->next;
+	while ((te = tep->next)) {
+		if (te->action == action) {
+			tep->next = te->next;
+			return te;
+		}
+		tep = te;
 	}
-	return false;
+	return NULL;
 }
 
 static void in_after(Long t, vector action, bool asap) {
 	if (action == no_action)
 		BLACK_HOLE();
-	if (already_there(action))
-		BLACK_HOLE();
 
 	TimeEvent * te;
 
-	safe( te = te_borrow(); )
+	safe(te = already_there(action))
+	if (!te)
+		safe( te = te_borrow(); )
 
 	te->action = action;
 	te->dueDate = get_dueDate(t);
