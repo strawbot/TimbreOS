@@ -76,12 +76,11 @@ void init_tea();
 #endif
 
 #ifdef __GNUC__
-    #define RC() record_event(__PRETTY_FUNCTION__)
+    #define RE() record_event(__PRETTY_FUNCTION__)
 #else
-    #define RC() record_event(__func__)
+    #define RE() record_event(__func__)
 #endif
 
-#define RE() RC()
 #define RE1() record_event(FIRST_EVENT)
 
 void record_event(const char * e);
