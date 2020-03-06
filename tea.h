@@ -55,6 +55,7 @@ void action_slice();
 // measure execution time
 #define namedAction(m) actor(m, #m)
 
+void printActionName(Cell x);
 void actor(vector action, const char * name);
 void actionRun(vector m);
 Cell * action_stat(vector m);

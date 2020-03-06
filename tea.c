@@ -240,7 +240,7 @@ void actor(vector action, const char * name) { // give name to action
 	*dictAdjunctKey((Cell)action, &teanames) = (Cell)name;
 }
 
-static void printActionName(Cell x) {
+void printActionName(Cell x) {
 	char ** name = (char **)dictAdjunctKey(x, &teanames);
 	if (name && name[0] != 0)
 		print(*name);
