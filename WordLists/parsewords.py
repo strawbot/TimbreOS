@@ -256,7 +256,8 @@ def generateText(file): # sorted list of words
 	wordlist = open(file, 'w')
 	wordlist.write('Word list for firmware  %s'%generatedBy())
 	wordlist.write(texthelp)
-	map(wordlist.write, sorted(entries))	
+	for e in sorted(entries):
+		wordlist.write(e)
 	wordlist.close()
 
 def printLine(string): # print a line given a string
@@ -285,7 +286,8 @@ def generateHelp(file): # sorted list of words in a c file
 	
 	wordlist = open(file, 'w')
 	wordlist.write(helpCheader)
-	map(wordlist.write, map(printLine, sorted(entries)))	
+	for e in sorted(entries):
+		wordlist.write(printLine(e))
 	wordlist.write('}\n')
 	wordlist.close()
 
