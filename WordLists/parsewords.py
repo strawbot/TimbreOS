@@ -339,8 +339,8 @@ if __name__ == '__main__':
 			# put results in same directory as input file
 			targetDir, file = os.path.split(os.path.abspath(arg))				
 			os.chdir(targetDir)
-			# if needUpdate(file): # update all if one is affected
-			generateWordlists(file)
+			if needUpdate(file): # update all if one is affected
+				generateWordlists(file)
 		else:
 			print ("Error: no '.txt' file specified.")
 
