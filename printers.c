@@ -15,21 +15,45 @@ void printCr(void) { print("\n"); }
 
 void tabTo(int n) { spaces(n - getCursor()); }
 
+static BARRAY(PAD_SIZE, pad); // safe place to format numbers
+
+static void convert1Digit(Cell *n, Byte base)
+{
+    Byte c = (Byte)(*n % base);
+
+    if (c > 9)
+        c += 7;
+    c += ZERO;
+    writeB(c, pad);
+
+    *n /= base;
+}
+
+static Byte * reverseB(Cell * a) {
+    Byte si = 0, ei = usedB(a);
+    while (si < ei) {
+        Byte c = *indexB(--ei, a);
+        *indexB(ei, a) = *indexB(si, a);
+        *indexB(si++, a) = c;
+    }
+    return indexB(0, a);
+}
+
 // 0, 0 n r - for minimal field width for all digits
 char *numString(Byte field, Byte digits, Cell n, Byte radix) {
-    Byte b = getBase();
-    setBase(radix);
-    lit(n), startNumberConversion();
+    initB(pad);
+    if (((Integer)n < 0) && (radix == 10))
+        writeB('-', pad);
     if (field != 0 &&
         field == digits) // if field is equal to digits fill with zeroes
         while (digits--)
-            convertDigit();
-    else
-        convertNumber();
-    endNumberConversion();
-    setBase(b);
-    ret();
-    return (char *)ret();
+            convert1Digit(&n, radix);
+    else do {
+        convert1Digit(&n, radix);
+    } while (n != 0);
+    reverseB(pad);
+    writeB(0, pad);
+    return (char *)indexB(0, pad);
 }
 
 void dotnb(Byte field, Byte digits, Cell n, Byte radix) {
@@ -40,10 +64,15 @@ void dotnb(Byte field, Byte digits, Cell n, Byte radix) {
     print(string);
 }
 
-void printHex(unsigned int hex) { lit(hex), doth(); }
-
 void printnHex(unsigned int digits, unsigned int n) {
     dotnb((Byte)digits, (Byte)digits, n, 16);
+}
+
+void printChar(unsigned char ch) { emitByte(ch); }
+
+void printHex(unsigned int hex) {
+    printnHex(sizeof(Cell) * 2, hex);
+    printChar((Byte)' ');
 }
 
 void printnDec(unsigned int n, unsigned int dec) { dotnb(n, n, dec, 10); }
@@ -71,8 +100,6 @@ void printDouble(double f, int n) {
 void printFloat(float f, int n) { printDouble((double)f, n); }
 
 void printBin(unsigned int bin) { lit(bin), dotb(); }
-
-void printChar(unsigned char ch) { emitByte(ch); }
 
 void printHex2(unsigned int hex) { printChar(' '); dotnb(2, 2, hex, 16); }
 
