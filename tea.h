@@ -95,7 +95,17 @@ class TeaCup {
     public:
     static const Byte cups = 3;
     Byte cup;
+    const char * cupi() {
+        switch(cup) {
+            case 0: return "cup0";
+            case 1: return "cup1";
+            case 2: return "cup2";
+            default: return "cupi";
+        }
+    }
 };
+
+#define CUP() record_event(cupi())
 
 #define Timebox(time, event, action) \
     { static vector box_action = action; \
