@@ -455,4 +455,10 @@ void play_events() {
 	}
 	playback = false;
 }
+
+void cancel_events() {
+	
+}
+
+
 #endif

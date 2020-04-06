@@ -16,6 +16,7 @@
 #include "printers.h"
 #include <string.h>
 #include <stdlib.h>
+#include "tea.h"
 
 // Helper
 static void * allocate(size_t size)
@@ -216,6 +217,7 @@ void freeDict(dictionary_t * dict) // return previous tables and start anew
 // first one found in old is deleted from old and appended to new; continue till string is not in old
 void upsizeDict(dictionary_t * dict)
 {
+    BLACK_HOLE();
     Short index, last;
     dictionary_t old;
 
