@@ -96,8 +96,10 @@ static bool set_dueDate(Long due) {
 		return true;
 	}
 	
-	max_delta = (Long) -delta > max_delta ? (Long) -delta : max_delta;
-	over_due();
+	if (delta < 0) {
+		max_delta = (Long) -delta > max_delta ? (Long) -delta : max_delta;
+		over_due();
+	}
 	return false;
 }
 

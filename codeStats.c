@@ -1,14 +1,7 @@
 // Generic stats counter for a file  Robert Chapman  Dec 15, 2017
-//#include "em_timer.h"
 
-// 14 MHz clock ticks; wraps after 5 minutes; 71.4 ns resolution
-#ifndef CLOCK_MHZ
-  #define CLOCK_MHZ 14
-#endif
-
-// ARM Cortex-M3 extended trace macrocell registers: Data Watchpoint and Trace (DWT)
-#define getTicks() (DWT->CYCCNT) // cortex-M3 cycle counter from ETM
-// #define getTicks() 0
+// CLOCK_MHZ and getTicks() are defined natively in project_defs.h per project
+#include "project_defs.h"
 
 #define CONVERT_TO_NS(n) ((unsigned long long)(n)*1000/CLOCK_MHZ)
 #define CONVERT_TO_US(n) ((n)/CLOCK_MHZ)

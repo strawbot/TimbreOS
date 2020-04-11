@@ -28,7 +28,6 @@ Cell dictFindKey(Cell address, dictionary_t * dict);
 Cell * dictAdjunct(char * string, dictionary_t * dict);
 Cell * dictAdjunctKey(Cell address, dictionary_t * dict);
 
-void dictPrint(dictionary_t *dict);
 char * dictFirst(dictionary_t * dict);
 char * dictNext(dictionary_t * dict);
 

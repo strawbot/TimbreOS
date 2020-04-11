@@ -339,22 +339,6 @@ Cell * dictAdjunctKey(Cell address, dictionary_t * dict) // return an associate 
     return &dict->adjunct[index];
 }
 
-char * getMachineName(Cell x);
-
-void dictPrint(dictionary_t *dict)
-{
-	for (char * entry = dictFirst(dict); entry; entry = dictNext(dict)) {
-		print("\n"), print(entry);
-        print("  adjunct: ");
-        Cell adj = dict->adjunct[dict->iter];
-        char * name = getMachineName(adj);
-        if (name)
-            print(name);
-        else
-            printHex(adj);
-    }
-}
-
 // Iterator access
 // must use dictFirst to initiate; then dictNext to get subsequent entries
 // end is detected when NULL string is returned from either function
