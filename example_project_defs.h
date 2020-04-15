@@ -5,6 +5,8 @@
 #define CLOCK_MHZ 14
 #define getTicks() 0
 
+#error blah
+
 #define safe(code) 	code
 
 #define NUM_ACTIONS 40

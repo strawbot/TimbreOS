@@ -11,16 +11,15 @@ extern Event alarmEvent;
 
 // time tracker; ms and S
 static Long uptime = 0;
-static Long last_dueDate, zero_ms; // points on the number wheel
+static Long last_dueDate; // points on the number wheel
 
 static void one_second() {
 	uptime++;
-	zero_ms = raw_time();
 	in(secs(1), one_second);
 }
 
 Long getTime() { 
-	return to_msec(raw_time());
+	return (msec(raw_time()));
 }
 
 uint32_t getUptime() {
@@ -142,10 +141,12 @@ static void in_after(Long t, vector action, bool asap) {
 
 	TimeEvent * te;
 
-	safe(te = already_there(action))
-	if (!te)
+	safe( te = already_there(action); )
+	
+	if (!te) {
 		safe( te = te_borrow(); )
-
+	}
+	
 	te->action = action;
 	te->dueDate = get_dueDate(t);
 	te->asap = asap;
@@ -287,7 +288,6 @@ void dumpTeaNames() {
 
 // ns 32 bit clock @ native MHz. Clock.h
 #include "codeStats.c"
-#define max(a,b) a > b ? a : b
 
 static int indexCompare(const void *a,const void *b) {
 	Short *x = (Short *) a;
@@ -343,8 +343,10 @@ void actionRun(vector m) {
 	Cell * stat = action_stat(m);
 	int time = (int)getTicks();
 	m();
-	time = (int)getTicks() - time;
-	* stat = max((Cell) time, *stat);
+	Long delta = (int)getTicks() - time;
+
+	if (delta > *stat)
+		*stat = delta;
 }
 
 void zeroMachineTimes() {
@@ -367,7 +369,6 @@ void init_tea() {
 	for (Byte i = 0; i < NUM_TE; i++)
 		te_return(&tes[i]);
 
-	zero_ms = raw_time();
 	last_dueDate = get_dueDate(0);
 
 	later(one_second);

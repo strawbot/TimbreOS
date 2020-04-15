@@ -3,11 +3,6 @@
 // CLOCK_MHZ and getTicks() are defined natively in project_defs.h per project
 #include "project_defs.h"
 
-#define CONVERT_TO_NS(n) ((unsigned long long)(n)*1000/CLOCK_MHZ)
-#define CONVERT_TO_US(n) ((n)/CLOCK_MHZ)
-#define CONVERT_TO_MS(n) ((unsigned long long)(n)/(CLOCK_MHZ*1000))
-#define US_TO_TICKS(n)	 ((n)*CLOCK_MHZ)
-
 #ifdef FOR_EACH_STAT
 /*
  use to increment stat counters within code to find out which paths are being used

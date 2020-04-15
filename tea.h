@@ -13,8 +13,8 @@ extern "C" {
 void system_failure(); // application defines signal_failure();
 // void system_failure() { while (true); } // DEBUGGING
 
+// resolve in application
 #define BLACK_HOLE() system_failure()
-
 
 // time
 typedef struct TimeEvent {
