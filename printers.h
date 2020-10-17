@@ -21,6 +21,7 @@ void flush(void);
 void printAt(char x);
 void printAscii(char x);
 void printAsciiString(const char * string);
+void printerval(Long n);
 void pdump(unsigned char * a, unsigned int lines);
 
 #ifndef PRINTERS_H
