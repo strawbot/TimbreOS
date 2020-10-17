@@ -72,9 +72,9 @@ void showTime(void)
 
 void sdotms(Long time)
 {
-	Long ms = time%(secs(1));
+	Long ms = time%1000;
 
-	printDec0(time/(secs(1)));
+	printDec0(time/1000);
 	print(".");
 	printDec0(ms/100);
 	printDec0((ms%100)/10);
