@@ -23,7 +23,7 @@ typedef struct TimeEvent {
 } TimeEvent;
 
 // time base
-Long get_uptime(); // seconds since startup; 136 year rollover
+Long getUptime(); // seconds since startup; 136 year rollover
 Long getTime(void);    // ms time stamp; 49 day rollover
 
 // note use of 8 byte intermediate precision; accomodate range of values for ONE_SECOND

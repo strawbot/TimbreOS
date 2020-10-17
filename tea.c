@@ -22,7 +22,7 @@ Long getTime() {
 	return to_msec(raw_time());
 }
 
-uint32_t getUptime() {
+Long getUptime() {
 	return uptime;
 }
 
