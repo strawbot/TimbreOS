@@ -124,6 +124,18 @@ void printAsciiString(char * string) {
 		printAscii(*string++);
 }
 
+void printerval(Long n) {
+	print(" (");
+	if (n < secs(1))
+	printDec0(to_msec(n)), print("ms)");
+	else if (n < mins(5))
+	printDec0(to_secs(n)), print("s)");
+	else if (n < hours(5))
+	printDec0(n/mins(1)),  print("m)");
+	else
+	printDec0(n/hours(1)), print("h)");
+}
+
 // CLI
 void dump(void) { // ( a n ) command line dump
     Cell lines = ret();
