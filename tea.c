@@ -22,12 +22,12 @@ Long getTime() {
 	return (msec(raw_time()));
 }
 
-uint32_t getUptime() {
+Long get_uptime() {
 	return uptime;
 }
 
 void printUptime() {
-    printDec(getUptime());
+    printDec(get_uptime());
 }
 
 // primitives
