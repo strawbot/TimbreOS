@@ -53,6 +53,7 @@ outputFiles = [ctarget, helptarget, txttarget]
 wordlistCheader = ''' \
 // names are kept in flash; arrays are used; reduces space requirements
 #include "cli.h"
+#include <stdio.h>
 
 #define NAMES(name) const char name[] = {
 #define NAME(s) s "\\000"
