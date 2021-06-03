@@ -10,11 +10,21 @@ extern "C" {
 #include "ttypes.h"
 #include "dictionary.h"
 
-void system_failure(); // application defines signal_failure();
-// void system_failure() { while (true); } // DEBUGGING
-
 // resolve in application
 #define BLACK_HOLE() system_failure()
+
+void system_failure(); // application defines system_failure();
+// void system_failure() { while (true); } // DEBUGGING
+
+#define safe(code) 	\
+	ENTER_SAFE_REGION() \
+	code; \
+	LEAVE_SAFE_REGION()
+
+#define outside(action) \
+	pushq((Cell)action, outsideq), \
+	critical_action()
+// void critical_action() { set_critical_interrupt(true); }
 
 // time
 typedef struct TimeEvent {
@@ -29,13 +39,17 @@ Long get_uptime(); // seconds since startup; 136 year rollover
 Long getTime(void);    // ms time stamp; 49 day rollover
 
 // note use of 8 byte intermediate precision; accomodate range of values for ONE_SECOND
+#define usec(t) ((Long)(((Octet)(t)*ONE_SECOND) / 1000000))
 #define msec(t) ((Long)(((Octet)(t)*ONE_SECOND) / 1000))
 #define secs(t) msec(t * 1000)
 #define mins(t) secs(t*60)
 #define hours(t) mins(t*60)
-#define days(t) hours(t*24)
+// #define days(t) hours(t*24)  - only 72 hrs available
 #define to_msec(n) ((Long)((Octet)(n)*1000/ONE_SECOND))
-#define to_secs(n) (to_msec(n)/1000)
+#define to_secs(n) (n/ONE_SECOND)
+
+// CLI
+void ticks_ms();
 
 // time
 void after(Long t, vector action);

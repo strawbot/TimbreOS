@@ -15,6 +15,7 @@ void printDec0(unsigned int dec);
 void printFloat(float dec, int n);
 void printDouble(double dec, int n);
 void printBin(unsigned int bin);
+void printBin0(unsigned int bin);
 void printChar(unsigned char ch);
 void printHex2(unsigned int hex);
 void flush(void);
@@ -23,6 +24,7 @@ void printAscii(char x);
 void printAsciiString(const char * string);
 void printerval(Long n);
 void pdump(unsigned char * a, unsigned int lines);
+void psdump(unsigned short * a, unsigned int lines);
 
 #ifndef PRINTERS_H
 #define PRINTERS_H

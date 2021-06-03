@@ -59,6 +59,17 @@ void timeoutWait(Cell time) // timed delay loop
 		action_slice();
 }
 
+Long timeout_left(Timeout * to) { // amount of time before due in ms
+	if (!to->off) {
+		Long now = getTime();
+		Long due = to->timeset + to->timeout;
+			
+		if (due > now)
+			return due - now;
+	}
+	return 0;
+}
+
 // CLI for timing
 #include "printers.h"
 #include "tea.h"

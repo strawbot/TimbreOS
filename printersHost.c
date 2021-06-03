@@ -73,12 +73,17 @@ void printDec0(unsigned int dec)
     outp += printf("%d", (int)dec);
 }
 
-void printBin(unsigned int bin)
+void printBin0(unsigned int bin)
 {
     int i;
 
     for(i=0x80; i != 0; i>>=1)
         outp += printf("%1i",(((bin)&i) != 0));
+}
+
+void printBin(unsigned int bin)
+{
+    printBin0(bin);
     outp += printf(" ");
 }
 
@@ -109,13 +114,43 @@ void flush(void)
 
 void pdump(unsigned char * a, unsigned int lines)
 {
-    while(lines--) {
+    while (lines--) {
         printCr();
         printHex((unsigned int)(long)a);
         print(":");
         for (int j=0; j<2; j++) {
+            for (int i = j*8; i < (j+1)*8; i++)
+                printHex2(a[i]);
             print(" ");
-            for (int i=0; i<8; i++) print(" "), printHex2(*a++);
         }
+        for (int j=0; j<2; j++) {
+            for (int i = j*8; i < (j+1)*8; i++)
+                printChar(a[i] > 31 && a[i] < 128 ? a[i] : '.');
+            print(" ");
+        }
+        a += 16;
     }
+}
+
+void psdump(unsigned short * a, unsigned int lines)
+{
+    while (lines--) {
+        printCr();
+        printHex((unsigned int)(long)a);
+        print(":");
+        for (int i = 8; i ; i--, printHex2(*a++));
+        print(" ");
+    }
+}
+
+void printerval(Long s) { // s is seconds - unit less
+    print(" ");
+    if (s < (5 * 60))
+        printDec0(s), print("s");
+    else if (s < (5 * 60 * 60))
+        printDec0(s / 60), print("m");
+    else if (s < (5 * 60 * 60 * 24))
+        printDec0(s / (60 * 60)), print("h");
+	else
+		printDec0(s / (60 * 60 * 24)), print("d");
 }

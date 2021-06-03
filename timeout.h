@@ -24,6 +24,8 @@ typedef struct {
 	Byte off;		// set to true to turn off timeout - reset by setting
 } Timeout;
 
+Long timeout_left(Timeout * to); // amount of time before due in ms
+
 #define NEW_TO(name) Timeout name[1] /* use timeouts without & */
 
 // Timeout support

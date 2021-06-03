@@ -14,12 +14,12 @@ static Long uptime = 0;
 static Long last_dueDate; // points on the number wheel
 
 static void one_second() {
-	uptime++;
 	in(secs(1), one_second);
+	uptime++;
 }
 
 Long getTime() { 
-	return (msec(raw_time()));
+	return (to_msec(raw_time()));
 }
 
 Long get_uptime() {
@@ -137,7 +137,7 @@ static TimeEvent * already_there(vector action) {
 
 static void in_after(Long t, vector action, bool asap) {
 	if (action == no_action)
-		BLACK_HOLE();
+		return;
 
 	TimeEvent * te;
 
@@ -158,7 +158,6 @@ static void in_after(Long t, vector action, bool asap) {
 // Time Events
 void after(Long t, vector action) { in_after(t, action, false); }
 void in   (Long t, vector action) { in_after(t, action, true); }
-// void in   (Long t, vector action) { in_after(t, action, false); }
 
 static void check_dueDates() {
 	last_dueDate = raw_time();
@@ -256,7 +255,7 @@ void print_te() {
 	show_timer();
 	while (curr &&
 		  (curr->action != NULL) && 
-		  (curr->dueDate - get_dueDate(0) < days(24))) {
+		  (curr->dueDate - get_dueDate(0) < hours(36))) {
 		print (curr->asap ? "\nin " : "\nafter ");
 		printDueDate(curr->dueDate);
 		tabTo(17);
@@ -324,7 +323,7 @@ void machineStats(void) {
 		if (name)
 			print(name);
 		else
-			printHex(machine - 1);
+			printHex((machine + 3) & ~3);
 	}
 }
 
@@ -360,27 +359,6 @@ void initMachineStats() {
 	zeroMachineTimes();
 }
 
-// init
-void init_tea() {
-	initMachineStats();
-	zeroq(actionq);
-	te_todo.next = te_done.next = NULL;
-
-	for (Byte i = 0; i < NUM_TE; i++)
-		te_return(&tes[i]);
-
-	last_dueDate = get_dueDate(0);
-
-	later(one_second);
-	init_clocks();
-	when(alarmEvent, check_dueDates);
-
-	namedAction(set_next_dueDate);
-	namedAction(one_second);
-	namedAction(no_action);
-	namedAction(check_dueDates);
-}
-
 // test vector
 #include "timeout.h"
 #include "cli.h"
@@ -407,8 +385,7 @@ void get_tick_time() {
 
 void ticks_ms() { lit(CONVERT_TO_MS(ret())); }
 
-#ifdef N_EVENTS // can use for tracing events; override defaults as needed
-
+// can use for tracing events; override defaults as needed
 QUEUE(N_EVENTS * 2, eventq);
 static bool playback = false;
 
@@ -425,8 +402,6 @@ static void record(const char * e) {
 	} else
 		playback = true;
 }
-
-void record_event_off() { playback = true; }
 
 void record_event(const char * e) {
 	if (playback == false)
@@ -459,9 +434,24 @@ void play_events() {
 	playback = false;
 }
 
-void cancel_events() {
-	
+// init
+void init_tea() {
+	initMachineStats();
+	zeroq(actionq);
+	te_todo.next = te_done.next = NULL;
+
+	for (Byte i = 0; i < NUM_TE; i++)
+		te_return(&tes[i]);
+
+	last_dueDate = get_dueDate(0);
+
+	later(one_second);
+	init_clocks();
+	when(alarmEvent, check_dueDates);
+
+	namedAction(set_next_dueDate);
+	namedAction(one_second);
+	namedAction(no_action);
+	namedAction(check_dueDates);
+	namedAction(play_events);
 }
-
-
-#endif

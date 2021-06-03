@@ -42,8 +42,11 @@ static Byte * reverseB(Cell * a) {
 // 0, 0 n r - for minimal field width for all digits
 char *numString(Byte field, Byte digits, Cell n, Byte radix) {
     initB(pad);
-    if (((Integer)n < 0) && (radix == 10))
-        writeB('-', pad);
+	bool negative_decimal = (Integer)n < 0 && radix == 10;
+	
+    if (negative_decimal)
+		n = (Long)(-(Integer)n);
+
     if (field != 0 &&
         field == digits) // if field is equal to digits fill with zeroes
         while (digits--)
@@ -51,6 +54,10 @@ char *numString(Byte field, Byte digits, Cell n, Byte radix) {
     else do {
         convert1Digit(&n, radix);
     } while (n != 0);
+	
+	if (negative_decimal)
+        writeB('-', pad);
+
     reverseB(pad);
     writeB(0, pad);
     return (char *)indexB(0, pad);
@@ -113,17 +120,18 @@ void pdump(unsigned char *a, unsigned int lines) {
         printCr();
         printHex((unsigned int)(long)a);
         print(":");
-        for (int i = 0; i < 8; i++)
-            printHex2(a[i]);
-        print(" ");
-        for (int i = 8; i < 16; i++)
-            printHex2(a[i]);
-        print("  ");
-        for (int i = 0; i < 8; i++)
-            printChar(a[i] > 31 && a[i] < 128 ? a[i] : '.');
-        print(" ");
-        for (int i = 8; i < 16; i++)
-            printChar(a[i] > 31 && a[i] < 128 ? a[i] : '.');
+        for (int j=0; j<2; j++) {
+            for (int i = 0; i < 8; i++)
+                printHex2(a[i+j*8]);
+            print(" ");
+        }
+        for (int j=0; j<2; j++) {
+            for (int i = 0; i < 8; i++) {
+                int k = i+j*8;
+                printChar(a[k] > 31 && a[k] < 128 ? a[k] : '.');
+            }
+			print(" ");
+        }
         a += 16;
     }
 }
@@ -151,16 +159,16 @@ void printAsciiString(char * string) {
 		printAscii(*string++);
 }
 
-void printerval(Long n) {
-	print(" (");
-	if (n < secs(1))
-	printDec0(to_msec(n)), print("ms)");
-	else if (n < mins(5))
-	printDec0(to_secs(n)), print("s)");
-	else if (n < hours(5))
-	printDec0(n/mins(1)),  print("m)");
+void printerval(Long s) { // s is seconds - unit-less
+    print(" ");
+    if (s < (5 * 60))
+        printDec0(s), print("s");
+    else if (s < (5 * 60 * 60))
+        printDec0(s / 60), print("m");
+    else if (s < (5 * 60 * 60 * 24))
+        printDec0(s / (60 * 60)), print("h");
 	else
-	printDec0(n/hours(1)), print("h)");
+		printDec0(s / (60 * 60 * 24)), print("d");
 }
 
 // CLI
@@ -169,4 +177,15 @@ void dump(void) { // ( a n ) command line dump
     Byte *a = (Byte *)ret();
 
     pdump(a, lines);
+}
+
+void psdump(unsigned short * a, unsigned int lines)
+{
+    while (lines--) {
+        printCr();
+        printHex((unsigned int)(long)a);
+        print(":");
+        for (int i = 8; i ; i--, printChar(' '), dotnb(4, 4, *a++, 16));
+        print(" ");
+    }
 }
