@@ -2,10 +2,12 @@
 
 #include "tea.h"
 #include "queue.h"
-#include "printers.h"
 #include <stdlib.h>
 #include "clocks.h"
 #include "project_defs.h"
+#ifndef	MINIMAL_TEA
+#include "printers.h"
+#endif
 
 extern Event alarmEvent;
 
@@ -13,15 +15,17 @@ extern Event alarmEvent;
 static Long uptime = 0;
 static Long last_dueDate; // points on the number wheel
 
-static void one_second() {
+static __reentrant void one_second(void) {
+    printf("One second\r\n");
 	in(secs(1), one_second);
 	uptime++;
 }
 
-Long getTime() { 
+Long getTime(void) { 
 	return (to_msec(raw_time()));
 }
 
+#ifndef	MINIMAL_TEA
 Long get_uptime() {
 	return uptime;
 }
@@ -29,11 +33,12 @@ Long get_uptime() {
 void printUptime() {
     printDec(get_uptime());
 }
+#endif
 
 // primitives
 static TimeEvent tes[NUM_TE], te_done, te_todo; // time events and todo and done lists
 
-static void verify_todo() {
+static void verify_todo(void) {
 	TimeEvent * te = &te_todo;
 	while ((te = te->next)) ;
 }
@@ -45,7 +50,7 @@ static void append(TimeEvent * curr, TimeEvent * te) {
 	)
 }
 
-static TimeEvent * remove(TimeEvent * curr) {
+static TimeEvent * remove_te(TimeEvent * curr) {
 	TimeEvent * te;
 	safe(
 		te = curr->next;
@@ -58,11 +63,11 @@ static TimeEvent * remove(TimeEvent * curr) {
 // list access
 static void te_return(TimeEvent* te) { append(&te_done, te); }
 
-static TimeEvent* te_borrow() {
+static TimeEvent* te_borrow(void) {
 	if (te_done.next == NULL)
 		BLACK_HOLE();
 
-	return remove(&te_done);	
+	return remove_te(&te_done);	
 }
 
 // make it happen
@@ -77,8 +82,8 @@ static void do_action(TimeEvent * te) {
 		later(action);
 }
 
-static void run_dueDate() {
-	do_action(remove(&te_todo));
+static void run_dueDate(void) {
+	do_action(remove_te(&te_todo));
 	verify_todo();
 }
 
@@ -88,10 +93,10 @@ static Long max_delta = 0;
 
 static bool set_dueDate(Long due) {
 	 // must be signed since for overdue items
-	int delta = due - raw_time();
+	int delta = (int) (due - raw_time());
 
 	if (delta > 0) {
-		set_alarm(delta);
+		set_alarm((Long) delta);
 		return true;
 	}
 	
@@ -102,7 +107,7 @@ static bool set_dueDate(Long due) {
 	return false;
 }
 
-static void set_next_dueDate() {
+static void set_next_dueDate(void) {
 	while (te_todo.next && !set_dueDate(te_todo.next->dueDate)) // atomicity issue?
 		run_dueDate();
 }
@@ -110,10 +115,10 @@ static void set_next_dueDate() {
 static void schedule_te(TimeEvent* te) {
 	TimeEvent * curr = &te_todo, * next;
 	Long ref = last_dueDate; // time reference
-	int dueDate = te->dueDate - ref;
+	int dueDate = (int) (te->dueDate - ref);
 
 	while ((next = curr->next) != NULL) {
-		int date = next->dueDate - ref;
+		int date = (int) (next->dueDate - ref);
 		if (dueDate < date)
 			break;
 		curr = next;
@@ -135,7 +140,7 @@ static TimeEvent * already_there(vector action) {
 	return NULL;
 }
 
-static void in_after(Long t, vector action, bool asap) {
+void in_after(Long t, vector action, bool asap) {
 	if (action == no_action)
 		return;
 
@@ -159,13 +164,13 @@ static void in_after(Long t, vector action, bool asap) {
 void after(Long t, vector action) { in_after(t, action, false); }
 void in   (Long t, vector action) { in_after(t, action, true); }
 
-static void check_dueDates() {
+static void check_dueDates(void) {
 	last_dueDate = raw_time();
 	set_next_dueDate();
 }
 
 // Events
-void no_action() {}
+void no_action(void) {}
 
 void when(Event e, vector a) { *e = a; }
 void never(Event e) { when(e, no_action); }
@@ -181,11 +186,11 @@ void later(vector a) {
 	safe( pushq((Cell)a, actionq);)
 }
 
-void run() {
+void run(void) {
 	while (queryq(actionq))  actionRun((vector)pullq(actionq));
 }
 
-void action_slice() { // like run but only once through the queued actions; full slice
+void action_slice(void) { // like run but only once through the queued actions; full slice
 	Long n = queryq(actionq);
 	while (n-- && queryq(actionq))
 		actionRun((vector)pullq(actionq));
@@ -216,6 +221,7 @@ void stop(vector v) {
 
 // Tools
 
+#ifndef	MINIMAL_TEA
 // times
 void print_time(Long time) {
 	if (time < secs(1))
@@ -335,19 +341,25 @@ Cell * action_stat(vector m) {
 	}
 	return stat;
 }
+#endif
 
 void actionRun(vector m) {
 	if (m == 0)
 		BLACK_HOLE();
+#ifndef	MINIMAL_TEA
 	Cell * stat = action_stat(m);
 	int time = (int)getTicks();
+#endif
 	m();
+#ifndef	MINIMAL_TEA
 	Long delta = (int)getTicks() - time;
 
 	if (delta > *stat)
 		*stat = delta;
+#endif
 }
 
+#ifndef	MINIMAL_TEA
 void zeroMachineTimes() {
     for (Short i=0; i<teatimes.capacity; i++)
         teatimes.adjunct[i] = 0;
@@ -358,11 +370,15 @@ void initMachineStats() {
     emptyDict(&teatimes);
 	zeroMachineTimes();
 }
+#endif
 
 // test vector
 #include "timeout.h"
 #include "cli.h"
 
+void ticks_ms(void) { lit((Cell) CONVERT_TO_MS(ret())); }
+
+#ifndef	MINIMAL_TEA
 void test_time() {
 	Long s = ret();
 	Long tick = getTicks();
@@ -382,8 +398,6 @@ void get_tick_time() {
 	Long time = getTime();
 	printDec(tick), printDec(time);
 }
-
-void ticks_ms() { lit(CONVERT_TO_MS(ret())); }
 
 // can use for tracing events; override defaults as needed
 QUEUE(N_EVENTS * 2, eventq);
@@ -433,10 +447,13 @@ void play_events() {
 	}
 	playback = false;
 }
+#endif
 
 // init
 void init_tea() {
+#ifndef	MINIMAL_TEA
 	initMachineStats();
+#endif
 	zeroq(actionq);
 	te_todo.next = te_done.next = NULL;
 
@@ -449,9 +466,11 @@ void init_tea() {
 	init_clocks();
 	when(alarmEvent, check_dueDates);
 
+#ifndef	MINIMAL_TEA
 	namedAction(set_next_dueDate);
 	namedAction(one_second);
 	namedAction(no_action);
 	namedAction(check_dueDates);
 	namedAction(play_events);
+#endif
 }

@@ -8,12 +8,14 @@ extern "C" {
 #include "clocks.h"
 #include "project_defs.h"
 #include "ttypes.h"
+#ifndef	MINIMAL_TEA
 #include "dictionary.h"
+#endif
 
 // resolve in application
 #define BLACK_HOLE() system_failure()
 
-void system_failure(); // application defines system_failure();
+void system_failure(void); // application defines system_failure();
 // void system_failure() { while (true); } // DEBUGGING
 
 #define safe(code) 	\
@@ -35,7 +37,7 @@ typedef struct TimeEvent {
 } TimeEvent;
 
 // time base
-Long get_uptime(); // seconds since startup; 136 year rollover
+Long get_uptime(void); // seconds since startup; 136 year rollover
 Long getTime(void);    // ms time stamp; 49 day rollover
 
 // note use of 8 byte intermediate precision; accomodate range of values for ONE_SECOND
@@ -49,11 +51,12 @@ Long getTime(void);    // ms time stamp; 49 day rollover
 #define to_secs(n) (n/ONE_SECOND)
 
 // CLI
-void ticks_ms();
+void ticks_ms(void);
 
 // time
 void after(Long t, vector action);
 void in(Long t, vector action);
+void in_after(Long t, vector action, bool asap);
 
 // events
 typedef vector Event[1];
@@ -63,8 +66,8 @@ void never(Event e);
 // actions
 #define now(action) actionRun(action)
 void later(void (*a)());
-void run();
-void action_slice();
+void run(void);
+void action_slice(void);
 
 // measure execution time
 #define namedAction(m) actor(m, #m)
@@ -75,12 +78,12 @@ void actionRun(vector m);
 Cell * action_stat(vector m);
 
 // inactions
-void no_action();
+void no_action(void);
 void stop_te(vector v);
 void stop_action(vector v);
 void stop(vector v); // all places;
 
-void init_tea();
+void init_tea(void);
 
 #ifndef N_EVENTS
 #define N_EVENTS 500
@@ -99,8 +102,8 @@ void init_tea();
 #define RE1() record_event(FIRST_EVENT)
 
 void record_event(const char * e);
-void play_events();
-void record_event_off();
+void play_events(void);
+void record_event_off(void);
 
 #ifdef __cplusplus
 }

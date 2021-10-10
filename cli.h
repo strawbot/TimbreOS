@@ -152,7 +152,7 @@ char * postQuote();
 void questionDup();
 void rat();
 void resetCli();
-Cell ret();
+Cell ret(void);
 void rfrom();
 void righBracket();
 void safeEmit(Byte c);
