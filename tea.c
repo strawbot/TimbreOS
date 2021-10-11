@@ -16,7 +16,6 @@ static Long uptime = 0;
 static Long last_dueDate; // points on the number wheel
 
 static __reentrant void one_second(void) {
-    printf("One second\r\n");
 	in(secs(1), one_second);
 	uptime++;
 }
@@ -25,11 +24,11 @@ Long getTime(void) {
 	return (to_msec(raw_time()));
 }
 
-#ifndef	MINIMAL_TEA
 Long get_uptime() {
 	return uptime;
 }
 
+#ifndef	MINIMAL_TEA
 void printUptime() {
     printDec(get_uptime());
 }
