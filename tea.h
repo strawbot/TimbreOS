@@ -66,7 +66,7 @@ void never(Event e);
 // actions
 #define now(action) actionRun(action)
 void later(void (*a)());
-void run(void);
+int run(void);
 void action_slice(void);
 
 // measure execution time

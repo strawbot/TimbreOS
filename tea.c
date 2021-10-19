@@ -185,8 +185,13 @@ void later(vector a) {
 	safe( pushq((Cell)a, actionq);)
 }
 
-void run(void) {
-	while (queryq(actionq))  actionRun((vector)pullq(actionq));
+int run(void) {
+    int count = 0;
+	while (queryq(actionq)) {
+        actionRun((vector)pullq(actionq));
+        count++;
+    }
+    return count;
 }
 
 void action_slice(void) { // like run but only once through the queued actions; full slice
