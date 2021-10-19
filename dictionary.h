@@ -13,8 +13,6 @@ typedef struct {
     Short iter;     // used for iterating over dictionary
 } dictionary_t;
 
-#define TEA_CAPACITY    32
-
 dictionary_t * dictionary(Short size);
 void initDict(dictionary_t * dict, Short n);
 void freeDict(dictionary_t * dict);
@@ -35,8 +33,6 @@ char * dictNext(dictionary_t * dict);
 
 // prime numbers just less than 2**n
 enum {
-    HASH6 =(1<<6) -1,
-    HASH7 =(1<<7) -1,
     HASH8 =(1<<8) -5,
     HASH9 =(1<<9) -3,
     HASH10=(1<<10)-3,

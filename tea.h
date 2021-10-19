@@ -56,7 +56,6 @@ void ticks_ms(void);
 // time
 void after(Long t, vector action);
 void in(Long t, vector action);
-void in_after(Long t, vector action, bool asap);
 
 // events
 typedef vector Event[1];

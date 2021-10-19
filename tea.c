@@ -139,7 +139,7 @@ static TimeEvent * already_there(vector action) {
 	return NULL;
 }
 
-void in_after(Long t, vector action, bool asap) {
+static void in_after(Long t, vector action, bool asap) {
 	if (action == no_action)
 		return;
 
@@ -374,15 +374,11 @@ void initMachineStats() {
     emptyDict(&teatimes);
 	zeroMachineTimes();
 }
-#endif
 
 // test vector
 #include "timeout.h"
 #include "cli.h"
 
-void ticks_ms(void) { lit((Cell) CONVERT_TO_MS(ret())); }
-
-#ifndef	MINIMAL_TEA
 void test_time() {
 	Long s = ret();
 	Long tick = getTicks();
@@ -402,6 +398,8 @@ void get_tick_time() {
 	Long time = getTime();
 	printDec(tick), printDec(time);
 }
+
+void ticks_ms() { lit(CONVERT_TO_MS(ret())); }
 
 // can use for tracing events; override defaults as needed
 QUEUE(N_EVENTS * 2, eventq);
