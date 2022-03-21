@@ -15,7 +15,7 @@ extern Event alarmEvent;
 static Long uptime = 0;
 static Long last_dueDate; // points on the number wheel
 
-static __reentrant void one_second(void) {
+static void one_second(void) {
 	in(secs(1), one_second);
 	uptime++;
 }
@@ -464,7 +464,7 @@ void init_tea() {
 
 	last_dueDate = get_dueDate(0);
 
-	later(one_second);
+//	later(one_second);
 	init_clocks();
 	when(alarmEvent, check_dueDates);
 
