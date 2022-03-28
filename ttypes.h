@@ -22,7 +22,7 @@ typedef unsigned char Byte; /* minimum memory transfer unit */
 #endif
 typedef unsigned short Word; /* next in size */
 #ifndef uintptr_t
-typedef unsigned int uintptr_t;
+typedef uint32_t uintptr_t;
 #endif
 typedef uintptr_t Cell; /* default memory transfer unit; big enough for pointer */
 typedef unsigned int Whole; /* whole numbers; 0 to finite infinity */
