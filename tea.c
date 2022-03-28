@@ -464,7 +464,7 @@ void init_tea() {
 
 	last_dueDate = get_dueDate(0);
 
-//	later(one_second);
+	later(one_second);
 	init_clocks();
 	when(alarmEvent, check_dueDates);
 
