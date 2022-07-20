@@ -70,6 +70,7 @@ static TimeEvent* te_borrow(void) {
 }
 
 // make it happen
+// runs in ISR and program
 static void do_action(TimeEvent * te) {
 	bool asap = te->asap;
 	vector action = te->action;
@@ -106,6 +107,7 @@ static bool set_dueDate(Long due) {
 	return false;
 }
 
+// run in ISR and program
 static void set_next_dueDate(void) {
 	while (te_todo.next && !set_dueDate(te_todo.next->dueDate)) // atomicity issue?
 		run_dueDate();
@@ -163,6 +165,7 @@ static void in_after(Long t, vector action, bool asap) {
 void after(Long t, vector action) { in_after(t, action, false); }
 void in   (Long t, vector action) { in_after(t, action, true); }
 
+// run in ISR
 static void check_dueDates(void) {
 	last_dueDate = raw_time();
 	set_next_dueDate();
@@ -185,13 +188,29 @@ void later(vector a) {
 	safe( pushq((Cell)a, actionq);)
 }
 
-int run(void) {
+uint32_t run(void) {
     int count = 0;
+    uint32_t max_time = 0;
 	while (queryq(actionq)) {
-        actionRun((vector)pullq(actionq));
+        extern int interrupt_count;
+        int start_count = interrupt_count, end_count;
+        uint32_t start_time = raw_time(), end_time;
+        vector act = (vector)pullq(actionq);
+        actionRun(act);
+        safe(
+            end_count = interrupt_count;
+            end_time = raw_time();
+        );
+        if (end_time - start_time > max_time) {
+            max_time = end_time - start_time;
+            if (max_time > 100) {
+                printf("Action %x took %lu msec\r\n", act, max_time);
+            }
+        }
         count++;
     }
-    return count;
+
+    return max_time;
 }
 
 void action_slice(void) { // like run but only once through the queued actions; full slice
@@ -400,6 +419,7 @@ void get_tick_time() {
 }
 
 void ticks_ms() { lit(CONVERT_TO_MS(ret())); }
+#endif
 
 // can use for tracing events; override defaults as needed
 QUEUE(N_EVENTS * 2, eventq);
@@ -438,18 +458,15 @@ void play_events() {
 		}
 
 		if (t != last) {
-			printCr();
-			printDec(t-zero);
-			tabTo(6);
+            printf("\r\n %ld\t", t-zero);
 		} else{ 
 			last = t;
-			print("  ");
+			printf("  ");
 		}
-		print(e);
+		printf("%s", e);
 	}
 	playback = false;
 }
-#endif
 
 // init
 void init_tea() {
