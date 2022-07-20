@@ -192,18 +192,13 @@ uint32_t run(void) {
     int count = 0;
     uint32_t max_time = 0;
 	while (queryq(actionq)) {
-        extern int interrupt_count;
-        int start_count = interrupt_count, end_count;
         uint32_t start_time = raw_time(), end_time;
         vector act = (vector)pullq(actionq);
         actionRun(act);
-        safe(
-            end_count = interrupt_count;
-            end_time = raw_time();
-        );
+        end_time = raw_time();
         if (end_time - start_time > max_time) {
             max_time = end_time - start_time;
-            if (max_time > 100) {
+            if (max_time > 20) {
                 printf("Action %x took %lu msec\r\n", act, max_time);
             }
         }
