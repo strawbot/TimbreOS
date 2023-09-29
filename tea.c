@@ -208,6 +208,10 @@ uint32_t run(void) {
     return max_time;
 }
 
+Cell actionq_count(void) {
+    return queryq(actionq);
+}
+
 void action_slice(void) { // like run but only once through the queued actions; full slice
 	Long n = queryq(actionq);
 	while (n-- && queryq(actionq))

@@ -67,6 +67,7 @@ void never(Event e);
 void later(void (*a)());
 uint32_t run(void);
 void action_slice(void);
+Cell actionq_count(void);
 
 // measure execution time
 #define namedAction(m) actor(m, #m)
