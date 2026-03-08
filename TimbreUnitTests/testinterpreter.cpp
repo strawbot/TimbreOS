@@ -12,7 +12,7 @@ Byte searchDictionaries(Byte * cstring, tcode * t);
 tcode link2tick(header * link);
 Byte lookup(Byte * cstring, tcode * t);
 void msg(const char * m);
-void error(void);
+void error_occurred(void);
 Byte checkBase(Byte * string);
 bool toDigit(Byte *n);
 Cell signDigits(Byte * string, bool sign);

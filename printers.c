@@ -4,6 +4,7 @@
 #include "cli.h"
 #include "tea.h"
 #include <string.h>
+#include <math.h>
 
 #define ESC 0x1B
 #define CR 0x0D
@@ -13,7 +14,18 @@ void print(const char *message) { msg((char *)message); }
 
 void printCr(void) { print("\n"); }
 
-void tabTo(int n) { spaces(n - getCursor()); }
+void tabTo(int n) {
+    int len = n - getCursor();
+    if (len > 0) {
+        char spaces[len + 1];
+        for (Short i = 0; i < len; i++)  spaces[i] = ' ';
+        spaces[len] = 0;
+        print(spaces);
+    } else // if -ve use backspaces
+        print(" ");
+}
+
+void cli_tabTo() { tabTo(ret()); }
 
 static BARRAY(PAD_SIZE, pad); // safe place to format numbers
 
@@ -63,6 +75,23 @@ char *numString(Byte field, Byte digits, Cell n, Byte radix) {
     return (char *)indexB(0, pad);
 }
 
+char *unumString(Byte field, Byte digits, Cell n, Byte radix) {
+    initB(pad);
+
+    if (field != 0 &&
+        field == digits) // if field is equal to digits fill with zeroes
+        while (digits--)
+            convert1Digit(&n, radix);
+    else do {
+        convert1Digit(&n, radix);
+    } while (n != 0);
+	
+    reverseB(pad);
+    writeB(0, pad);
+    return (char *)indexB(0, pad);
+}
+
+
 void dotnb(Byte field, Byte digits, Cell n, Byte radix) {
     char *string = numString(field, digits, n, radix);
     Byte width = strlen(string);
@@ -86,33 +115,43 @@ void printnDec(unsigned int n, unsigned int dec) { dotnb(n, n, dec, 10); }
 
 void printDec(unsigned int dec) { lit(dec), dot(); }
 
+void printuDec(unsigned int dec) { print(unumString(0, 0, dec, 10)); }
+
 void printDec0(unsigned int dec) { printnDec(0, dec); }
 
-void printDouble(double f, int n) {
-    if (f < 0.0) {
-        print("-");
-        f = -f;
+void printFloat0(float f, int n) {
+    if (isnan(f))
+        print("NAN");
+    else if (isinf(f))
+        print("INF");
+    else {
+        if (f < 0.0) {
+            print("-");
+            f = -f;
+        }
+        printDec0((int)f);
+        f = f - (int)f;
+        print(".");
+        Long multiplier = 1;
+        for(Byte i=0; i++<n;)  multiplier *= 10;
+        f = f * multiplier + .9;
+        dotnb(n,n,(Cell)f,10);
     }
-    printDec0((int)f);
-    print(".");
-    while (n--) {
-        f *= 10;
-        if (n == 0)
-            f += .5;
-        printDec0(((unsigned int)f) % 10);
-    }
-    print(" ");
 }
-
-void printFloat(float f, int n) { printDouble((double)f, n); }
+void printFloat(float f, int n) { printFloat0(f, n); print(" "); }
 
 void printBin(unsigned int bin) { lit(bin), dotb(); }
 
 void printHex2(unsigned int hex) { printChar(' '); dotnb(2, 2, hex, 16); }
 
+void printHex4(unsigned int hex) {
+    printHex2((unsigned int)(hex>>8));
+    printHex2((unsigned int)hex);
+}
+
 void flush(void) {
     while (qbq(emitq))
-        OUTPUT_BLOCKED; // sit here until empty
+        OUTPUT_FLUSH; // sit here until empty
 }
 
 void pdump(unsigned char *a, unsigned int lines) {
@@ -155,11 +194,14 @@ void printAscii(char x) {
 }
 
 void printAsciiString(char * string) {
-	while (*string)
-		printAscii(*string++);
+	while (*string) {
+		printAscii(*string);
+        if (*string++ == LF)
+            printCr();
+    }
 }
 
-void printerval(Long s) { // s is seconds - unit-less
+void printerval(Long s) { // s is seconds - unit less
     print(" ");
     if (s < (5 * 60))
         printDec0(s), print("s");
@@ -167,8 +209,10 @@ void printerval(Long s) { // s is seconds - unit-less
         printDec0(s / 60), print("m");
     else if (s < (5 * 60 * 60 * 24))
         printDec0(s / (60 * 60)), print("h");
-	else
+	else if (s < (1 * 60 * 60 * 24 * 365))
 		printDec0(s / (60 * 60 * 24)), print("d");
+    else
+		printDec0(s / (60 * 60 * 24 * 365)), print("y");
 }
 
 // CLI
@@ -188,4 +232,17 @@ void psdump(unsigned short * a, unsigned int lines)
         for (int i = 8; i ; i--, printChar(' '), dotnb(4, 4, *a++, 16));
         print(" ");
     }
+}
+
+void dumps() {
+    Cell lines = ret();
+    Short *a = (Short *)ret();
+
+    psdump(a, lines);
+}
+
+void hbytes(void * v, Cell n) {
+    Byte * b = (Byte *)v;
+    for (Short i = 0; i < n; i++)
+        printHex2(b[i]);
 }

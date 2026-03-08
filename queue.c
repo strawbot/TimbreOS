@@ -9,8 +9,10 @@ void zeroq(Cell *q)  // empty the queue
 
 Cell q(Cell *q) // return copy of oldest element
 {
-	return (q[q[QREMOVE]]);
+	return q[q[QREMOVE]];
 }
+
+void writeq(Cell c, Cell *q) { q[q[QREMOVE]] = c; }
 
 void pushq(Cell c, Cell *q) // push an element into the q
 {
@@ -57,6 +59,14 @@ Cell p(Cell * q) // copy of last item at end of queue
 		return q[QDATA];
 	else
 		return (q[q[QINSERT]+1]);
+}
+
+void writep(Cell c, Cell * q) // overwrite last pushed item with c
+{
+	if (q[QINSERT] == q[QEND])
+		q[QDATA] = c;
+	else
+		q[q[QINSERT]+1] = c;
 }
 
 Cell popq(Cell * q) // pop item from queue

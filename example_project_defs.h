@@ -3,7 +3,7 @@
 
 // 14 MHz clock ticks; wraps after 5 minutes; 71.4 ns resolution
 #define CLOCK_MHZ 14
-#define getTicks() 0
+#define sysTicks() 0
 
 #error blah
 
@@ -14,5 +14,7 @@
 
 #define N_EVENTS 100
 #define FIRST_EVENT (const char *)secs(5)
+
+#define TEA_TABLE HASH8
 
 #endif

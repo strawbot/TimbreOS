@@ -37,6 +37,16 @@ Byte popbq(Cell * q) // pop item from queue
     return bq->q[bq->insert];
 }
 
+Byte lastbq(Cell * q) // peer at last item queued
+{
+    byteq * bq = (byteq *)q;
+
+    if ( bq->insert + 1 > bq->end )
+            return bq->q[BQDATA];
+    return bq->q[bq->insert + 1];
+}
+
+
 Byte pullbq(Cell *q) // pull oldest element from the q
 {
     byteq * bq = (byteq *)q;

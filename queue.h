@@ -6,19 +6,20 @@
              +-------------------v
    | i | r | e |       ...       |-|
      |   +--------^          ^
-     |      pull<-|->pop     |
+     |      pull<-|->stuff     |
      |            |          |
      |            V          |
      |            q          |
      |                       |
      +-----------------------+
-                       push<-|->stuff
+                       push<-|->pop
                              |
                              V
                              p
   insert, remove and end are all offsets and not pointers. end is the length of
   the queue plus 1. insert and remove are incremented and modded by end or
-  decremented and made into end-1 when decrementing past 0.
+  decremented and made into end-1 when decrementing past 0. insert points to 
+  an empty cell for quick writes. remove points to a data cell for quick reads.
   | i | r | e | d | - length 0 actually 1
     0   1   2   3
   QOVERHEAD = 4
@@ -64,8 +65,11 @@ Cell queryq(Cell *); // get number of items in queue
 Cell sizeq(Cell *); // get maximum number of items queue can hold
 Cell pullq(Cell *); // pull item from queue
 void pushq(Cell , Cell *); // push item into queue
+Cell fullq(Cell *q);
+void writep(Cell c, Cell *q); // overwrite item in p end with c
 Cell popq(Cell *); // pop item from queue
 void stuffq(Cell , Cell *); // stuff item into queue
+void writeq(Cell c, Cell *q); // overwrite item in q end with c
 void rotateq(Cell *, Cell n); // rotate n queue items
 void transferq(Cell *src, Cell *dst, Cell n); // transfer n items between queues
 void deq(Cell item, Qtype *q); // remove all copies of item from the q

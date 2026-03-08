@@ -65,6 +65,8 @@ typedef unsigned char  bool;
 // a vector followed by pointers to other vectors is a threaded code body
 typedef void (*vector)();
 typedef void (*unafun)(void*); // unary function
+#define Events(n, name) vector name[n] = {no_action}; 
+typedef vector Event[1];
 
 struct tcbody;
 

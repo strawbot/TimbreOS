@@ -4,6 +4,10 @@
 #include "printers.h"
 #include <string.h>
 
+#define ESC 0x1B
+#define CR 0x0D
+#define LF 0x0A
+
 static int outp = 0;
 
 void printCr(void)
@@ -73,6 +77,8 @@ void printDec0(unsigned int dec)
     outp += printf("%d", (int)dec);
 }
 
+void printnDec(unsigned int n, unsigned int dec) { dotnb(n, n, dec, 10); }
+
 void printBin0(unsigned int bin)
 {
     int i;
@@ -102,11 +108,6 @@ void printFloat(float f, int n)
     outp += printf("%.*f ", n, f);
 }
 
-void printDouble(double d, int n)
-{
-    outp += printf("%.*g ", n, d);
-}
-
 void flush(void)
 {
     fflush(stdout);
@@ -132,6 +133,29 @@ void pdump(unsigned char * a, unsigned int lines)
     }
 }
 
+void printAt(char x) {
+    if ((x >= ' ' && x <= '~') || (x == 0xD || x == LF))
+        printChar(x);
+    else if (x == ESC)
+        print("<ESC>");
+    else
+        print("<"), dotnb(2,2,(Byte)x,16), print(">");
+}
+
+void printAscii(char x) {
+    if (x == CR)
+        print("<CR>");
+    else if (x == LF)
+        print("<LF>");
+    else
+        printAt(x);
+}
+
+void printAsciiString(const char * string) {
+	while (*string)
+		printAscii(*string++);
+}
+
 void psdump(unsigned short * a, unsigned int lines)
 {
     while (lines--) {
@@ -153,4 +177,10 @@ void printerval(Long s) { // s is seconds - unit less
         printDec0(s / (60 * 60)), print("h");
 	else
 		printDec0(s / (60 * 60 * 24)), print("d");
+}
+
+void hbytes(void * v, Cell n) {
+    Byte * b = (Byte *)v;
+    for (Short i = 0; i < n; i++)
+        printHex2(b[i]);
 }

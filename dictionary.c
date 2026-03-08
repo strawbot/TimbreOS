@@ -35,8 +35,6 @@ static void qfree(Cell address)
         free((void *)address);
 }
 
-#define HASH_SEED 8315	// hash starting point
-
 // hash table sizes
 static Short primeSizes[] = {HASH8, HASH9, HASH10, HASH11, HASH12, HASH13, HASH14, HASH15, HASH16};
 
@@ -51,14 +49,14 @@ static Short hashSize(Short n)  // select table size
 // Table checks
 static char zeroString[] = {'\0'}; // used in place of deleted locations
 
-static bool used(char * string) // true if string is valid and not zerostring
+static bool used(const char * string) // true if string is valid and not zerostring
 {
     if (string)
         return *string != '\0';
     return false;
 }
 
-static bool same(char * s1, char * s2) // true if string matches
+static bool same(const char * s1, const char * s2) // true if string matches
 {
     if (s1 == s2)
         return true;
@@ -67,7 +65,7 @@ static bool same(char * s1, char * s2) // true if string matches
     return 0 == strcmp(s1, s2);
 }
 
-static bool different(char *string, char ** loc) // true if string valid and different
+static bool different(const char *string, const char ** loc) // true if string valid and different
 {
     if (loc == NULL)
         return false;
@@ -77,7 +75,7 @@ static bool different(char *string, char ** loc) // true if string valid and dif
 }
 
 // Hashing algorithms
-static Short hash(char * string, dictionary_t * dict)
+static Short hash(const char * string, dictionary_t * dict)
 {
     Short hash = HASH_SEED;
 
@@ -91,7 +89,7 @@ static Short hash(char * string, dictionary_t * dict)
 }
 
 // rehash based on first character of string
-static Short rehash(char * string, Short index, dictionary_t * dict)
+static Short rehash(const char * string, Short index, dictionary_t * dict)
 {
     index += *string + 1;
     index %= dict->capacity;
@@ -115,14 +113,14 @@ static Short hashKey(Cell address, dictionary_t * dict) {
 
 static Short rehashKey(Cell address, Short index, dictionary_t * dict)
 {
-    index += (Byte)address + 1;
+    index += (Byte)address + HASH_SEED;
     index %= dict->capacity;
 
     return index;
 }
 
 // locate start or end of chain of same string
-static Short locate(char * string, dictionary_t * dict)
+static Short locate(const char * string, dictionary_t * dict)
 {
     Short index = hash(string, dict);
 
@@ -132,17 +130,19 @@ static Short locate(char * string, dictionary_t * dict)
     return index;
 }
 
+static Short rehashes = 0; // use to evaluate collisions
+
 static Short locateKey(Cell address, dictionary_t * dict)
 {
     Short index = hashKey(address, dict);
-
+    rehashes = 0;
 	while(dict->table[index] != NULL && address != (Cell)dict->table[index])
-        index = rehashKey(address, index, dict);
+        index = rehashKey(address, index, dict), rehashes++;
 
     return index;
 }
 
-static Short locateAppend(char * string, dictionary_t * dict)
+static Short locateAppend(const char * string, dictionary_t * dict)
 {
     Short index = hash(string, dict);
 
@@ -184,7 +184,7 @@ dictionary_t * dictionary(Short size) // return a dictionary big enough to hold 
 void initDict(dictionary_t * dict, Short n) // fill in dictionary template and allocate string table
 {
     dict->capacity = hashSize(n);
-    dict->table = (char**)allocate(dict->capacity * sizeof(char**));
+    dict->table = (const char**)allocate(dict->capacity * sizeof(char**));
     dict->adjunct = (Cell *)allocate(dict->capacity*sizeof(Cell));
     emptyDict(dict);
 }
@@ -217,7 +217,6 @@ void freeDict(dictionary_t * dict) // return previous tables and start anew
 // first one found in old is deleted from old and appended to new; continue till string is not in old
 void upsizeDict(dictionary_t * dict)
 {
-    BLACK_HOLE();
     Short index, last;
     dictionary_t old;
 
@@ -230,7 +229,7 @@ void upsizeDict(dictionary_t * dict)
     initDict(dict, old.capacity);               // get a new dictionary
 
     for (Short i=0; i<old.capacity; i++) {
-        char * string = old.table[i];
+        const char * string = old.table[i];
 
         if (used(string)) {
             while (true) { // relocate all strings that match
@@ -251,7 +250,7 @@ void upsizeDict(dictionary_t * dict)
 }
 
 // Usage
-Cell * dictInsert(char * string, dictionary_t * dict) // insert a string into the dictionary
+Cell * dictInsert(const char * string, dictionary_t * dict) // insert a string into the dictionary
 {
     Cell adjunct = 0, temp;
     Short index;
@@ -264,7 +263,7 @@ Cell * dictInsert(char * string, dictionary_t * dict) // insert a string into th
     while (used(dict->table[index])) {
         // if same, insert newer and push other deeper in the chain
         if (same(string, dict->table[index])) {
-            char *s = dict->table[index];
+            const char *s = dict->table[index];
             temp = dict->adjunct[index];
 
             dict->table[index] = string;
@@ -281,7 +280,7 @@ Cell * dictInsert(char * string, dictionary_t * dict) // insert a string into th
 
 }
 
-void dictAppend(char * string, dictionary_t * dict) // append a string to the dictionary
+void dictAppend(const char * string, dictionary_t * dict) // append a string to the dictionary
 {
     plusEntry(dict);
     dict->table[locateAppend(string, dict)] = string;
@@ -296,7 +295,7 @@ void dictAddKey(Cell address, dictionary_t * dict) // append a key to the dictio
 	*(Cell *)&dict->table[key] = address;
 }
 
-void dictDelete(char * string, dictionary_t * dict) // delete inserted string from dictionary
+void dictDelete(const char * string, dictionary_t * dict) // delete inserted string from dictionary
 {
     Short index = locate(string, dict);
 
@@ -309,7 +308,7 @@ void dictDelete(char * string, dictionary_t * dict) // delete inserted string fr
     }
 }
 
-char * dictFind(char * string, dictionary_t * dict) // find a string in the dict
+const char * dictFind(const char * string, dictionary_t * dict) // find a string in the dict
 {
     return dict->table[locate(string, dict)];
 }
@@ -319,7 +318,7 @@ Cell dictFindKey(Cell key, dictionary_t * dict) // find a key in the dict
 	return (Cell)dict->table[locateKey(key, dict)];
 }
 
-Cell * dictAdjunct(char * string, dictionary_t * dict) // return an associate cell for string
+Cell * dictAdjunct(const char * string, dictionary_t * dict) // return an associate cell for string
 {
     Short index = locate(string, dict);
 
@@ -342,7 +341,7 @@ Cell * dictAdjunctKey(Cell address, dictionary_t * dict) // return an associate 
 // Iterator access
 // must use dictFirst to initiate; then dictNext to get subsequent entries
 // end is detected when NULL string is returned from either function
-char * dictFirst(dictionary_t * dict)
+const char * dictFirst(dictionary_t * dict)
 {
 	dict->iter = 0;
 	if (used(dict->table[0]))
@@ -351,7 +350,7 @@ char * dictFirst(dictionary_t * dict)
 		return dictNext(dict);
 }
 
-char * dictNext(dictionary_t * dict)
+const char * dictNext(dictionary_t * dict)
 {
 	Short i = dict->iter;
 
@@ -383,3 +382,23 @@ char * dictNext(dictionary_t * dict)
     and not get out of order as the dicitonary fills up. This is the reason for zeroString as a
     place holder.
 */
+
+void dump_key_hashes(dictionary_t * dict) { // print each cell in dict with the
+// number of hops it takes to get to where it is
+    Short used = 0;
+    Short total = 0;
+    Short longest = 0;
+    for (Short i=0; i<dict->capacity; i++) {
+        Cell address = (Cell)dict->table[i];
+        if (address) {
+            used++;
+            locateKey(address, dict);
+            total += rehashes;
+            longest = rehashes > longest ? rehashes : longest;
+            printDec(1+rehashes); // note: rehashes is reset by this function
+        } else
+            print(". ");
+    }
+    print("\nused, free, rehashes, longest: ");
+     printDec(used),printDec(dict->free),printDec(total),printDec(longest);
+}

@@ -1,25 +1,31 @@
 // Floats
 Words
-	f.		cliFdot // ( n - )
-	pi		cliPi  // ( - n )
-	i>f		cliItof // ( n - n  )
-	f>i		cliFtoi  // ( n - n  )
-	fabs	cliFabs  // ( n - n  )
-	fexp	cliExp  // ( n - n  )
-	flog	cliLog  // ( n - n  )
-	fpow	cliPow  // ( n m - n  )
-	fneg	cliFneg  // ( n - n  )
-	f>		cliFgreater  // ( n m - flag  )
-	fsqrt	cliSqrt  // ( n - n  )
-	f+		cliFplus  // ( n m - n  )
-	f-		cliFminus  // ( n m - n  )
-	f*		cliFstar  // ( n m - m  )
-	f/		cliFslash  // ( n m - m  )
-	fsin	cliSin  // ( n -  n  )
-	fcos	cliCos  // ( n -  n  )
-	ftan	cliTan  // ( n -  n  )
-	fasin	cliAsin  // ( n -  n  )
-	facos	cliAcos  // ( n -  n  )
-	fatan	cliAtan  // ( n -  n  )
-	fatan2	cliAtan2  // ( n m - m  )
+	.f		cliFdot // ( f - )  print f as a floating point number
+	i>f		cliItof // ( i - f ) convert integer to 32 bit float
+	f>i		cliFtoi  // ( f - f  ) convert 32 bit float to integer
+	fabs	cliFabs  // ( f - f  ) get absolute value of float 
+	fneg	cliFneg  // ( f - f  ) reverse the sign of the float
+	f+		cliFplus  // ( f m - f  ) add two floats 
+	f-		cliFminus  // ( f m - f  ) subtract float m from f
+	f*		cliFstar  // ( f m - m  ) multiply two floats
+	f/		cliFslash  // ( f m - m  ) divide float f by float m
+	f>		cliFgreater  // ( f m - flag  ) flag is true if f is greater
+	pi		cliPi  // ( - f ) return 32 bit value for pi
+	sin		cliSin  // ( f -  f  ) calculate the sine of f
+	cos		cliCos  // ( f -  f  ) calculate the cosine of f
+	tan		cliTan  // ( f -  f  ) calculate the tangent of f
+	asin	cliAsin  // ( f -  f  ) calculate the inverse sine of f
+	acos	cliAcos  // ( f -  f  ) calculate the inverse cos of f
+	atan	cliAtan  // ( f -  f  ) calculate the inverse tan of f
+	atan2	cliAtan2  // ( f m - m  ) calculate the inverse tan of f/m
+	exp		cliExp  // ( f - f  ) calculate the value of e to the power of f 
+	ln		cliLn  // ( f - f  ) calculate the natural log of f 
+	log		cliLog  // ( f - f  ) calculate the log 10 of f 
+	pow		cliPow  // ( f m - f  ) calculate the power of f to m
+	sqrt	cliSqrt  // ( f - f  ) calculate the square root of f
+	cbrt	cliCbrt  // ( f - f  ) calculate the cube root of f
+End
+
+Constants
+	decimals decimals ( - a ) number of decimal places  access with @ !
 End

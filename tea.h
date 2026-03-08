@@ -10,15 +10,32 @@ extern "C" {
 #include "ttypes.h"
 #include "dictionary.h"
 
+#ifndef max
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef min
+#define min(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
+
 // resolve in application
-#define BLACK_HOLE() system_failure()
+#define BLACK_HOLE(reason) system_failure(reason)
+#define TE_LOOPED 1
+#define TE_UNDERRUN 2
+#define LATER_NULL 3
+#define ACTION_OVERRUN 4
+#define ACTION_NULL 5
+#define SFP_UNDERRUN 6
+#define IN_0 7
+#define TE_MISSING 8
+#define FS_FAILURE 9
 
-void system_failure(); // application defines system_failure();
+void system_failure(Long reason); // application defines system_failure();
 // void system_failure() { while (true); } // DEBUGGING
-
+// Note: safe() will fail for comma separated statements, use ;
 #define safe(code) 	\
 	ENTER_SAFE_REGION() \
-	code; \
+	code \
 	LEAVE_SAFE_REGION()
 
 #define outside(action) \
@@ -35,18 +52,24 @@ typedef struct TimeEvent {
 } TimeEvent;
 
 // time base
-Long get_uptime(); // seconds since startup; 136 year rollover
+uint32_t getUptime();
 Long getTime(void);    // ms time stamp; 49 day rollover
 
+// interval length of time before rollover is determined by the number of bits used for precision
+// for ONE_SECOND defined as 16384 ticks, this is 61us ticks with a maximum 32-14=18 bits of seconds
+//  18 bits of seconnds is 72.8h
+//  17 bits of seconds is 36.4h; more than a day; 15 bits for seconds or 32768 ticks or 30.5 us res
+//  16 bits of seconds is 18.2h
 // note use of 8 byte intermediate precision; accomodate range of values for ONE_SECOND
 #define usec(t) ((Long)(((Octet)(t)*ONE_SECOND) / 1000000))
 #define msec(t) ((Long)(((Octet)(t)*ONE_SECOND) / 1000))
-#define secs(t) msec(t * 1000)
-#define mins(t) secs(t*60)
-#define hours(t) mins(t*60)
+#define secs(t) msec((t) * 1000)
+#define mins(t) secs((t)*60)
+#define hours(t) mins((t)*60)
 // #define days(t) hours(t*24)  - only 72 hrs available
+#define to_usec(n) ((Long)((Octet)(n)*1000000/ONE_SECOND))
 #define to_msec(n) ((Long)((Octet)(n)*1000/ONE_SECOND))
-#define to_secs(n) (n/ONE_SECOND)
+#define to_secs(n) ((n)/ONE_SECOND)
 
 // CLI
 void ticks_ms();
@@ -56,7 +79,7 @@ void after(Long t, vector action);
 void in(Long t, vector action);
 
 // events
-typedef vector Event[1];
+extern Event alarmEvent;
 void when(Event e, vector a);
 void never(Event e);
 
@@ -92,15 +115,19 @@ void init_tea();
 
 #ifdef __GNUC__
     #define RE() record_event(__PRETTY_FUNCTION__)
+    #define RI() record_interrupt(__PRETTY_FUNCTION__)
 #else
     #define RE() record_event(__func__)
+    #define RI() record_interrupt(__func__)
 #endif
 
 #define RE1() record_event(FIRST_EVENT)
+// handy search and replace:  s/^([a-zA-Z][^)]+\) \{)/$1 RE();/
 
 void record_event(const char * e);
 void play_events();
 void record_event_off();
+void record_interrupt(const char * e); // only record e if in an interrupt
 
 #ifdef __cplusplus
 }

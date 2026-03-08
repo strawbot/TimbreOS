@@ -1,6 +1,6 @@
 // Generic stats counter for a file  Robert Chapman  Dec 15, 2017
 
-// CLOCK_MHZ and getTicks() are defined natively in project_defs.h per project
+// CLOCK_MHZ and sysTicks() are defined natively in project_defs.h per project
 #include "project_defs.h"
 
 #ifdef FOR_EACH_STAT
@@ -49,12 +49,12 @@ typedef int make_iso_compilers_happy;
 #endif
 
 // Time measures in microseconds
-#define startUS() Cell startingTime = getTicks()
-#define endUS() CONVERT_TO_US(getTicks() - startingTime)
+#define startUS() Cell startingTime = sysTicks()
+#define endUS() SYS_TO_US(sysTicks() - startingTime)
 #define maxUS(stat) maxStat(endUS(), stat)
-#define waitUS(n)  startUS(); while(US_TO_TICKS(n) > getTicks() - startingTime)
+#define waitUS(n)  startUS(); while(US_TO_SYS(n) > sysTicks() - startingTime)
 
 // Time measures in milliseconds
 #define startMS() startUS()
-#define endMS() CONVERT_TO_MS(getTicks() - startingTime)
+#define endMS() SYS_TO_MS(sysTicks() - startingTime)
 #define maxMS(stat) maxStat(endMS(), stat)

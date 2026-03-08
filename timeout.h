@@ -24,7 +24,8 @@ typedef struct {
 	Byte off;		// set to true to turn off timeout - reset by setting
 } Timeout;
 
-Long timeout_left(Timeout * to); // amount of time before due in ms
+Long timeout_left(Timeout * to); // amount of time before due in ticks
+// divide by msec(1) to convert to ms; or secs(1) to get seconds
 
 #define NEW_TO(name) Timeout name[1] /* use timeouts without & */
 
@@ -57,8 +58,10 @@ void startTimeout(Timeout *timer);
 void repeatTimeout(Timeout *timer);
 void timeoutWait(Cell time);
 void restartTimeout(Timeout *timer);
+void ms_delay(Cell ms);
 
 void showTime(void);
 void cliStartTime(void);
-void sdotms(Long time);
+void sdotms(Octet time);
+Octet utc_ms();
 Long cliEndTime(void);

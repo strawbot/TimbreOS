@@ -3,13 +3,15 @@
 
 #include "cli.h"
 #include "byteq.h"
+#include "tea.h"
 
 #include <string.h>
 #include <ctype.h>
 
 Event EmitEvent = {no_action};
+Event KeyEvent = {run_cli};
 
-// structures
+// structures; could use one end of a queue for data and the other end for return
 static QUEUE(DCELLS, dataStack);
 static QUEUE(RCELLS, returnStack);
 static BQUEUE(PAD_SIZE, padq); // safe place to format numbers
@@ -27,7 +29,7 @@ static Byte prompt[10] = { PROMPTSTRING };
 static Byte compiling = 0;
 static tcbody* tick;
 static tcode* ip;
-static Byte interpretError = 0;
+static Byte interpretError = 0, errors = 0;
 static header* wordlist = (header*)NULL; // list of words created from CLI
 
 static struct { // text input buffer for parsing
@@ -42,6 +44,8 @@ Headless(minusBranch);
 Headless(tor);
 
 // data stack
+#define TOP p(dataStack)
+
 Cell ret() /* m - */
 {
     return popq(dataStack);
@@ -78,13 +82,13 @@ void drop() /* n - */
 
 void dup() /* m - m m */
 {
-    pushq(p(dataStack), dataStack);
+    pushq(TOP, dataStack);
 }
 
 void over() /* m n - m n m */
 {
     Cell top = popq(dataStack);
-    Cell next = p(dataStack);
+    Cell next = TOP;
 
     pushq(top, dataStack);
     pushq(next, dataStack);
@@ -92,7 +96,7 @@ void over() /* m n - m n m */
 
 void questionDup() /* n - [n] n */
 {
-    if (p(dataStack) != 0)
+    if (TOP != 0)
         dup();
 }
 
@@ -120,13 +124,11 @@ void rfrom() /* - m */
 // logic
 #define binary(op)               \
     Cell top = popq(dataStack);  \
-    Cell next = popq(dataStack); \
-    pushq(next op top, dataStack)
+    writep(TOP op top, dataStack)
 #define binaryInts(op)           \
     Cell top = popq(dataStack);  \
-    Cell next = popq(dataStack); \
-    pushq((Cell)((Integer)next op(Integer) top), dataStack)
-#define unary(op) pushq(op popq(dataStack), dataStack)
+    writep((Cell)((Integer)TOP op(Integer) top), dataStack)
+#define unary(op) writep(op TOP, dataStack)
 
 void andOp() /* m n - p */
 {
@@ -181,18 +183,35 @@ void slashModOp() /* n \ m -- remainder \ quotient */
     Cell top = popq(dataStack);
     Cell next = popq(dataStack);
 
-    pushq(next % top, dataStack);
-    pushq(next / top, dataStack);
+    if (top != 0) {
+        pushq(next % top, dataStack);
+        pushq(next / top, dataStack);
+    } else {
+        pushq(0, dataStack);
+        pushq(0, dataStack);
+    }
+
 }
 
 void slashOp() /* n \ m -- quotient */
 {
-    binary(/);
+    Cell top = popq(dataStack);
+    Cell next = popq(dataStack);
+
+    if (top != 0)
+        top = next / top;
+    pushq(top, dataStack);
 }
 
 void modOp() /* n \ m -- remainder */
 {
-    binary(%);
+    Cell top = popq(dataStack);
+    Cell next = popq(dataStack);
+
+    if (top != 0)
+        top = next % top;
+
+    pushq(top, dataStack);
 }
 
 void starOp() /* n \ m -- p */
@@ -202,7 +221,7 @@ void starOp() /* n \ m -- p */
 
 void absOp() /* n -- n */
 {
-    if ((Integer)p(dataStack) < 0)
+    if ((Integer)TOP < 0)
         pushq((Cell)(-(Integer)popq(dataStack)), dataStack);
 }
 
@@ -220,12 +239,12 @@ void maxOp() /* n \ m -- p */
 void minOp() /* n \ m -- p */
 {
     Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
+    Cell next = TOP;
 
     if ((Integer)top < (Integer)next)
-        pushq(top, dataStack);
+        writep(top, dataStack);
     else
-        pushq(next, dataStack);
+        writep(next, dataStack);
 }
 
 // compare
@@ -245,13 +264,15 @@ void greaterThan() /* n \ m -- flag */
 }
 
 // memory
-void error();
+void error_occurred();
 
 void hereSay(Byte* space, Cell size)
 {
     hp = hpStart = space;
     hpEnd = space + size;
 }
+
+Long here_left() { return hpEnd - hp; }
 
 void here() /* -- addr */
 {
@@ -263,7 +284,7 @@ void allot(Cell n)
     if (hp + n + CUSHION < hpEnd)
         hp += n;
     else
-        error();
+        error_occurred();
 }
 
 void cliAllot()
@@ -277,15 +298,10 @@ void cComma() /* n -- */
     allot(1);
 }
 
-Cell align(Cell p) /* a -- a' */
-{
-    struct {
-        char y;
-        void* z;
-    } a;
-    Cell z = (Cell)&a.z - (Cell)&a.y - sizeof(a.y); /* 1 or 3 */
+#define ALIGNMENT 4
 
-    return (p + z) & ~z;
+Cell align(Cell p) { /* a -- a' */
+    return (p + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1);
 }
 
 void aligned()
@@ -304,7 +320,7 @@ void comma() /* n -- */
 
 void fetch() /* a -- n */
 {
-    pushq(*(Cell*)popq(dataStack), dataStack);
+    writep(*(Cell*)TOP, dataStack);
 }
 
 void store() /* n \ a -- */
@@ -334,9 +350,7 @@ void longStore() // lo \ hi \ a -
 
 void shortFetch() // a - n
 {
-    Short s = *(Short*)popq(dataStack);
-
-    pushq((Cell)s, dataStack);
+    writep((Cell)*(Short*)TOP, dataStack);
 }
 
 void shortStore() // n \ a -
@@ -349,9 +363,7 @@ void shortStore() // n \ a -
 
 void byteFetch() /* a -- c */
 {
-    Byte c = *(Byte*)popq(dataStack);
-
-    pushq((Cell)c, dataStack);
+    writep((Cell)*(Byte*)TOP, dataStack);
 }
 
 void byteStore() /* c \ a -- */
@@ -415,12 +427,14 @@ void safeEmit(Byte c)
         if (alreadyHere) // support blocking on first writer but dump after that
             return;
         alreadyHere = true;
-        while (fullbq(emitq))
+        while (fullbq(emitq)) {
             OUTPUT_BLOCKED; // sit here until sent
+            action_slice();
+        }
         alreadyHere = false;
     }
-    safe(pushbq(c, emitq));
-    now(*EmitEvent);
+    safe( pushbq(c, emitq); )
+    (*EmitEvent)();
 }
 
 void emitByte(Byte c)
@@ -444,8 +458,7 @@ void emitOp() /* char -- */
 
 void cursorReturn()
 {
-    emitByte(10);
-    emitByte(13);
+    emitByte('\n');
 }
 
 void maybeCr()
@@ -477,6 +490,11 @@ void type() /* addr \ count -- */
 void stringLength() /* a - c */
 {
     lit(strlen((char*)ret()));
+}
+
+void dot_quote() { /* s - */
+    lit(strlen((char*)TOP));
+    type();
 }
 
 void spaces(int n)
@@ -533,7 +551,7 @@ void convertNumber() /* n -- n */
 {
     do {
         convertDigit();
-    } while (p(dataStack) != 0);
+    } while (TOP != 0);
 }
 
 void sign() /* m \ n -- n */
@@ -659,6 +677,12 @@ void dots() /* -- */
     }
 }
 
+void show_rstack() {
+    msg(" return depth: ");
+    lit(queryq(returnStack));
+    dot();
+}
+
 Byte getBase()
 {
     return base;
@@ -674,6 +698,7 @@ void setBase(Byte b)
 void setPrompt(const char* string)
 {
     strncpy((char*)prompt, string, sizeof(prompt) - 1);
+    prompt[sizeof(prompt) - 1] = 0;
 }
 
 void dotPrompt()
@@ -726,14 +751,33 @@ void lii() /* -- n */ // inline literals
     lit(ip++->lit);
 }
 
-void colonii() // macro threader
-{
-    tcode* save = ip;
-
+// should return stack be used for loops as well as return?
+// consider a different queue and better integration
+// with ip and tick.
+// nest:  ipstack <- ++ip <- tick <- ip->call
+// unnest: 
+// with multiple ipstacks, multiple macros could be run
+// this might be the way to integrate TEA and macros
+// multiple actions at different times
+// nap model is a hold back but perhaps simpler for user
+// limited to single machines
+// use TEA for multiple samples and reports
+// Eliminate tick by incrementing ip before getting next item
+//  instead of copying to tick for cii,vii, they can use ip
+// stuffing to ipStack would be queueing actions.
+void colonii() { // macro threader
+    pushq((Cell)ip, returnStack);
     ip = tick->list;
-    while ((tick = ip++->call) != 0)
-        tick->ii();
-    ip = save;
+}
+
+bool executing() {
+    if (ip && ip->lit)
+        executeIt(ip++->call);
+    else if (queryq(returnStack))
+        ip = (tcode*)popq(returnStack);
+    else
+        return false;
+    return true;
 }
 
 void branch()
@@ -751,7 +795,7 @@ void zeroBranch() /* f -- */
 
 void minusBranch()
 {
-    Cell i = pullq(returnStack);
+    Cell i = popq(returnStack);
 
     if (i) {
         pushq(--i, returnStack);
@@ -765,6 +809,11 @@ void zeroTib()
 {
     tib.in = 0;
     tib.buffer[tib.in] = 0;
+}
+
+void end_tib() {
+    tib.buffer[tib.in] = 0;
+    tib.in = 0;
 }
 
 Byte peek()
@@ -812,6 +861,20 @@ void comment() /* char -- */ // scan input for end comment or 0
     tib.in = input - tib.buffer;
 }
 
+Long hexscii_convert(Byte *hs, Byte *hex) { // "AABBCC" -> 0xAA,0xBB,0xCC
+    // convert characters to hex nibbles till end found
+    Byte wasbase = base;
+    base = 16;
+    Byte *end = hs;
+    while (toDigit(end))  end++;
+    base = wasbase;
+    // fold nibbles into bytes till end
+    Byte n = 0;
+    for (; hs < end; hs += 2, n++)
+        *hex++ = hs[0] << 4 | hs[1];
+    return n;
+}
+
 // dictionary words
 /* CLI built words use this header structure:
  * [ link | name | II | list of other ticks ]
@@ -832,7 +895,7 @@ header* searchWordlist(Byte* cstring)
         Byte length = strlen((char*)cstring);
 
         if ((name[0] & ~IMMEDIATE_BITS) == length) // smudged bit prevents matching bad headers
-            if (0 == memcmp(&name[1], cstring, length))
+            if (0 == strcasecmp((char *)&name[1], (char *)cstring))
                 break;
         list = list->list;
     }
@@ -845,7 +908,7 @@ Short searchNames(Byte* cstring, PGM_P dictionary) // return name number or 0 if
     Short index = 1;
 
     while (pgm_read_byte(dictionary)) {
-        if (strcmp_P(cstring, dictionary) == 0)
+        if (strcasecmp((char *)cstring, dictionary) == 0)
             return index;
         index++;
         dictionary += strlen_P(dictionary) + 1;
@@ -881,7 +944,7 @@ Byte searchDictionaries(Byte* cstring, tcbody** t) // look through dictionaries 
 tcbody* link2tick(header* link)
 {
     Byte length = link->name[0] & ~HEADER_BITS;
-    Cell t = align((Cell)&link->name[1 + length]);
+    Cell t = align((Cell)&link->name[1 + length + 1]); // bits, terminator
 
     return (tcbody*)t;
 }
@@ -900,12 +963,15 @@ Byte lookup(Byte* cstring, tcbody** t)
 }
 
 // Error recovery
-void error()
+void error_occurred()
 {
     msg((char*)&hp[1]);
     msg("<- eh?");
-    interpretError = 1;
+    errors = interpretError = 1;
 }
+
+void zero_errors() { errors = 0; }
+Byte get_errors() { return errors; }
 
 // Number conversion
 Byte checkBase(Byte* cstring) // check for prefixes: 0X, 0x, 0C, 0c, 0B or 0b
@@ -951,7 +1017,7 @@ Cell signDigits(Byte* cstring, bool sign) // convert string to number according 
     Cell n = 0;
 
     if (*cstring == 0) {
-        error();
+        error_occurred();
         return 0;
     }
 
@@ -972,7 +1038,7 @@ Cell signDigits(Byte* cstring, bool sign) // convert string to number according 
                 while (*--cstring != '.') {
                     c = *cstring;
                     if (!toDigit(&c)) {
-                        error();
+                        error_occurred();
                         return n;
                     }
                     num.f = (num.f + c) / base;
@@ -983,7 +1049,7 @@ Cell signDigits(Byte* cstring, bool sign) // convert string to number according 
                 return num.n;
             }
 #endif
-            error();
+            error_occurred();
             return n;
         }
         n = n * base + c;
@@ -1149,7 +1215,7 @@ void interpret()
         skip(SPACE);
         if (peek() == 0) return;
 
-        tcbody* t;
+        tcbody* t = NULL;
         Byte headbits;
         Byte* cstring;
 
@@ -1184,71 +1250,141 @@ void autoEchoOff()
 {
     keyEcho = false;
 }
+bool autoEchoIs() { return keyEcho; }
 
 void emptyKeyq()
 {
     zerobq(keyq);
 }
 
-void keyIn(Byte c)
-{
-    pushbq(c, keyq);
+static enum {TIB_FILL, TIB_LINE} tib_state = TIB_FILL;
+static Long naptime = 0;
+
+void nap_for() { naptime = ret(); }
+
+static void parse_keyq() {
+	while (qbq(keyq)) {
+		Byte key = pullbq(keyq);
+
+		switch (key) {
+		case LFEED: // ignore line feeds
+			key = 0;
+			break;
+		case BSPACE:
+		case DELETE: // backspace or delete
+			if (tib.in == 0) {
+				tib_state = TIB_FILL;
+				key = 0;
+			} else
+				tib.in -= 1;
+			break;
+		case CRETURN:
+			if (keyEcho)
+				cursorReturn();
+			// fall through
+		case 0:
+			outp = 0;
+			tib_state = TIB_LINE;
+			end_tib();
+			return;
+		default:
+			if (ESCAPE < key && key < DELETE && tib.in < LINE_LENGTH) {
+				tib.buffer[tib.in++] = key;
+				tib_state = TIB_FILL;
+			} else
+				key = BEEP;
+			break;
+		}
+
+		if (keyEcho && key)
+			emitByte(key);
+	}
 }
 
-void cli()
-{
-    if (qbq(keyq) == 0)
-        return;
+void no_prompt() { lineEcho = false; }
 
-    Byte key = pullbq(keyq);
-
-    switch (key) {
-    case LFEED: // ignore line feeds
-        return;
-    case BSPACE:
-    case DELETE: // backspace or delete
-        if (tib.in == 0)
-            return;
-        tib.in -= 1;
-        break;
-    case 0: // end of line
-    case CRETURN:
-        outp = 0;
-        if (lineEcho)
-            spaces(1);
-        tib.buffer[tib.in] = 0;
-        tib.in = 0;
-        interpret();
+static void interpret_one() {
+    skip(SPACE);
+    switch(peek()) {
+    case 0:
         zeroTib();
-        if (lineEcho || key == CRETURN)
-            dotPrompt();
-        lineEcho = keyEcho; // restore key echoing at end of each line
-        return;
-    default:
-        if (key < ESCAPE)
-            key = BEEP;
-        else if (tib.in < LINE_LENGTH) { // check in not out!
-            tib.buffer[tib.in] = key;
-            tib.in++;
-        } else
-            key = BEEP;
+        tib_state = TIB_FILL;
+        if (lineEcho)
+            later(dotPrompt);
+        else
+        	lineEcho = true;
         break;
+    case QUOTE:
+        quote();
+        break;
+    default: {
+        tcbody* t = NULL;
+        Byte* cstring = parseWord(SPACE);
+        Byte headbits = lookup(cstring, &t);
+
+        if (headbits != 0)
+            headbits == compiling ? compileIt(t) : executeIt(t);
+        else {
+            Cell n = stringNumber((char *)cstring);
+
+            if (interpretError)
+                quit();
+            else
+                literal(n);
+        }
+        } break;
     }
-    if (lineEcho)
-        emitByte(key);
 }
 
-void listenQuietly(Byte * string, Byte length) {
-    while (length--)
-        keyIn(*string++);
-    lineEcho = false; // keep line echo quiet
+bool interpreting() {
+	if (tib_state == TIB_FILL)
+		parse_keyq();
+	if (tib_state == TIB_LINE)
+		interpret_one();
+	return qbq(keyq) || peek() || tib_state == TIB_LINE;
 }
+
+static enum {CLI_OFF, CLI_EXECUTING, CLI_INTERPRETING, CLI_NAPPING, CLI_RUNNING} cli_state = CLI_OFF;
+
+static void cli() {
+    if (naptime) {
+        cli_state = CLI_NAPPING;
+        after(msec(naptime), cli);
+        naptime = 0;
+    } else if (executing()) {
+        cli_state = CLI_EXECUTING;
+    	later(cli);
+    } else if (interpreting()) {
+        cli_state = CLI_INTERPRETING;
+		later(cli);
+    } else
+        cli_state = CLI_OFF;
+}
+
+void run_cli() {
+    if (cli_state == CLI_OFF) {
+        cli_state = CLI_RUNNING;
+        later(cli);
+    }
+}
+
+void keyIn(Byte c) {
+    if (c == ESCAPE)
+        later(resetCli);
+    else
+        pushbq(c, keyq);
+    now(*KeyEvent);
+}
+
+void get_key() { lit( qbq(keyq) ? pullbq(keyq) : 0 ); } // CLI tools
+void ask_key() { lit(qbq(keyq)); }
 
 void evaluate(Byte* string)
 {
     zeroTib(); // clear out any network debris - assure command execution
     outp = 0;
     strncpy((char *)tib.buffer, (char *)string, LINE_LENGTH);
+    tib.buffer[LINE_LENGTH] = 0;
     interpret();
     zeroTib();
 }
@@ -1264,7 +1400,7 @@ static void makeHeader()
     wordlist = (header*)ret();
     parseWord(SPACE);
     *hp |= NAME_BITS;
-    allot((*hp & ~HEADER_BITS) + 1);
+    allot((*hp & ~HEADER_BITS) + 2); // header bits, trailing 0
     aligned();
 }
 
@@ -1341,10 +1477,14 @@ void words() // list user words and system dictionaries
 }
 
 // reset all
-void resetCli()
-{
+bool cli_is_off() { return cli_state == CLI_OFF; }
+
+void resetCli() {
+    naptime = 0;
+    cli_state = CLI_OFF;
     hereSay(hpStart, hpEnd - hpStart);
     wordlist = NULL;
+    ip = NULL;
     decimal();
     quit();
 }
@@ -1363,4 +1503,20 @@ Cell getCliResult() { return result; }
 bool isCompiling()
 {
 	return compiling != 0;
+}
+
+void init_cli() {
+    namedAction(colonii);
+    namedAction(lii);
+    namedAction(vii);
+    namedAction(cii);
+    namedAction(branch);
+    namedAction(zeroBranch);
+    namedAction(minusBranch);
+    namedAction(semiColon);
+	namedAction(cli);
+	namedAction(dotPrompt);
+    namedAction(compileNext);
+    namedAction(compileFor);
+    resetCli();
 }

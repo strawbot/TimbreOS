@@ -1,11 +1,12 @@
 // Header file for CLI
 
-#include "tea.h"
+#include "ttypes.h"
 
 #ifndef _CLI_H_
 #define _CLI_H_
 
 // parameters
+#if 0
 #ifndef CLI_PARAMETERS  // override by defining
 #define CLI_PARAMETERS
 
@@ -20,9 +21,6 @@
 #define HERE_SPACE 1024 // small here space
 #define OUTPUT_BLOCKED output() // deal with by running machines
 #endif
-
-#ifndef safe
-#define safe(atomic)	atomic
 #endif
 
 void output();
@@ -64,6 +62,7 @@ extern const struct constantCall constantbodies[];
 extern const vector immediatebodies[];
 
 extern Event EmitEvent; // called when character emitted
+extern Event KeyEvent; // called when key entered
 
 // These are character arrays with a zero between strings; C inserts a final string zero - But only if there is a string
 extern PROGMEM char wordnames[];
@@ -78,6 +77,7 @@ void absOp();
 Cell align(Cell p);
 void allot(Cell n);
 void andOp();
+bool autoEchoIs();
 void autoEchoOff();
 void autoEchoOn();
 void bin();
@@ -87,8 +87,8 @@ void byteFill();
 void byteMove();
 void byteStore();
 void cComma();
-void cii();
-void cli();
+bool cli_is_off();
+void run_cii();
 void colonii();
 void comma();
 void comment();
@@ -105,32 +105,37 @@ void dotd();
 void dotPrompt();
 void dotr();
 void drop();
-void dup();
+// void dup(); // conflict with <unistd.h>
 void emitByte(Byte c);
 void emitOp();
+void emptyKeyq();
 void endNumberConversion();
 void equals();
+void error_occurred();
 void evaluate(Byte *string);
 void execute();
 void executeIt(tcbody * t);
 void fetch();
+Byte get_errors();
 Byte getBase();
 int getCursor();
 void greaterThan();
 void here();
 void hereSay(Byte * space, Cell size);
 void hex();
+Long hexscii_convert(Byte *hs, Byte *hex);
 void hold();
 void interpret();
+bool interpreting();
 void keyIn(Byte c);
 void leftBracket();
 void lessThan();
 void lii();
-void listenQuietly(Byte * string, Byte length);
 void lit(Cell n);
 void literal(Cell n);
 void longFetch();
 void longStore();
+Byte lookup(Byte* cstring, tcbody** t);
 void maxOp();
 void maybeCr();
 void minOp();
@@ -139,6 +144,7 @@ void minusOp();
 void modOp();
 void msg(const char * m);
 void negateOp();
+void no_prompt();
 void notifyEmit();
 void notOp();
 void oct();
@@ -150,11 +156,13 @@ void plusBits();
 void plusOp();
 char * postQuote();
 void questionDup();
+void quote();
 void rat();
 void resetCli();
 Cell ret();
 void rfrom();
 void righBracket();
+void run_cli();
 void safeEmit(Byte c);
 header * searchWordlist(Byte * string);
 void setBase(Byte b);
@@ -174,6 +182,7 @@ void store();
 void stringLength();
 Cell stringNumber(char * cstring);
 void swap();
+void nap_for();
 void tor();
 bool toDigit(Byte* n);
 void type();
@@ -182,6 +191,7 @@ void word();
 void words();
 void xorOp();
 void zeroTib();
+void zero_errors();
 
 void compileIf();
 void compileEndif();

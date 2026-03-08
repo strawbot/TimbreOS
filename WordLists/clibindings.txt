@@ -4,7 +4,7 @@ Constants
 End
 
 Words
-	help	help  // print words with one line help; allow wild card filtering; parenthesis show ( args - results ) and precede the command; angle brackets show arguments that follow commands
+	help	help  // <filtering> print words with one line help; allow wild card <filtering>; parenthesis show ( args - results ) and precede the command; angle brackets show arguments that follow commands
 	words	words // list all words in dictionary
 End
 
@@ -69,10 +69,10 @@ Words // IO
 	bin		bin // switch to binary numbers
 	oct		oct // switch to octal numbers
 	hold	hold // ( c - ) hold a character in number sequence
-	<#		startNumberConversion // inititiate a number sequence
+	<#		startNumberConversion // initiate a number sequence
 	#		convertDigit // ( n - n' ) convert a digit from n
 	#s		convertNumber // ( n - 0 ) convert all digits in n
-	sign	sign // ( n - ) prepend sign to number sequence if n is negative
+	sign	sign // ( m n - n ) prepend sign to number sequence if m is negative
 	#>		endNumberConversion // ( n - a c ) finish number sequence and return address and count
 	.		dot // ( n - ) print n in current number base
 	.r		dotr // ( m n - ) print m in right field of n digits
@@ -82,18 +82,21 @@ Words // IO
 	.s		dots // print number of items on data stack and items
 	dump	dump // ( a n - ) dump n 16-byte rows of memory starting at address a
 	resetcli	resetCli // reset cli including removing all macros
+//	when cli_when // ( action \ event -- )  store action in event
+//	after cli_after // ( action \ time -- )  create time event for action
+//	later cli_later // ( action -- )  queue up action for later
+//  ' cli_tick // ( - action )  <name>  return named action on the stackd
 End
 
 Words // definitions
-	words		words // list all words in dictionary
-	:			colon // start a macro definition
-	constant	constant // ( n - ) give n a name
-	variable	variable // ( n - ) give n a place to be stored at a name
-	]			righBracket // enter macro mode
+	:			colon // <string> start a macro definition named string
+	constant	constant // ( n - ) <string> give n a name
+	variable	variable // ( n - ) <string> give n a place to be stored at a name
+	]			righBracket // enter macro build
 End
 
 Immediates // compiling
-	[		leftBracket // exit macro mode
+	[		leftBracket // exit macro build
 	(		comment // start of comment till end of line or )
 	if		compileIf // ( n - ) execute following code if top of stack is non-zero
 	else	compileElse // otherwise part of an if statement
@@ -106,5 +109,5 @@ Immediates // compiling
 	for		compileFor // ( n - ) start of a loop which runs n times
 	next	compileNext // end of a for loop
 	exit	compileExit // exit macro
-	;		semiColon // end a macro
+	;		semiColon // end a macro build
 End

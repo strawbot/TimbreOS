@@ -73,6 +73,7 @@ Cell sizebq(Cell *q);
 bool fullbq(Cell *q);
 void setsizebq(Cell size, Cell * q);
 void wrappedbq(Cell * q);
+Byte lastbq(Cell * q);
 
 // use queue structure as an array
 #define BARRAY(size, name) BQUEUE(size,name)

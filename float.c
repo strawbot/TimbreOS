@@ -1,5 +1,10 @@
 // Float support for CLI  Robert Chapman  Mar 5, 2017
-
+// For double precision, use a parallel array of doubles, enough for the whole stack
+// Data stack contains indexes into double array. All float operations work on the
+// indexed values. f>i and i>f change the index back to an integer.
+// or pointers instead of indexes. dup would be an issue since the pointer is duplicated
+// and not the value.
+// maybe the stack becomes pointers or double sized.
 #include "cli.h"
 #include "printers.h"
 #include <stdio.h>
@@ -8,6 +13,8 @@
 // tools
 #define floatop(op) putFloat(op(getFloat()))
 #define float2op(op) float m = getFloat(); float n = getFloat(); putFloat(n op m);
+
+Long decimals = 4;
 
 float getFloat()
 {
@@ -37,7 +44,7 @@ void cliFdot()
     	Cell  n;
     }num = {.n = ret()};
 
-	printFloat(num.f, 4);
+	printFloat(num.f, decimals);
 }
 
 // ops
@@ -46,7 +53,7 @@ void cliPi()
 	static float pi = 0;
 	
 	if (pi == 0)
-		pi = (float)4.0*(float)atan(1.0);
+		pi = 4 * atan(1.0);
 	putFloat(pi);
 }
 
@@ -62,7 +69,7 @@ void cliFtoi()  /* n -- n */
 	float f = getFloat();
 	
 	f += (f < 0.0) ? -0.5 : 0.5;  // round up or down
-	putFloat(f);
+	lit((Integer)f);
 }
 
 void cliFabs()  /* n -- n */
@@ -76,6 +83,11 @@ void cliExp()  /* n -- n */
 }
 
 void cliLog()  /* n -- n */
+{
+	floatop(log10);
+}
+
+void cliLn()  /* n -- n */
 {
 	floatop(log);
 }
@@ -104,6 +116,11 @@ void cliFgreater()  /* n m -- FLAG */
 void cliSqrt()  /* n -- n */
 {
 	floatop(sqrt);
+}
+
+void cliCbrt()  /* n -- n */
+{
+	floatop(cbrt);
 }
 
 void cliFplus()  /* n m -- n */

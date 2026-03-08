@@ -1,23 +1,28 @@
 // Timeouts  Rob Chapman  Apr 14, 2011
-
+// Note: time is given in ticks and must be converted to milliseconds to
+//       work with getTime() which is in milliseconds and 32 bit. This
+//       puts a limit on timeout to 49 days
+//       For 15 bit ticks per second, 32 bits is 128K seconds or 36h
+#include "timestamp.h"
 #include "timeout.h"
 #include "cli.h"
+#include "tea.h"
 
 bool checkTimeout(Timeout *timer) // see if it has timed out
 {
-	if (timer->off == true) // see if it is enalbed
-		return true; // a timer off is condidered don
+	if (timer->off == true) // see if it is enabled
+		return true; // a timer off is condidered done
 	
 	Integer elapsed = getTime() - timer->timeset;
 	Integer interval = (Integer)timer->timeout;
-
+// unit test the condition where ms rollover is inside timeout interval
 	return (timer->off = elapsed >= interval);
 }
 
 void setTimeout(Cell time, Timeout *timer) // set the timeout time and turn on the timeout
 {
 	timer->timeset = getTime(); // not set here to avoid wraparound issues
-	timer->timeout = time;
+	timer->timeout = to_msec(time);
 	timer->off = false;
 }
 
@@ -59,13 +64,19 @@ void timeoutWait(Cell time) // timed delay loop
 		action_slice();
 }
 
-Long timeout_left(Timeout * to) { // amount of time before due in ms
+void ms_delay(Cell ms) {
+	NEW_TO(timer);
+
+	setTimeout(ms, timer);
+	while (!checkTimeout(timer));
+}
+
+Long timeout_left(Timeout * to) { // amount of time before due in ticks
 	if (!to->off) {
-		Long now = getTime();
-		Long due = to->timeset + to->timeout;
+		Long passed = getTime() - to->timeset;
 			
-		if (due > now)
-			return due - now;
+		if (passed < to->timeout)
+			return to->timeout - passed;
 	}
 	return 0;
 }
@@ -81,9 +92,9 @@ void showTime(void)
 	printDec(getTime());
 }
 
-void sdotms(Long time)
+void sdotms(Octet time)
 {
-	Long ms = time%1000;
+	Short ms = time%1000;
 
 	printDec0(time/1000);
 	print(".");
