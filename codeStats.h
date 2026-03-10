@@ -3,6 +3,9 @@
 // CLOCK_MHZ and sysTicks() are defined natively in project_defs.h per project
 #include "project_defs.h"
 
+#ifndef CODESTATS_H
+#define CODESTATS_H
+
 #ifdef FOR_EACH_STAT
 /*
  use to increment stat counters within code to find out which paths are being used
@@ -58,3 +61,5 @@ typedef int make_iso_compilers_happy;
 #define startMS() startUS()
 #define endMS() SYS_TO_MS(sysTicks() - startingTime)
 #define maxMS(stat) maxStat(endMS(), stat)
+
+#endif

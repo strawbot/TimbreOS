@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "clocks.h"
+#include <Board/clocks.h>
 #include "project_defs.h"
 #include "ttypes.h"
 #include "dictionary.h"

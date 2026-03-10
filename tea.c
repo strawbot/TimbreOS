@@ -1,11 +1,11 @@
 // Time Event Action interface
 
+#include <Board/clocks.h>
 #include "tea.h"
 #include "queue.h"
 #include "printers.h"
 #include <stdlib.h>
 #include <string.h>
-#include "clocks.h"
 #include "project_defs.h"
 
 #define MIN_DELTA 2 // minimum worth queueing up, ~200us
@@ -391,7 +391,7 @@ void dumpTeaNames() {
 }
 
 // ns 32 bit clock @ native MHz. Clock.h
-#include "codeStats.c"
+#include "codeStats.h"
 
 static int indexCompare(const void *a,const void *b) {
 	Short *x = (Short *) a;
