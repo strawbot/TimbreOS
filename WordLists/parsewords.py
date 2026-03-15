@@ -78,13 +78,23 @@ helpCheader = '''\
 #include <string.h>
 #include "printers.h"
 #include "cli.h"
+#include <ctype.h>
 
 bool visible_word(char *s);
 
 static char *filter;
 
+const char *strcasestr_r(const char *haystack, const char *needle) {
+    size_t nlen = strlen(needle);
+    if (nlen == 0) return haystack;
+    for (; *haystack; haystack++) {
+        if (strncasecmp(haystack, needle, nlen) == 0) return haystack;
+    }
+    return NULL;
+}
+
 static void printif(char *s) {
-	if (strcasestr(s, filter) != NULL && visible_word(s))
+	if (strcasestr_r(s, filter) != NULL && visible_word(s))
 		print(s);
 }
 
