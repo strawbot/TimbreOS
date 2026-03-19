@@ -4,6 +4,7 @@
 #include "cli.h"
 #include "byteq.h"
 #include "tea.h"
+#include "printers.h"
 
 #include <string.h>
 #include <ctype.h>
@@ -1519,4 +1520,6 @@ void init_cli() {
     namedAction(compileNext);
     namedAction(compileFor);
     resetCli();
+    print("\n"CLI_TITLE);
+    later(dotPrompt);
 }
