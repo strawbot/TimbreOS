@@ -547,7 +547,7 @@ void play_events() {
 		if (t != last) {
 			flush(), maybeCr();
 			if (fe)
-				fe = false, sdotms(utc_ms() - (getTime() - zero));
+				fe = false;
 			else
 				print(" +"), printDec(t - zero);
 			printChar(' ');
