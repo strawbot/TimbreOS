@@ -134,7 +134,7 @@ void printFloat0(float f, int n) {
         print(".");
         Long multiplier = 1;
         for(Byte i=0; i++<n;)  multiplier *= 10;
-        f = f * multiplier + .9;
+        f = f * multiplier + .5;
         dotnb(n,n,(Cell)f,10);
     }
 }
