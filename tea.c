@@ -341,7 +341,7 @@ void actor(vector action, const char * name) { // give name to action
 		dictAddKey(key, &teatimes);
 		dictAddKey(key, &teanames);
 		*dictAdjunctKey(key, &teanames) = (Cell)name;
-	} else if (cname[0] == 0 ) { // only report if no pending report
+	} else if (cname[0] != 0 ) { // only report if there is a name
 		strncpy(cname, name, 31);
 		later(bad_name);
 	}

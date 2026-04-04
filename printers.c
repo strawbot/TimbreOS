@@ -14,6 +14,8 @@ void print(const char *message) { msg((char *)message); }
 
 void printCr(void) { print("\n"); }
 
+void printChar(unsigned char ch) { emitByte(ch); }
+
 void tabTo(int n) {
     int len = n - getCursor();
     if (len > 0)
@@ -101,8 +103,6 @@ void printnHex(unsigned int digits, unsigned int n) {
     dotnb((Byte)digits, (Byte)digits, n, 16);
 }
 
-void printChar(unsigned char ch) { emitByte(ch); }
-
 void printHex(unsigned int hex) {
     printnHex(sizeof(Cell) * 2, hex);
     printChar((Byte)' ');
@@ -136,8 +136,10 @@ void printFloat0(float f, int n) {
             frac -= multiplier;
         }
         printDec0(intPart);
-        print(".");
-        dotnb(n,n,(Cell)frac,10);
+        if (n > 0) {
+            print(".");
+            dotnb(n,n,(Cell)frac,10);
+        }
     }
 }
 void printFloat(float f, int n) { printFloat0(f, n); print(" "); }
