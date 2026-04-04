@@ -43,7 +43,10 @@ void te_lists() {
 		else
 			print("end");
 	}
-	print("\ntodo, done: "), printDec(te_todo.next - tes), printDec(te_done.next - tes);
+	print("\ntodo: ");
+	if (te_todo.next) printDec(te_todo.next - tes); else print("null");
+	print("  done: ");
+	if (te_done.next) printDec(te_done.next - tes); else print("null");
 }
 
 static void verify_todo() {
@@ -333,19 +336,19 @@ static char cname[32] = {0};
 static void bad_name() { print("!"),print(cname),print("  check c name "); cname[0] = 0; }
 
 void actor(vector action, const char * name) { // give name to action
-	Cell key = 0xFFFFFFFC & ((Cell)action + 1);
+	Cell key = ~(Cell)3 & ((Cell)action + 1);
 	if (dictFindKey(key, &teanames) == 0) {
 		dictAddKey(key, &teatimes);
 		dictAddKey(key, &teanames);
 		*dictAdjunctKey(key, &teanames) = (Cell)name;
-	} else if (cname[0] != 0 ) {
+	} else if (cname[0] == 0 ) { // only report if no pending report
 		strncpy(cname, name, 31);
 		later(bad_name);
 	}
 }
 
 void printActionName(Cell key) {
-	key = 0xFFFFFFFC & (key+1);
+	key = ~(Cell)3 & (key+1);
 	char ** name = (char **)dictAdjunctKey(key, &teanames);
 	if (name && name[0] != 0)
 		print(*name);
@@ -552,8 +555,7 @@ void play_events() {
 				print(" +"), printDec(t - zero);
 			printChar(' ');
 			tabTo(8);
-		} else { 
-			last = t;
+		} else {
 			print("  ");
 		}
 		print(e);

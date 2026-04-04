@@ -18,6 +18,7 @@ void initDict(dictionary_t * dict, Short n);
 void freeDict(dictionary_t * dict);
 void emptyDict(dictionary_t * dict);
 void upsizeDict(dictionary_t * dict);
+void setUpsize(bool flag, dictionary_t * dict);
 
 Cell * dictInsert(const char * string, dictionary_t * dict);
 void dictAppend(const char * string, dictionary_t * dict);

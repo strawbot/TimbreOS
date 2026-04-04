@@ -38,11 +38,6 @@ void system_failure(Long reason); // application defines system_failure();
 	code \
 	LEAVE_SAFE_REGION()
 
-#define outside(action) \
-	pushq((Cell)action, outsideq), \
-	critical_action()
-// void critical_action() { set_critical_interrupt(true); }
-
 // time
 typedef struct TimeEvent {
     struct TimeEvent *next;

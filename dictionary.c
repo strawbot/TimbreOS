@@ -227,6 +227,7 @@ void upsizeDict(dictionary_t * dict)
     old.upsize = dict->upsize;
 
     initDict(dict, old.capacity);               // get a new dictionary
+    dict->upsize = old.upsize;                  // preserve upsize flag
 
     for (Short i=0; i<old.capacity; i++) {
         const char * string = old.table[i];
@@ -241,6 +242,7 @@ void upsizeDict(dictionary_t * dict)
                 last = locateAppend(string, dict); // append to new dict
                 dict->table[last] = string;
                 dict->adjunct[last] = old.adjunct[index];
+                dict->free--;                       // track transferred entries
 
                 old.table[index] = zeroString;      // remove from old dict
             }

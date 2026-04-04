@@ -10,12 +10,11 @@
 
 bool checkTimeout(Timeout *timer) // see if it has timed out
 {
-	if (timer->off == true) // see if it is enabled
-		return true; // a timer off is condidered done
+	if (timer->off == true) // see if it is disabled
+		return true; // a disabled timer is considered done
 	
 	Integer elapsed = getTime() - timer->timeset;
 	Integer interval = (Integer)timer->timeout;
-// unit test the condition where ms rollover is inside timeout interval
 	return (timer->off = elapsed >= interval);
 }
 
@@ -64,11 +63,11 @@ void timeoutWait(Cell time) // timed delay loop
 		action_slice();
 }
 
-void ms_delay(Cell ms) {
+void ms_delay(Cell ms) { // meant as a blocking delay
 	NEW_TO(timer);
 
 	setTimeout(ms, timer);
-	while (!checkTimeout(timer));
+	while (!checkTimeout(timer)) {}
 }
 
 Long timeout_left(Timeout * to) { // amount of time before due in ticks

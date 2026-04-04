@@ -16,13 +16,10 @@ void printCr(void) { print("\n"); }
 
 void tabTo(int n) {
     int len = n - getCursor();
-    if (len > 0) {
-        char spaces[len + 1];
-        for (Short i = 0; i < len; i++)  spaces[i] = ' ';
-        spaces[len] = 0;
-        print(spaces);
-    } else // if -ve use backspaces
-        print(" ");
+    if (len > 0)
+        while (len-- > 0) printChar(' ');
+    else
+        printChar(' ');
 }
 
 void cli_tabTo() { tabTo(ret()); }
@@ -129,13 +126,18 @@ void printFloat0(float f, int n) {
             print("-");
             f = -f;
         }
-        printDec0((int)f);
-        f = f - (int)f;
-        print(".");
+        Long intPart = (Long)f;
+        f = f - intPart;
         Long multiplier = 1;
         for(Byte i=0; i++<n;)  multiplier *= 10;
-        f = f * multiplier + .5;
-        dotnb(n,n,(Cell)f,10);
+        Long frac = (Long)(f * multiplier + .5);
+        if (frac >= multiplier) { // rounding carried into integer part
+            intPart++;
+            frac -= multiplier;
+        }
+        printDec0(intPart);
+        print(".");
+        dotnb(n,n,(Cell)frac,10);
     }
 }
 void printFloat(float f, int n) { printFloat0(f, n); print(" "); }
@@ -157,7 +159,7 @@ void flush(void) {
 void pdump(unsigned char *a, unsigned int lines) {
     while (lines--) {
         printCr();
-        printHex((unsigned int)(long)a);
+        printHex((unsigned int)(uintptr_t)a);
         print(":");
         for (int j=0; j<2; j++) {
             for (int i = 0; i < 8; i++)
@@ -227,7 +229,7 @@ void psdump(unsigned short * a, unsigned int lines)
 {
     while (lines--) {
         printCr();
-        printHex((unsigned int)(long)a);
+        printHex((unsigned int)(uintptr_t)a);
         print(":");
         for (int i = 8; i ; i--, printChar(' '), dotnb(4, 4, *a++, 16));
         print(" ");
