@@ -1,12 +1,10 @@
 // Time Event Action interface
 
-#include <Board/clocks.h>
 #include "tea.h"
 #include "queue.h"
 #include "printers.h"
 #include <stdlib.h>
 #include <string.h>
-#include "project_defs.h"
 
 #define MIN_DELTA 2 // minimum worth queueing up, ~200us
 
