@@ -36,11 +36,7 @@ DIRECTIVE = 'directive' # note: this is somehow getting inserted into the .txt f
 COMMENT = 'comment'
 
 # input files
-parser   = os.path.abspath(__file__)
-dirname  = os.path.dirname(parser)
-txtcore  = os.path.join(dirname,'clibindings.txt')
-txtfloat = os.path.join(dirname,'floatwords.txt')
-inputFiles = [parser, txtcore, txtfloat]
+parser = os.path.abspath(__file__)
 
 # generated files
 targetDir   = './' # default
@@ -338,10 +334,38 @@ def emptyWords(): # empty out lists
 	del constants[:]
 	del comments[:]
 
-# update is require if there is no wordlist.c
-#  or if *bindings.txt, this file, clibindings.txt are newer than wordlist.c
+# update is required if there is no wordlist.c, or if parsewords.py, the input
+# file, or any file it Includes (transitively) is newer than wordlist.c
 def fileModTime(file): # return file modified date
 	return time.localtime(os.path.getmtime(file))
+
+def collectDependencies(rootFile): # walk Include directives starting from rootFile
+	# returns absolute paths of every .txt file the input transitively depends on.
+	# Include paths are resolved relative to the current working directory,
+	# matching the behaviour of readWordLists().
+	deps = []
+	seen = set()
+	pending = [rootFile]
+	while pending:
+		current = pending.pop(0)
+		absPath = os.path.abspath(current)
+		if absPath in seen:
+			continue
+		seen.add(absPath)
+		try:
+			lines = open(current, 'r').readlines()
+		except (IOError, OSError):
+			print ('warning: cannot read Include target: %s' % current)
+			continue
+		deps.append(absPath)
+		for line in lines:
+			fields = line.split()
+			if fields and fields[0] == 'Include':
+				for ref in fields[1:]:
+					if ref.startswith('//'):
+						break # rest of line is a comment
+					pending.append(ref)
+	return deps
 
 def needUpdate(checkfile):
 	try:
@@ -351,7 +375,7 @@ def needUpdate(checkfile):
 
 		# check file mod times > wordlist.c
 		modtime = fileModTime(ctarget)
-		for file in inputFiles + [checkfile]:
+		for file in [parser] + collectDependencies(checkfile):
 			if fileModTime(file) > modtime:
 				print (file + ' newer than ' + ctarget)
 				return True
