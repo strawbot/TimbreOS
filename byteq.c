@@ -6,7 +6,7 @@ void zerobq(Cell *q)  // empty the queue
 {
     byteq * bq = (byteq *)q;
 
-    bq->insert = bq->remove = bq->end;
+    bq->insert = bq->remove = BQDATA;
 }
 
 Byte bq(Cell *q) // return copy of oldest element
@@ -62,7 +62,7 @@ Byte pullbq(Cell *q) // pull oldest element from the q
 Cell sizebq(Cell *q) // return size of q
 {
     byteq * bq = (byteq *)q;
-	return bq->end - BQDATA;
+	return bq->end;
 }
 
 Cell qbq(Cell *q) // query #elements in q
@@ -76,9 +76,12 @@ Cell qbq(Cell *q) // query #elements in q
     return (Cell)n;
 }
 
-bool fullbq(Cell *q) // true if q is full
-{
-	return qbq(q) == sizebq(q);
+bool fullbq(Cell *q) { // true if q is full
+    byteq *bq = (byteq *)q;
+    Cell size = bq->end;  // BQDATA == 0
+    int n = bq->remove - bq->insert;
+    if (n < 0) n += size + 1;
+    return (Cell)n == size;
 }
 
 void setsizebq(Cell size, Cell * q)
@@ -88,6 +91,7 @@ void setsizebq(Cell size, Cell * q)
 	bq->insert = bq->remove = bq->end = BQDATA + size;
 }
 
+// wrap the queue around to the beginning; useful for reusing a queue as an array
 void wrappedbq(Cell * q)
 {
 	byteq * bq = (byteq *)q;

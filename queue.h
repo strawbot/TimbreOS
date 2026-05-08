@@ -54,6 +54,36 @@ typedef Cell Qtype;
 	INIT_Q(s.newq);
 */
 #define QUEUE(size, name)	 NEW_Q(size, name) = {QDATA,QDATA,QDATA+(size)}
+
+/* queue.h — unified header
+typedef struct {
+    Cell insert, remove, end;
+    // data follows: Cell q[] for cellq, Byte q[] for byteq
+} queue_hdr;
+
+// Declaration macros (distinct storage types, same header)
+#define QUEUE(size, name)  \
+    struct { Cell insert, remove, end; Cell  q[size+1]; } name = {0,0,size}
+
+#define BQUEUE(size, name) \
+    struct { Cell insert, remove, end; Byte q[size+1]; } name = {0,0,size}
+
+CellQueue<16> actionq;
+actionq.push(5);   // true dot notation, fully inlined, zero overhead
+
+#ifdef __cplusplus
+#include <string.h>
+template<size_t N>
+struct CellQueue {
+    void push(Cell v) { pushq(v, q); }
+    Cell pull()       { return pullq(q); }
+    Cell query()      { return queryq(q); }
+private:
+    QUEUE(N, q);
+};
+#endif
+*/
+
 #define leftq(q)	 (sizeq(q) - queryq(q)) // how much is left
 
 #endif

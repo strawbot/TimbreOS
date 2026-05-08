@@ -50,7 +50,10 @@ Cell queryq(Cell *q) // query #elements in q
 
 Cell fullq(Cell *q) // true if q is full
 {
-	return (Cell)(queryq(q) == sizeq(q));
+	Cell size = q[QEND] - QDATA;
+	int n = q[QREMOVE] - q[QINSERT];
+	if (n < 0) n += size + 1;
+	return (Cell)(n == size);
 }
 
 Cell p(Cell * q) // copy of last item at end of queue
@@ -117,14 +120,13 @@ Long scanq(Cell item, Qtype *qi) { // count occurances of item in queue
 	 one starting at the start of the queue array and the other at the
 	 end of the queue array. Either one may be from 0 to the queue size
 	 minus one.
-
-	 Here's the wrong way to do it:
 	*/
-	Long i = 0;
-	for(Long n = queryq(qi); n; n--) {
-		if (item == q(qi))
-			i++;
-		pushq(pullq(qi),qi);
-	}
-	return i;
+    Long count = 0;
+    Long n = queryq(qi);
+    Cell idx = qi[QREMOVE];
+    for (Long i = 0; i < n; i++) {
+        if (qi[idx] == item) count++;
+        if (idx == QDATA) idx = qi[QEND]; else idx--;
+    }
+    return count;
 }
