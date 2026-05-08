@@ -386,9 +386,9 @@ void print_actions() {
 }
 
 void dumpTeaNames() {
-	for(int i = 0; i < HASH9; i++)
-		if (teanamesadjunct[i])
-			printCr(), printHex(teanamesadjunct[i]), print((char *)teanamesadjunct[i]);
+	Cell *t = teanames.adjunct;
+	for(int i = 0; i < teanames.capacity; i++)
+		if (t[i])  printCr(), printHex(t[i]), print((char *)t[i]);
 }
 
 // ns 32 bit clock @ native MHz. Clock.h
