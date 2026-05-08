@@ -25,7 +25,7 @@ static void prepend(TimeEvent * curr, TimeEvent * te) {
 	curr->next = te;
 }
 
-static TimeEvent * remove(TimeEvent * curr) {
+static TimeEvent * unlink_te(TimeEvent * curr) {
 	TimeEvent * te;
 	te = curr->next;
 	curr->next = te->next;
@@ -86,7 +86,7 @@ static TimeEvent* te_borrow() {
 	if (te_left < te_min_left)
 		te_min_left = te_left;
 
-	return remove(&te_done);
+	return unlink_te(&te_done);
 }
 
 // make it happen
@@ -102,8 +102,8 @@ static void do_action(TimeEvent * te) {
 }
 
 static void run_dueDate() {
-	do_action(remove(&te_todo));
-	verify_todo();
+	do_action(unlink_te(&te_todo));
+	// verify_todo();
 }
 
 static Long get_dueDate(Long t) { return get_ticks() + t; }
@@ -112,7 +112,7 @@ static Long max_delta = 0;
 
 static bool set_dueDate(Long due) {
 	 // must be signed since for overdue items
-	int delta = due - get_ticks();
+	int delta = due - last_dueDate;
 
 	if (delta > MIN_DELTA) {
 		set_delta_alarm(delta);
@@ -126,56 +126,60 @@ static bool set_dueDate(Long due) {
 	return false;
 }
 
-static void set_next_dueDate() {
-	while (te_todo.next && !set_dueDate(te_todo.next->dueDate)) // atomicity issue?
-		run_dueDate();
+static void delta_alarm_handler() {
+    static bool running = false;
+    if (running) return;
+    running = true; // prevent reentrancy; in action calling in won't recurse
+    last_dueDate = get_ticks();
+    while (te_todo.next && !set_dueDate(te_todo.next->dueDate))
+        run_dueDate();
+    running = false;
 }
 
-static void schedule_te(TimeEvent* te) {
-	TimeEvent * curr = &te_todo, * next;
-	Long ref = last_dueDate; // time reference
-	int dueDate = te->dueDate - ref;
+static void schedule_te_with_dedup(TimeEvent* te) {
+    TimeEvent *curr = &te_todo, *next;
+    TimeEvent *dup = NULL, *dup_prev = NULL;
+    Long ref = last_dueDate;
+    int dueDate = te->dueDate - ref;
+    TimeEvent *insert_after = &te_todo;
+    bool found_insert = false;
 
-	while ((next = curr->next) != NULL) {
-		int date = next->dueDate - ref;
-		if (dueDate < date)
-			break;
-		curr = next;
-	}
-	prepend(curr, te);
-	verify_todo();
-	if (te_todo.next == te)
-	    set_next_dueDate();
-}
+    while ((next = curr->next)) {
+        // track duplicate
+        if (next->action == te->action && !dup) {
+            dup_prev = curr;
+            dup = next;
+        }
+        // track insertion point
+        if (!found_insert && (int)(next->dueDate - ref) > dueDate) {
+            insert_after = curr;
+            found_insert = true;
+        }
+        curr = next;
+    }
+    if (!found_insert) insert_after = curr;
 
-static TimeEvent * already_there(vector action) {
-	TimeEvent *te, *tep = &te_todo;
-
-	while ((te = tep->next)) {
-		if (te->action == action) {
-			tep->next = te->next;
-			return te;
-		}
-		tep = te;
-	}
-	return NULL;
+    if (dup) {
+        dup_prev->next = dup->next;  // unlink duplicate
+        te_return(dup);
+        // insertion point may have shifted — adjust if needed
+    }
+    prepend(insert_after, te);
+    if (te_todo.next == te) {
+        int delta = te->dueDate - get_ticks();
+        if (delta > MIN_DELTA)
+            set_delta_alarm(delta);
+    }
 }
 
 static void in_after(Long t, vector action, bool asap) {
 	if (action && action != no_action) {
 		if ((int)t > 0) { // deal with unsigned negatives
-			safe(
-				TimeEvent * te = already_there(action);
-
-				if (!te)
-					te = te_borrow();
-				
-				te->action = action;
-				te->dueDate = get_dueDate(t);
-				te->asap = asap;
-
-				schedule_te(te);
-			)
+			TimeEvent * te = te_borrow();
+			te->action = action;
+			te->dueDate = get_dueDate(t);
+			te->asap = asap;
+			safe( schedule_te_with_dedup(te); )
 		} else {
 			if (asap)
 				action();
@@ -185,17 +189,12 @@ static void in_after(Long t, vector action, bool asap) {
 	}
 }
 
-// Time Events
+// Time Events - 0 ok for after but not in since it is a timing error
 void after(Long t, vector action) { in_after(t, action, false); }
 void in   (Long t, vector action) {
-	if (t == 0)
+	if (t == 0) // 0 is considered a timing error
 		BLACK_HOLE(IN_0);
 	in_after(t, action, true);
-}
-
-static void check_dueDates() { // delta interrupt handler
-	last_dueDate = get_ticks();
-	set_next_dueDate();
 }
 
 // Events
@@ -227,25 +226,34 @@ void action_slice() { // like run but only once through the queued actions; full
 }
 
 // reductions
-void stop_te(vector v) {
+void stop_te(vector action) {
 	safe(
-		TimeEvent * te = already_there(v);
-		if (te)
-			te_return(te);
+		TimeEvent *te;
+		TimeEvent *tep = &te_todo;
+
+		while ((te = tep->next)) {
+			if (te->action == action) {
+				tep->next = te->next;
+				te_return(te);
+				break;
+			}
+			tep = te;
+		}
 	)
 }
 
-void stop_action(vector v) {
+void stop_action(vector action) {
 	safe(
-	for (Long n = queryq(actionq); n; n--) {
-		Cell a = pullq(actionq);
-		if (a != (Cell)v)  pushq(a, actionq); // develop iter q tool to read and write without moving items
-	})
+		for (Long n = queryq(actionq); n; n--) {
+			Cell a = pullq(actionq);
+			if (a != (Cell)action)  pushq(a, actionq); // develop iter q tool to read and write without moving items
+		}
+	)
 }
 
-void stop(vector v) {
-	stop_te(v);
-	stop_action(v);
+void stop(vector action) {
+	stop_te(action);
+	stop_action(action);
 }
 
 // Tools
@@ -323,7 +331,11 @@ static void measure_later() {//start,in,after,later
 }
 static void measure_after() { stamps[LATER] = get_ticks(); later(measure_later); }
 static void measure_in() { stamps[AFTER] = get_ticks(); after(secs(1),measure_after); }
-static void measure_latency() { stamps[IN] = get_ticks(); in(secs(1), measure_in); }
+static void measure_latency() {
+	safe( verify_todo(); )
+	stamps[IN] = get_ticks();
+	in(secs(1), measure_in);
+}
 
 // named actions
 HASHDICT(TEA_TABLE, teanames); // keep track of machine names
@@ -335,11 +347,11 @@ static void bad_name() { print("!"),print(cname),print("  check c name "); cname
 
 void actor(vector action, const char * name) { // give name to action
 	Cell key = ~(Cell)3 & ((Cell)action + 1);
-	if (dictFindKey(key, &teanames) == 0) {
+	if (dictFindKey(key, &teanames) == 0) { // check for duplicate
 		dictAddKey(key, &teatimes);
 		dictAddKey(key, &teanames);
 		*dictAdjunctKey(key, &teanames) = (Cell)name;
-	} else if (cname[0] != 0 ) { // only report if there is a name
+	} else if (name[0] != 0 ) { // only report if there is a name
 		strncpy(cname, name, 31);
 		later(bad_name);
 	}
@@ -371,7 +383,7 @@ void print_te() {
 		print("\n  Stopped. TE list changed while printing it.");
 	print("\nmax overdue: "), printDec(max_delta);
 	print("  te min: "), printDec(te_min());
-	max_delta = 0;
+	max_delta = 0; // reset after report
 }
 
 void print_actions() {
@@ -577,12 +589,11 @@ void init_tea() {
 	namedAction(measure_in);
 	namedAction(measure_after);
 	namedAction(measure_later);
-	namedAction(set_next_dueDate);
 	namedAction(no_action);
-	namedAction(check_dueDates);
+	namedAction(delta_alarm_handler);
 	// namedAction(play_events);
 
 	init_clocks();
-	when(alarmEvent, check_dueDates);
+	when(alarmEvent, delta_alarm_handler);
 	later(measure_latency);
 }
