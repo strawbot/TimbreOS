@@ -56,22 +56,10 @@ static bool used(const char * string) // true if string is valid and not zerostr
     return false;
 }
 
-static bool same(const char * s1, const char * s2) // true if string matches
-{
-    if (s1 == s2)
-        return true;
-    if (*s2 == 0)
-        return false;
-    return 0 == strcmp(s1, s2);
-}
-
-static bool different(const char *string, const char ** loc) // true if string valid and different
-{
-    if (loc == NULL)
-        return false;
-    if (*loc == NULL)
-        return false;
-    return !same(string, *loc);
+static bool same(const char * s1, const char * s2) { // true if string matches
+    if (s1 == s2) return true;
+    if (*s2 == 0 || *s1 != *s2) return false;
+    return strcmp(s1, s2) == 0;
 }
 
 // Hashing algorithms
@@ -89,30 +77,27 @@ static Short hash(const char * string, dictionary_t * dict)
 }
 
 // rehash based on first character of string
-static Short rehash(const char * string, Short index, dictionary_t * dict)
-{
-    index += *string + 1;
+static Short rehash(const char * string, Short index, dictionary_t * dict) {
+    index += hash(string, dict) | 1;   // odd step ensures full coverage
     index %= dict->capacity;
-
     return index;
 }
 
 // base index on address
 static Short hashKey(Cell address, dictionary_t * dict) {
-    Short hash = HASH_SEED;
+    Short hval = HASH_SEED;
 
     for (Byte i = sizeof(Cell); i; i--) {
-        hash ^= (Short)address;
-        hash = (hash << 3) | (hash >> 13);
+        hval ^= (Short)address;
+        hval = (hval << 3) | (hval >> 13);
 		address >>= 8;
     }
 
-    hash %= dict->capacity;
-    return hash;
+    hval %= dict->capacity;
+    return hval;
 }
 
-static Short rehashKey(Cell address, Short index, dictionary_t * dict)
-{
+static Short rehashKey(Cell address, Short index, dictionary_t * dict) {
     index += (Byte)address + HASH_SEED;
     index %= dict->capacity;
 
@@ -120,11 +105,11 @@ static Short rehashKey(Cell address, Short index, dictionary_t * dict)
 }
 
 // locate start or end of chain of same string
-static Short locate(const char * string, dictionary_t * dict)
-{
+static Short locate(const char * string, dictionary_t * dict) {
     Short index = hash(string, dict);
+    const char * s;
 
-    while(different(string, &dict->table[index]))
+    while ((s = dict->table[index]) != NULL && s != string && strcmp(s, string) != 0)
         index = rehash(string, index, dict);
 
     return index;
@@ -135,15 +120,12 @@ static Short rehashes = 0; // use to evaluate collisions
 static Short locateKey(Cell address, dictionary_t * dict)
 {
     Short index = hashKey(address, dict);
-    rehashes = 0;
-	while(dict->table[index] != NULL && address != (Cell)dict->table[index])
-        index = rehashKey(address, index, dict), rehashes++;
-
+    while (dict->table[index] != NULL && address != (Cell)dict->table[index])
+        index = rehashKey(address, index, dict);
     return index;
 }
 
-static Short locateAppend(const char * string, dictionary_t * dict)
-{
+static Short locateAppend(const char * string, dictionary_t * dict) {
     Short index = hash(string, dict);
 
     while(used(dict->table[index]))
@@ -153,8 +135,7 @@ static Short locateAppend(const char * string, dictionary_t * dict)
 }
 
 // growth and shrink
-static void plusEntry(dictionary_t * dict) // upsize if full and allowed; otherwise empty
-{
+static void plusEntry(dictionary_t * dict) { // upsize if full and allowed; otherwise empty
     if (dict->free == 0) {
         if (dict->upsize)
             upsizeDict(dict);
@@ -196,10 +177,8 @@ void setUpsize(bool flag, dictionary_t * dict)
 
 void emptyDict(dictionary_t * dict) // empty out any content
 {
-    for (Short i=0; i<dict->capacity; i++) {
-        dict->table[i] = NULL;
-        dict->adjunct[i] = 0;
-    }
+    memset(dict->table,   0, dict->capacity * sizeof(char*));
+    memset(dict->adjunct, 0, dict->capacity * sizeof(Cell));
     dict->free = dict->capacity/2;
     dict->upsize = false;
 }
@@ -390,16 +369,15 @@ void dump_key_hashes(dictionary_t * dict) { // print each cell in dict with the
     Short used = 0;
     Short total = 0;
     Short longest = 0;
-    for (Short i=0; i<dict->capacity; i++) {
+    for (Short i = 0; i < dict->capacity; i++) {
         Cell address = (Cell)dict->table[i];
         if (address) {
-            used++;
-            locateKey(address, dict);
-            total += rehashes;
-            longest = rehashes > longest ? rehashes : longest;
-            printDec(1+rehashes); // note: rehashes is reset by this function
-        } else
-            print(". ");
+            Short idx = hashKey(address, dict);
+            Short hops = 0;
+            while (dict->table[idx] != NULL && address != (Cell)dict->table[idx])
+                idx = rehashKey(address, idx, dict), hops++;
+            printDec(1 + hops);
+        }
     }
     print("\nused, free, rehashes, longest: ");
      printDec(used),printDec(dict->free),printDec(total),printDec(longest);
