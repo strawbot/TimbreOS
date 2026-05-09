@@ -39,6 +39,7 @@ typedef struct byteq {
 
 #define BQDATA		0
 
+// declare instances as extern Cell name[];
 #define BQUEUE(size, name) NEW_BQ(size, name) = {BQDATA,BQDATA,BQDATA+(size)}
 #define BYTEQ(size, name) BQUEUE(size, name)
 

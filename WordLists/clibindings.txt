@@ -46,8 +46,6 @@ Words // memory
 	c!		byteStore // ( c a - ) store next into memory using top as address (8 bit)
 	s@		shortFetch // ( a - h ) return contents of memory using top stack item as the address (16 bit)
 	s!		shortStore // ( h a - ) store next into memory using top as address (16 bit)
-	l@		longFetch // ( a - n )return contents of memory using top stack item as the address (32 bit)
-	l! 		longStore // (n a - )store next into memory using top as address (processor sized)
 	+b 		plusBits // ( b a - ) turn on b bits at address a: 0b10001 em +b
 	-b 		minusBits // ( b a - ) turn off b bits at address a: 0b10001 em -b
 	cmove	byteMove // ( s d n - ) move n bytes from s to d
@@ -92,7 +90,7 @@ Words // definitions
 	:			colon // <string> start a macro definition named string
 	constant	constant // ( n - ) <string> give n a name
 	variable	variable // ( n - ) <string> give n a place to be stored at a name
-	]			righBracket // enter macro build
+	]			rightBracket // enter macro build
 End
 
 Immediates // compiling

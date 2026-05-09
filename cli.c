@@ -190,6 +190,7 @@ void slashModOp() /* n \ m -- remainder \ quotient */
     } else {
         pushq(0, dataStack);
         pushq(0, dataStack);
+        msg(" div/0 ");
     }
 
 }
@@ -201,6 +202,10 @@ void slashOp() /* n \ m -- quotient */
 
     if (top != 0)
         top = next / top;
+    else {
+        top = 0;
+        msg(" div/0 ");
+    }
     pushq(top, dataStack);
 }
 
@@ -211,6 +216,10 @@ void modOp() /* n \ m -- remainder */
 
     if (top != 0)
         top = next % top;
+    else {
+        top = 0;
+        msg(" mod/0 ");
+    }
 
     pushq(top, dataStack);
 }
@@ -330,23 +339,6 @@ void store() /* n \ a -- */
     Cell next = popq(dataStack);
 
     *(Cell*)top = next;
-}
-
-void longFetch() // a - lo \ hi
-{
-    Long l = *(Long*)popq(dataStack);
-
-    pushq((Cell)(l & 0xFFFF), dataStack);
-    pushq((Cell)(l >> 16), dataStack);
-}
-
-void longStore() // lo \ hi \ a -
-{
-    Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
-    Cell third = popq(dataStack);
-
-    *(Long*)top = ((Long)next << 16) + third;
 }
 
 void shortFetch() // a - n
@@ -567,8 +559,13 @@ void sign() /* m \ n -- n */
 
 void endNumberConversion() /* n -- addr \ count */
 {
-    Cell n = qbq(padq);
+    if (hp + LINE_LENGTH > hpEnd) { // prevent overflow of here space
+        error_occurred();
+        quit(); // reset everything
+        return;
+    }
     Byte* a = &hp[LINE_LENGTH];
+    Cell n = qbq(padq);
 
     popq(dataStack);
     pushq((Cell)a, dataStack);
@@ -709,7 +706,7 @@ void dotPrompt()
 }
 
 // compiler
-void righBracket()
+void rightBracket()
 {
     compiling = 0x80;
 }
@@ -836,7 +833,7 @@ void parse(Byte c) // parse string till char or 0 from input to here count prefi
     while (*input != 0) {
         Byte b = *input++;
 
-        if (b == c)
+        if (b == c || output >= hpEnd - 1)
             break;
         *++output = b;
     }
@@ -862,20 +859,6 @@ void comment() /* char -- */ // scan input for end comment or 0
     tib.in = input - tib.buffer;
 }
 
-Long hexscii_convert(Byte *hs, Byte *hex) { // "AABBCC" -> 0xAA,0xBB,0xCC
-    // convert characters to hex nibbles till end found
-    Byte wasbase = base;
-    base = 16;
-    Byte *end = hs;
-    while (toDigit(end))  end++;
-    base = wasbase;
-    // fold nibbles into bytes till end
-    Byte n = 0;
-    for (; hs < end; hs += 2, n++)
-        *hex++ = hs[0] << 4 | hs[1];
-    return n;
-}
-
 // dictionary words
 /* CLI built words use this header structure:
  * [ link | name | II | list of other ticks ]
@@ -890,10 +873,10 @@ Long hexscii_convert(Byte *hs, Byte *hex) { // "AABBCC" -> 0xAA,0xBB,0xCC
 header* searchWordlist(Byte* cstring)
 {
     header* list = wordlist;
+    Byte length = strlen((char*)cstring);
 
     while (list) {
         Byte* name = list->name;
-        Byte length = strlen((char*)cstring);
 
         if ((name[0] & ~IMMEDIATE_BITS) == length) // smudged bit prevents matching bad headers
             if (0 == strcasecmp((char *)&name[1], (char *)cstring))
@@ -1178,7 +1161,7 @@ char * postQuote() {
 
 void makeString(char * string) // ( - a )
 {
-    strcpy((char *)hp, string); // remove leading count
+    strncpy((char *)hp, string, here_left()); // remove leading count
     lit((Cell)hp);
     Cell n = strlen((char *)hp);
     allot(n + 1); // account for null terminator
@@ -1210,53 +1193,36 @@ void quit()
     cursorReturn();
 }
 
-void interpret()
-{
-	while (true) {
-        skip(SPACE);
-        if (peek() == 0) return;
+static void interpret_word() {
+    skip(SPACE);
+    if (peek() == QUOTE) {
+        quote();
+        return;
+    }
+    Byte* cstring = parseWord(SPACE);
+    tcbody* t = NULL;
+    Byte headbits = lookup(cstring, &t);
 
-        tcbody* t = NULL;
-        Byte headbits;
-        Byte* cstring;
+    if (headbits != 0) // compiling or executing regardless of compiling
+        headbits == compiling ? compileIt(t) : executeIt(t);
+    else { // interpreting as a number
+        Cell n = stringNumber((char *)cstring);
 
-        if (peek() == QUOTE) {
-            quote();
-            continue;
-        }
-
-        cstring = parseWord(SPACE);
-        headbits = lookup(cstring, &t);
-        if (headbits != 0)
-            headbits == compiling ? compileIt(t) : executeIt(t);
-        else {
-            Cell n = stringNumber((char *)cstring);
-
-            if (interpretError) {
-                quit();
-                break;
-            }
+        if (interpretError)
+            quit();
+        else
             literal(n);
-        }
     }
 }
 
+void interpret() { skip(SPACE);  while (peek()) interpret_word();}
+
 // input stream
-void autoEchoOn()
-{
-    keyEcho = true;
-}
+void autoEchoOn()  { keyEcho = true; }
+void autoEchoOff() { keyEcho = false; }
+bool autoEchoIs()  { return keyEcho; }
 
-void autoEchoOff()
-{
-    keyEcho = false;
-}
-bool autoEchoIs() { return keyEcho; }
-
-void emptyKeyq()
-{
-    zerobq(keyq);
-}
+void emptyKeyq() { zerobq(keyq); }
 
 static enum {TIB_FILL, TIB_LINE} tib_state = TIB_FILL;
 static Long naptime = 0;
@@ -1306,34 +1272,15 @@ void no_prompt() { lineEcho = false; }
 
 static void interpret_one() {
     skip(SPACE);
-    switch(peek()) {
-    case 0:
+    if (peek())
+        interpret_word();
+    else {
         zeroTib();
         tib_state = TIB_FILL;
         if (lineEcho)
             later(dotPrompt);
         else
         	lineEcho = true;
-        break;
-    case QUOTE:
-        quote();
-        break;
-    default: {
-        tcbody* t = NULL;
-        Byte* cstring = parseWord(SPACE);
-        Byte headbits = lookup(cstring, &t);
-
-        if (headbits != 0)
-            headbits == compiling ? compileIt(t) : executeIt(t);
-        else {
-            Cell n = stringNumber((char *)cstring);
-
-            if (interpretError)
-                quit();
-            else
-                literal(n);
-        }
-        } break;
     }
 }
 
@@ -1411,7 +1358,7 @@ void colon()
     wordlist->name[0] |= SMUDGE_BITS;
     lit((Cell)colonii);
     comma();
-    righBracket();
+    rightBracket();
 }
 
 void semiColon()

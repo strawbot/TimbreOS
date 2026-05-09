@@ -36,7 +36,10 @@ void output();
 #define ZERO 48
 #define DELETE 127
 
-// Header bits
+// Header bits:
+// 0x80 = normal word (compile when compiling, execute when interpreting)
+// 0xC0 = immediate word (always execute, even when compiling)
+// 0x20 = smudge (exclude from search while being defined)
 #define NAME_BITS 0x80
 #define IMMEDIATE_BITS (NAME_BITS | 0x40)
 #define SMUDGE_BITS 0x20
@@ -88,7 +91,6 @@ void byteMove();
 void byteStore();
 void cComma();
 bool cli_is_off();
-void run_cii();
 void colonii();
 void comma();
 void comment();
@@ -123,7 +125,6 @@ void greaterThan();
 void here();
 void hereSay(Byte * space, Cell size);
 void hex();
-Long hexscii_convert(Byte *hs, Byte *hex);
 void hold();
 void interpret();
 bool interpreting();
@@ -133,8 +134,6 @@ void lessThan();
 void lii();
 void lit(Cell n);
 void literal(Cell n);
-void longFetch();
-void longStore();
 Byte lookup(Byte* cstring, tcbody** t);
 void maxOp();
 void maybeCr();
@@ -145,7 +144,6 @@ void modOp();
 void msg(const char * m);
 void negateOp();
 void no_prompt();
-void notifyEmit();
 void notOp();
 void oct();
 void orOp();
@@ -161,7 +159,7 @@ void rat();
 void resetCli();
 Cell ret();
 void rfrom();
-void righBracket();
+void rightBracket();
 void run_cli();
 void safeEmit(Byte c);
 header * searchWordlist(Byte * string);
@@ -187,7 +185,6 @@ void tor();
 bool toDigit(Byte* n);
 void type();
 void vii();
-void word();
 void words();
 void xorOp();
 void zeroTib();
@@ -209,7 +206,6 @@ void colon();
 void semiColon();
 void constant();
 void variable();
-void resetCli();
 
 void setCliResult(Cell n);
 Cell getCliResult();
