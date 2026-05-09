@@ -21,7 +21,7 @@ void tabTo(int n) {
     if (len > 0)
         while (len-- > 0) printChar(' ');
     else
-        printChar(' ');
+        printChar(' '); // at least one space if already past tab stop
 }
 
 void cli_tabTo() { tabTo(ret()); }

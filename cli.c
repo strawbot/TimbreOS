@@ -5,6 +5,7 @@
 #include "byteq.h"
 #include "tea.h"
 #include "printers.h"
+#include "ttypes.h"
 
 #include <string.h>
 #include <ctype.h>
@@ -47,14 +48,29 @@ Headless(tor);
 // data stack
 #define TOP p(dataStack)
 
+static void push(Cell c) {
+    if (fullbq(dataStack)) {
+        msg(" stack overflow " );
+        spStore();
+    } else
+        pushq(c, dataStack);
+}
+
+static Cell pop() {
+    if (queryq(dataStack))
+        return popq(dataStack);
+    msg(" stack underflow " );
+    return 0;
+}
+
 Cell ret() /* m - */
 {
-    return popq(dataStack);
+    return pop();
 }
 
 void lit(Cell n) /* - n */
 {
-    pushq(n, dataStack);
+    push(n);
 }
 
 Cell depth()
@@ -69,30 +85,30 @@ void spStore() /* ... - */
 
 void swap() /* m n - n m */
 {
-    Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
+    Cell top = pop();
+    Cell next = pop();
 
-    pushq(top, dataStack);
-    pushq(next, dataStack);
+    push(top);
+    push(next);
 }
 
 void drop() /* n - */
 {
-    popq(dataStack);
+    pop();
 }
 
 void dup() /* m - m m */
 {
-    pushq(TOP, dataStack);
+    push(TOP);
 }
 
 void over() /* m n - m n m */
 {
-    Cell top = popq(dataStack);
+    Cell top = pop();
     Cell next = TOP;
 
-    pushq(top, dataStack);
-    pushq(next, dataStack);
+    push(top);
+    push(next);
 }
 
 void questionDup() /* n - [n] n */
@@ -109,25 +125,34 @@ void rpStore()
 
 void tor() /* m - */
 {
-    pushq(popq(dataStack), returnStack);
+    if (fullbq(returnStack)) {
+        msg(" return stack overflow " );
+        quit();
+    } else
+        pushq(pop(), returnStack);
 }
 
 void rat() /* - m */
 {
-    pushq(p(returnStack), dataStack);
+    push(p(returnStack));
 }
 
 void rfrom() /* - m */
 {
-    pushq(popq(returnStack), dataStack);
+    if (queryq(returnStack))
+        push(popq(returnStack));
+    else {
+        msg(" return stack underflow " );
+        quit();
+    }
 }
 
 // logic
 #define binary(op)               \
-    Cell top = popq(dataStack);  \
+    Cell top = pop();  \
     writep(TOP op top, dataStack)
 #define binaryInts(op)           \
-    Cell top = popq(dataStack);  \
+    Cell top = pop();  \
     writep((Cell)((Integer)TOP op(Integer) top), dataStack)
 #define unary(op) writep(op TOP, dataStack)
 
@@ -153,14 +178,14 @@ void notOp() /* m - n */
 
 void shiftOp() /* n m - p */
 {
-    Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
+    Cell top = pop();
+    Cell next = pop();
 
     if ((signed)top < 0)
         next >>= -(signed)top;
     else
         next <<= top;
-    pushq(next, dataStack);
+    push(next);
 }
 
 // math
@@ -181,15 +206,15 @@ void negateOp() /* m -- n */
 
 void slashModOp() /* n \ m -- remainder \ quotient */
 {
-    Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
+    Cell top = pop();
+    Cell next = pop();
 
     if (top != 0) {
-        pushq(next % top, dataStack);
-        pushq(next / top, dataStack);
+        push(next % top);
+        push(next / top);
     } else {
-        pushq(0, dataStack);
-        pushq(0, dataStack);
+        push(0);
+        push(0);
         msg(" div/0 ");
     }
 
@@ -197,8 +222,8 @@ void slashModOp() /* n \ m -- remainder \ quotient */
 
 void slashOp() /* n \ m -- quotient */
 {
-    Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
+    Cell top = pop();
+    Cell next = pop();
 
     if (top != 0)
         top = next / top;
@@ -206,13 +231,13 @@ void slashOp() /* n \ m -- quotient */
         top = 0;
         msg(" div/0 ");
     }
-    pushq(top, dataStack);
+    push(top);
 }
 
 void modOp() /* n \ m -- remainder */
 {
-    Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
+    Cell top = pop();
+    Cell next = pop();
 
     if (top != 0)
         top = next % top;
@@ -221,7 +246,7 @@ void modOp() /* n \ m -- remainder */
         msg(" mod/0 ");
     }
 
-    pushq(top, dataStack);
+    push(top);
 }
 
 void starOp() /* n \ m -- p */
@@ -232,23 +257,23 @@ void starOp() /* n \ m -- p */
 void absOp() /* n -- n */
 {
     if ((Integer)TOP < 0)
-        pushq((Cell)(-(Integer)popq(dataStack)), dataStack);
+        push((Cell)(-(Integer)pop()));
 }
 
 void maxOp() /* n \ m -- p */
 {
-    Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
+    Cell top = pop();
+    Cell next = pop();
 
     if ((Integer)top > (Integer)next)
-        pushq(top, dataStack);
+        push(top);
     else
-        pushq(next, dataStack);
+        push(next);
 }
 
 void minOp() /* n \ m -- p */
 {
-    Cell top = popq(dataStack);
+    Cell top = pop();
     Cell next = TOP;
 
     if ((Integer)top < (Integer)next)
@@ -304,7 +329,7 @@ void cliAllot()
 
 void cComma() /* n -- */
 {
-    *hp = (Byte)popq(dataStack);
+    *hp = (Byte)pop();
     allot(1);
 }
 
@@ -321,7 +346,7 @@ void aligned()
 
 void comma() /* n -- */
 {
-    Cell top = popq(dataStack);
+    Cell top = pop();
     Cell* p = (Cell*)hp;
     aligned();
     *p = top;
@@ -335,8 +360,8 @@ void fetch() /* a -- n */
 
 void store() /* n \ a -- */
 {
-    Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
+    Cell top = pop();
+    Cell next = pop();
 
     *(Cell*)top = next;
 }
@@ -348,8 +373,8 @@ void shortFetch() // a - n
 
 void shortStore() // n \ a -
 {
-    Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
+    Cell top = pop();
+    Cell next = pop();
 
     *(Short*)top = (Short)next;
 }
@@ -361,42 +386,42 @@ void byteFetch() /* a -- c */
 
 void byteStore() /* c \ a -- */
 {
-    Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
+    Cell top = pop();
+    Cell next = pop();
 
     *(Byte*)top = (Byte)next;
 }
 
 void plusBits() /* bits \ addr -- */
 {
-    Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
+    Cell top = pop();
+    Cell next = pop();
 
     *(Byte*)top |= next;
 }
 
 void minusBits() /* bits \ addr -- */
 {
-    Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
+    Cell top = pop();
+    Cell next = pop();
 
     *(Byte*)top = (Byte)(*(Byte*)top & ~next);
 }
 
 void byteMove() /* src \ dest \ count -- */
 {
-    Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
-    Cell third = popq(dataStack);
+    Cell top = pop();
+    Cell next = pop();
+    Cell third = pop();
 
     memcpy((void*)next, (void*)third, top);
 }
 
 void byteFill() /* addr \ count \ char -- */
 {
-    Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
-    Cell third = popq(dataStack);
+    Cell top = pop();
+    Cell next = pop();
+    Cell third = pop();
 
     memset((void*)third, (Byte)top, next);
 }
@@ -446,7 +471,7 @@ void emitByte(Byte c)
 
 void emitOp() /* char -- */
 {
-    emitByte((Byte)popq(dataStack));
+    emitByte((Byte)pop());
 }
 
 void cursorReturn()
@@ -473,8 +498,8 @@ void msg(const char* m) // message in program space
 
 void type() /* addr \ count -- */
 {
-    Byte n = (Byte)popq(dataStack);
-    Byte* a = (Byte*)popq(dataStack);
+    Byte n = (Byte)pop();
+    Byte* a = (Byte*)pop();
 
     while (n--)
         emitByte(*a++);
@@ -518,7 +543,7 @@ void hex()
 
 void hold() /* char -- */
 {
-    pushbq((Byte)popq(dataStack), padq);
+    pushbq((Byte)pop(), padq);
 }
 
 void startNumberConversion()
@@ -528,7 +553,7 @@ void startNumberConversion()
 
 void convertDigit() /* n -- n */
 {
-    Cell n = popq(dataStack);
+    Cell n = pop();
     Byte c = (Byte)(n % base);
 
     if (c > 9)
@@ -537,7 +562,7 @@ void convertDigit() /* n -- n */
     pushbq(c, padq);
 
     n /= base;
-    pushq(n, dataStack);
+    push(n);
 }
 
 void convertNumber() /* n -- n */
@@ -549,12 +574,12 @@ void convertNumber() /* n -- n */
 
 void sign() /* m \ n -- n */
 {
-    Cell top = popq(dataStack);
-    Cell next = popq(dataStack);
+    Cell top = pop();
+    Cell next = pop();
 
     if ((Integer)next < 0)
         pushbq('-', padq);
-    pushq(top, dataStack);
+    push(top);
 }
 
 void endNumberConversion() /* n -- addr \ count */
@@ -567,9 +592,9 @@ void endNumberConversion() /* n -- addr \ count */
     Byte* a = &hp[LINE_LENGTH];
     Cell n = qbq(padq);
 
-    popq(dataStack);
-    pushq((Cell)a, dataStack);
-    pushq(n, dataStack);
+    pop();
+    push((Cell)a);
+    push(n);
 
     while (qbq(padq))
         *a++ = popbq(padq);
@@ -595,7 +620,7 @@ void dotr() /* n \ m -- */
     minusOp();
     lit(0);
     maxOp();
-    spaces(popq(dataStack));
+    spaces(pop());
     type();
 }
 
@@ -694,9 +719,9 @@ void setBase(Byte b)
 
 // prompt
 void setPrompt(const char* string)
-{
-    strncpy((char*)prompt, string, sizeof(prompt) - 1);
-    prompt[sizeof(prompt) - 1] = 0;
+{ // truncate if too long
+    prompt[0] = 0;
+    strncat((char*)prompt, string, sizeof(prompt) - 1);
 }
 
 void dotPrompt()
@@ -764,8 +789,13 @@ void lii() /* -- n */ // inline literals
 //  instead of copying to tick for cii,vii, they can use ip
 // stuffing to ipStack would be queueing actions.
 void colonii() { // macro threader
-    pushq((Cell)ip, returnStack);
-    ip = tick->list;
+    if (fullq(returnStack)) {
+        msg(" return stack overflow " );
+        quit();
+    } else {
+        pushq((Cell)ip, returnStack);
+        ip = tick->list;
+    }
 }
 
 bool executing() {
@@ -793,13 +823,17 @@ void zeroBranch() /* f -- */
 
 void minusBranch()
 {
-    Cell i = popq(returnStack);
+    if (queryq(returnStack)) {
+        Cell i = popq(returnStack);
 
-    if (i) {
-        pushq(--i, returnStack);
-        branch();
-    } else
-        ip++;
+        if (i)
+            pushq(--i, returnStack);
+        else
+            branch();
+    } else {
+        msg( " return stack underflow " );
+        quit();
+    }
 }
 
 // parsing

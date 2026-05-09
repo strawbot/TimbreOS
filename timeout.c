@@ -63,7 +63,7 @@ void timeoutWait(Cell time) // timed delay loop
 		action_slice();
 }
 
-void ms_delay(Cell ms) { // meant as a blocking delay
+void ms_blocking(Cell ms) { // meant as a blocking delay
 	NEW_TO(timer);
 
 	setTimeout(ms, timer);

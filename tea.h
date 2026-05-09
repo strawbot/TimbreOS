@@ -153,6 +153,7 @@ class TeaCup {
 // This beast will convert an object and method into an array of function vectors
 #define OMVI(method, name) \
     ( [this](decltype(this) o) { \
+            static_assert(cups == 3, "OMVI lambda array must match cups — add/remove a slot here"); \
             static decltype(this) obj[cups]; \
             obj[cup] = o; \
             vector lambs[cups] = { \

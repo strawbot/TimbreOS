@@ -341,9 +341,14 @@ static void measure_latency() {
 HASHDICT(TEA_TABLE, teanames); // keep track of machine names
 HASHDICT(TEA_TABLE, teatimes); // keep track of machine max execution times
 
+// only report one duplicate per name to avoid flooding the console;
+//  cleared on next duplicate or at print time
 static char cname[32] = {0};
 
-static void bad_name() { print("!"),print(cname),print("  check c name "); cname[0] = 0; }
+static void bad_name() {
+	print("!"),print(cname),print("  check c name ");
+	cname[0] = 0; // signal ready for use
+}
 
 void actor(vector action, const char * name) { // give name to action
 	Cell key = ~(Cell)3 & ((Cell)action + 1);
@@ -351,7 +356,7 @@ void actor(vector action, const char * name) { // give name to action
 		dictAddKey(key, &teatimes);
 		dictAddKey(key, &teanames);
 		*dictAdjunctKey(key, &teanames) = (Cell)name;
-	} else if (name[0] != 0 ) { // only report if there is a name
+	} else if (cname[0] == 0 && name[0] != 0 ) { // only report if there is a name
 		strncpy(cname, name, 31);
 		later(bad_name);
 	}
@@ -565,9 +570,9 @@ void play_events() {
 				print(" +"), printDec(t - zero);
 			printChar(' ');
 			tabTo(8);
-		} else {
+		} else
 			print("  ");
-		}
+		
 		print(e);
 	}
 	playback = false;

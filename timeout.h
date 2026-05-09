@@ -41,6 +41,7 @@ Long timeout_left(Timeout * to); // amount of time before due in ticks
 //#define setTimeout(time, timer) timer = getTime() + time
 //#define elapsedTime(timer) (timer - getTime())
 // Note: (getTime() - rtcto.timeset) will give elapsed time from start of timeout
+// Note: to block actions for a time use ms_blocking
 
 // #define ta_usecs()
 // Define ta_msecs in a modified timestamp.h file
@@ -58,7 +59,7 @@ void startTimeout(Timeout *timer);
 void repeatTimeout(Timeout *timer);
 void timeoutWait(Cell time);
 void restartTimeout(Timeout *timer);
-void ms_delay(Cell ms);
+void ms_blocking(Cell ms);
 
 void showTime(void);
 void cliStartTime(void);
