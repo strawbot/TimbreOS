@@ -115,8 +115,6 @@ static Short locate(const char * string, dictionary_t * dict) {
     return index;
 }
 
-static Short rehashes = 0; // use to evaluate collisions
-
 static Short locateKey(Cell address, dictionary_t * dict)
 {
     Short index = hashKey(address, dict);

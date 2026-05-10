@@ -5,26 +5,6 @@
 #ifndef _CLI_H_
 #define _CLI_H_
 
-// parameters
-#if 0
-#ifndef CLI_PARAMETERS  // override by defining
-#define CLI_PARAMETERS
-
-#define DCELLS 30  // number of data stack cells
-#define RCELLS 30  // number of return stack cells
-#define LINE_LENGTH 80 // number of characters allowed in tib
-#define EMITQ_SIZE 500
-#define KEYQ_SIZE 80
-#define PAD_SIZE 20
-#define PROMPTSTRING "timbre: "
-#define CUSHION LINE_LENGTH // how much space to maintain for HERE
-#define HERE_SPACE 1024 // small here space
-#define OUTPUT_BLOCKED output() // deal with by running machines
-#endif
-#endif
-
-void output();
-
 // stream tokens
 #define BEEP 7
 #define BSPACE 8
@@ -154,6 +134,7 @@ void plusBits();
 void plusOp();
 char * postQuote();
 void questionDup();
+void quit();
 void quote();
 void rat();
 void resetCli();

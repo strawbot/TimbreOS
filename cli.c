@@ -6,6 +6,7 @@
 #include "tea.h"
 #include "printers.h"
 #include "ttypes.h"
+#include "project_defs.h"
 
 #include <string.h>
 #include <ctype.h>

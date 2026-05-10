@@ -3,7 +3,6 @@
 //       work with getTime() which is in milliseconds and 32 bit. This
 //       puts a limit on timeout to 49 days
 //       For 15 bit ticks per second, 32 bits is 128K seconds or 36h
-#include "timestamp.h"
 #include "timeout.h"
 #include "cli.h"
 #include "tea.h"
