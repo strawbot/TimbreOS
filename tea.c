@@ -3,6 +3,7 @@
 #include "tea.h"
 #include "queue.h"
 #include "printers.h"
+#include "ttypes.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -182,7 +183,7 @@ static void in_after(Long t, vector action, bool asap) {
 			safe( schedule_te_with_dedup(te); )
 		} else {
 			if (asap)
-				action();
+				actionRun(action);
 			else
 				later(action);
 		}
@@ -350,8 +351,10 @@ static void bad_name() {
 	cname[0] = 0; // signal ready for use
 }
 
+static Cell action_key(vector action) { return ~(Cell)3 & ((Cell)action + 1); }
+
 void actor(vector action, const char * name) { // give name to action
-	Cell key = ~(Cell)3 & ((Cell)action + 1);
+	Cell key = action_key(action);
 	if (dictFindKey(key, &teanames) == 0) { // check for duplicate
 		dictAddKey(key, &teatimes);
 		dictAddKey(key, &teanames);
@@ -363,7 +366,7 @@ void actor(vector action, const char * name) { // give name to action
 }
 
 void printActionName(Cell key) {
-	key = ~(Cell)3 & (key+1);
+	key = action_key((vector) key);
 	char ** name = (char **)dictAdjunctKey(key, &teanames);
 	if (name && name[0] != 0)
 		print(*name);
@@ -403,9 +406,11 @@ void print_actions() {
 }
 
 void dumpTeaNames() {
-	Cell *t = teanames.adjunct;
+	Cell *n = teanames.adjunct;
+	Cell *t = teatimes.adjunct;
 	for(int i = 0; i < teanames.capacity; i++)
-		if (t[i])  printCr(), printHex(t[i]), print((char *)t[i]);
+		if (n[i])
+			printCr(),printHex((Cell)teanames.table[i]),print((char *)n[i]),print("  "),printDec(t[i]);
 }
 
 // ns 32 bit clock @ native MHz. Clock.h
@@ -421,7 +426,7 @@ static void print_elapsed_time(Cell time) {
 	Long us = SYS_TO_US(time);
 	if (us > 9999)
 		dotnb(7, 6, SYS_TO_MS(time), 10), print(" ms  ");
-	else if (us)
+	else if (us > 3)
 		dotnb(7, 6, us, 10), print(" us  ");
 	else
 		dotnb(7, 6, SYS_TO_NS(time), 10), print(" ns  ");
@@ -437,7 +442,7 @@ void machineStats(void) {
 
 	qsort(indexes, j, sizeof(Short), indexCompare);
 
-	print(" mstats ");
+	print(" mstats: "), printDec(j);
 	for (Short i=0; i<j; i++) {
 		Cell machine = (Cell)teatimes.table[indexes[i]];
 		char * name = (char *)teanames.adjunct[indexes[i]];
@@ -452,10 +457,11 @@ void machineStats(void) {
 }
 
 Cell * action_stat(vector m) {
-	Cell * stat = dictAdjunctKey((Cell)m, &teatimes);
+	Cell key = action_key(m);
+	Cell * stat = dictAdjunctKey(key, &teatimes);
 	if (stat == 0) {
 		actor(m, NULL);
-		stat = dictAdjunctKey((Cell)m, &teatimes);
+		stat = dictAdjunctKey(key, &teatimes);
 	}
 	return stat;
 }
@@ -465,12 +471,11 @@ void actionRun(vector m) {
 		BLACK_HOLE(ACTION_NULL);
 	if (m == no_action)
 		return;
-	Cell * stat = action_stat(m);
-	int time = (int)sysTicks();
+	Long time = sysTicks();
 	m();
-	Long delta = (int)sysTicks() - time;
-
-	if (delta > *stat)
+	Long delta = sysTicks() - time;
+	Cell * stat = action_stat(m);
+	if (stat && delta > *stat)
 		*stat = delta;
 }
 
@@ -509,7 +514,7 @@ void test_time() {
 void get_tick_time() {
 	Long tick = sysTicks();
 	Long time = getTime();
-	printDec(tick), printDec(time);
+	printuDec(tick), print(", "),printuDec(time);
 }
 
 void ticks_ms() { lit(SYS_TO_MS(ret())); }

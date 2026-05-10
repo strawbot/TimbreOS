@@ -370,13 +370,17 @@ void dump_key_hashes(dictionary_t * dict) { // print each cell in dict with the
     for (Short i = 0; i < dict->capacity; i++) {
         Cell address = (Cell)dict->table[i];
         if (address) {
+            used++;
             Short idx = hashKey(address, dict);
             Short hops = 0;
             while (dict->table[idx] != NULL && address != (Cell)dict->table[idx])
                 idx = rehashKey(address, idx, dict), hops++;
-            printDec(1 + hops);
+            printCr(),printHex(address),printDec(1 + hops);
+            total += hops;
+            longest = hops > longest ? hops : longest;
         }
     }
     print("\nused, free, rehashes, longest: ");
-     printDec(used),printDec(dict->free),printDec(total),printDec(longest);
+    printDec(used),printDec(dict->free),printDec(total),printDec(longest);
+    print("\nActual capacity: "), printDec(dict->capacity);
 }

@@ -751,7 +751,7 @@ void compileIt(tcbody* t)
 void executeIt(tcbody* t)
 {
     tick = t;
-    t->ii();
+    t->ii();  // use actionRun to get stats
 }
 
 void execute() /* a - */
@@ -1489,18 +1489,9 @@ bool isCompiling()
 }
 
 void init_cli() {
-    namedAction(colonii);
-    namedAction(lii);
-    namedAction(vii);
-    namedAction(cii);
-    namedAction(branch);
-    namedAction(zeroBranch);
-    namedAction(minusBranch);
-    namedAction(semiColon);
 	namedAction(cli);
 	namedAction(dotPrompt);
-    namedAction(compileNext);
-    namedAction(compileFor);
+    namedAction(run_cli);
     resetCli();
     print("\n"CLI_TITLE);
     later(dotPrompt);
