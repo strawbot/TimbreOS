@@ -1,3 +1,4 @@
+// Sample project definitions file - copy this to your project and edit as needed
 #ifndef PROJECT_DEFS_H_
 #define PROJECT_DEFS_H_
 
