@@ -5,10 +5,6 @@
 #include "project_defs.h"
 #include <time.h>
 
-// Tick/real-time conversions
-#define TO_US(ticks)  ((Octet)(ticks) * 1000000uLL / ONE_SECOND)
-#define TO_MS(ticks)  ((Octet)(ticks) * 1000uLL    / ONE_SECOND)
-
 // Libc-free UTC date/time math (no mktime, gmtime, sscanf)
 Long timestamp_to_utc(const char *ts);    // parse __TIMESTAMP__ → Unix epoch
 void epoch_to_tm(Long utc, struct tm *t); // epoch → struct tm

@@ -69,7 +69,8 @@ Long getTime(void);    // ms time stamp; 49 day rollover
 // CLI
 void ticks_ms();
 
-// time
+// time — t MUST be expressed with a converter: usec(), msec(), secs(), mins().
+// Never pass a raw integer literal; the unit depends on ONE_SECOND which varies by board.
 void after(Long t, vector action);
 void in(Long t, vector action);
 
