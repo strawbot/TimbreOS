@@ -230,7 +230,7 @@ See `example_project_defs.h` for a template.
 
 ## Key Invariants
 
-- `in(0, action)` is a fatal error (`BLACK_HOLE(IN_0)`). Use `later(action)` for zero-delay dispatch.
+- `in(0, action)` is a fatal error (`BLACK_HOLE(IN_0)`). Use `now(action)` for zero-delay action.
 - `safe()` does not work with comma-separated statements; use semicolons inside the block.
 - Floats passed as CLI literals are 32-bit `float`. Values like `8.95` are stored as `~8.9499998` (IEEE 754) and will round accordingly — this is correct behavior, not a bug.
 - `dotnb(field, digits, n, radix)` with `field == digits != 0` produces exactly `field` digits. The caller must ensure the value fits; there is no truncation guard.
