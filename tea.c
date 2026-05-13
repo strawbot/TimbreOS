@@ -137,7 +137,7 @@ static void delta_alarm_handler() {
     running = false;
 }
 
-static void schedule_te_with_dedup(TimeEvent* te) {
+static void schedule_te(TimeEvent* te) {
     TimeEvent *curr = &te_todo, *next;
     TimeEvent *dup = NULL, *dup_prev = NULL;
     Long ref = last_dueDate;
@@ -180,7 +180,7 @@ static void in_after(Long t, vector action, bool asap) {
 			te->action = action;
 			te->dueDate = get_dueDate(t);
 			te->asap = asap;
-			safe( schedule_te_with_dedup(te); )
+			safe( schedule_te(te); )
 		} else {
 			if (asap)
 				actionRun(action);
@@ -471,10 +471,10 @@ void actionRun(vector m) {
 		BLACK_HOLE(ACTION_NULL);
 	if (m == no_action)
 		return;
+	Cell * stat = action_stat(m);
 	Long time = sysTicks();
 	m();
 	Long delta = sysTicks() - time;
-	Cell * stat = action_stat(m);
 	if (stat && delta > *stat)
 		*stat = delta;
 }
@@ -585,8 +585,6 @@ void play_events() {
 
 // init
 void init_tea() {
-	initMachineStats();
-	zeroq(actionq);
 	te_todo.next = te_done.next = NULL;
 	te_left = 0;
 	for (Byte i = 0; i < NUM_TE; i++)
