@@ -9,8 +9,8 @@
 
 #define MIN_DELTA 2 // minimum worth queueing up, ~200us
 
-// time tracker; ms and S
-static volatile Long last_dueDate; // points on the number wheel
+// time tracker; updated each time set_delta_alarm is called
+static volatile Long last_load_ticks;
 
 Long getTime() { 
 	return (to_msec(get_ticks()));
@@ -107,69 +107,82 @@ static void run_dueDate() {
 	// verify_todo();
 }
 
-static Long get_dueDate(Long t) { return get_ticks() + t; }
-
 static Long max_delta = 0;
 
-static bool set_dueDate(Long due) {
-	 // must be signed since for overdue items
-	int delta = due - last_dueDate;
-
-	if (delta > MIN_DELTA) {
-		set_delta_alarm(delta);
-		return true;
-	}
-	
-	if (delta < 0) {
-		max_delta = (Long) -delta > max_delta ? (Long) -delta : max_delta;
-		over_due();
-	}
-	return false;
-}
-
+// delta_alarm_handler advances last_load_ticks by each head's delta before firing
+// it, so that schedule_te called from inside an action gets a fresh reference.
 static void delta_alarm_handler() {
     static bool running = false;
+    // print("H"); // PROBE: handler entered
     if (running) return;
-    running = true; // prevent reentrancy; in action calling in won't recurse
-    last_dueDate = get_ticks();
-    while (te_todo.next && !set_dueDate(te_todo.next->dueDate))
+    running = true;
+    while (te_todo.next) {
+        Long elapsed = get_ticks() - last_load_ticks;
+        Long d = (Long)te_todo.next->delta;
+        if (elapsed + MIN_DELTA < d) {
+            Long load = d - elapsed;
+            te_todo.next->delta = load;
+            set_delta_alarm(load);
+            last_load_ticks = get_ticks();
+            break;
+        }
+        Long overshoot = elapsed - d;
+        if (overshoot > max_delta) max_delta = overshoot;
+        if (overshoot > 0) over_due();
+        last_load_ticks += d; // advance reference to head's intended fire time
         run_dueDate();
+    }
     running = false;
 }
 
-static void schedule_te(TimeEvent* te) {
-    TimeEvent *curr = &te_todo, *next;
-    TimeEvent *dup = NULL, *dup_prev = NULL;
-    Long ref = last_dueDate;
-    int dueDate = te->dueDate - ref;
-    TimeEvent *insert_after = &te_todo;
-    bool found_insert = false;
+static void schedule_te(TimeEvent *te) {
+    Long elapsed = get_ticks() - last_load_ticks;
+    Long te_abs = (Long)te->delta + elapsed; // fire time relative to last_load_ticks
 
-    while ((next = curr->next)) {
-        // track duplicate
-        if (next->action == te->action && !dup) {
-            dup_prev = curr;
-            dup = next;
+    // Remove duplicate (same action) from list; add its delta to its successor
+    // so the successor's absolute fire time is unchanged.
+    {
+        TimeEvent *p = &te_todo;
+        while (p->next) {
+            if (p->next->action == te->action) {
+                TimeEvent *dup = p->next;
+                p->next = dup->next;
+                if (dup->next)
+                    dup->next->delta += dup->delta;
+                te_return(dup);
+                break;
+            }
+            p = p->next;
         }
-        // track insertion point
-        if (!found_insert && (int)(next->dueDate - ref) > dueDate) {
-            insert_after = curr;
-            found_insert = true;
-        }
-        curr = next;
     }
-    if (!found_insert) insert_after = curr;
 
-    if (dup) {
-        dup_prev->next = dup->next;  // unlink duplicate
-        te_return(dup);
-        // insertion point may have shifted — adjust if needed
+    // Find the insertion point (sorted by absolute fire time).
+    Long accum = 0;
+    TimeEvent *prev = &te_todo;
+    while (prev->next) {
+        Long next_abs = accum + (Long)prev->next->delta;
+        if (next_abs > te_abs)
+            break;
+        accum = next_abs;
+        prev = prev->next;
     }
-    prepend(insert_after, te);
-    if (te_todo.next == te) {
-        int delta = te->dueDate - get_ticks();
-        if (delta > MIN_DELTA)
-            set_delta_alarm(delta);
+
+    // Insert te, splitting the delta at the insertion point.
+    te->delta = te_abs - accum;
+    te->next = prev->next;
+    if (te->next)
+        te->next->delta -= te->delta;
+    prev->next = te;
+
+    // If te is the new head, program the hardware timer and anchor last_load_ticks
+    // so the stored delta and the reference stay consistent.
+    if (prev == &te_todo) {
+        Long elapsed2 = get_ticks() - last_load_ticks;
+        Long load = (Long)te->delta - elapsed2;
+        if (load < MIN_DELTA) load = MIN_DELTA;
+        te->delta = load;
+        set_delta_alarm(load);
+        last_load_ticks = get_ticks();
     }
 }
 
@@ -178,7 +191,7 @@ static void in_after(Long t, vector action, bool asap) {
 		if ((int)t > 0) { // deal with unsigned negatives
 			TimeEvent * te = te_borrow();
 			te->action = action;
-			te->dueDate = get_dueDate(t);
+			te->delta = t; // raw delay; schedule_te converts to list coordinates
 			te->asap = asap;
 			safe( schedule_te(te); )
 		} else {
@@ -235,6 +248,8 @@ void stop_te(vector action) {
 		while ((te = tep->next)) {
 			if (te->action == action) {
 				tep->next = te->next;
+				if (te->next)
+					te->next->delta += te->delta;
 				te_return(te);
 				break;
 			}
@@ -271,9 +286,6 @@ void print_time(Long time) {
 		printDec(time/hours(1)), print("hours ");
 }
 
-static void printDueDate(Long dd) {
-	print_time(dd - get_dueDate(0));
-}
 
 // measure latency for in, after and later to indicate system throughput
 //   sequence: start ->1s in ->1s after -> later
@@ -375,14 +387,19 @@ void printActionName(Cell key) {
 }
 
 void print_te() {
-	TimeEvent * curr = te_todo.next;
-	show_timer();
-	while (curr &&
-		  (curr->action != NULL) //&& 
-		//   (curr->dueDate - get_dueDate(0) < hours(36))
-		  ) {
-		print (curr->asap ? "\nin " : "\nafter ");
-		printDueDate(curr->dueDate);
+    TimeEvent *curr = te_todo.next;
+    show_timer();
+    Long elapsed = get_ticks() - last_load_ticks;
+    // print("\nllt:"), printDec(last_load_ticks);   // PROBE
+    // print("  now:"), printDec(get_ticks());        // PROBE
+    // print("  el:"), printDec(elapsed);             // PROBE
+    Long accum = 0;
+    while (curr && curr->action != NULL) {
+        accum += (Long)curr->delta;
+        // print("\n  raw delta:"), printDec(curr->delta);   // PROBE
+		Long time_from_now = accum > elapsed ? accum - elapsed : 0;
+		print(curr->asap ? "\nin " : "\nafter ");
+		print_time(time_from_now);
 		tabTo(17);
 		printActionName((Cell)curr->action);
 		curr = curr->next;
@@ -391,7 +408,7 @@ void print_te() {
 		print("\n  Stopped. TE list changed while printing it.");
 	print("\nmax overdue: "), printDec(max_delta);
 	print("  te min: "), printDec(te_min());
-	max_delta = 0; // reset after report
+	max_delta = 0;
 }
 
 void print_actions() {
@@ -591,7 +608,7 @@ void init_tea() {
 		te_return(&tes[i]);
 	te_min_left = NUM_TE;
 
-	last_dueDate = get_dueDate(0);
+	last_load_ticks = get_ticks();
 
 	namedAction(measure_latency);
 	namedAction(measure_in);

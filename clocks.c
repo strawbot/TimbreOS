@@ -166,14 +166,15 @@ void blink_leds(void) {
 
 #if defined(CLOCK_DELTA_TIM) && !defined(CLOCK_HAS_DELTA)
 void set_delta_alarm(Long t) {
-    if ((unsigned long)t > CLOCK_DELTA_MAX) { print("#"); t = (Long)CLOCK_DELTA_MAX; }
     if (t < 1) t = 1;
+    // print("A"), printDec(t); // PROBE: set_delta_alarm called with t
     LL_TIM_SetAutoReload(CLOCK_DELTA_TIM, (uint32_t)(t - 1));
     LL_TIM_SetCounter(CLOCK_DELTA_TIM, 0);
     LL_TIM_EnableCounter(CLOCK_DELTA_TIM);
 }
 
 void delta_alarm(void) {
+    // print("I"); // PROBE: ISR fired
     LL_TIM_ClearFlag_UPDATE(CLOCK_DELTA_TIM);
     now(*alarmEvent);
 }

@@ -42,7 +42,7 @@ void system_failure(Long reason); // application defines system_failure();
 typedef struct TimeEvent {
     struct TimeEvent *next;
     vector action;
-    Long dueDate; // 1ms resolution; up to 48.5 days
+    Long delta; // relative delta from previous entry (or last_load_ticks for list head)
     bool asap;
 } TimeEvent;
 
