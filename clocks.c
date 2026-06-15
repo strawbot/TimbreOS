@@ -129,9 +129,11 @@ void micro_sleep(void) {
 #endif
 }
 
+extern const char build_timestamp[];
+
 void print_build_banner(void) {
     print("\nBuilt: ");
-    print(__TIMESTAMP__);
+    print(build_timestamp);
 }
 
 // ── Heartbeat double-blink ────────────────────────────────────────────────
