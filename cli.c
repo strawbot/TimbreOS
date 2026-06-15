@@ -826,11 +826,11 @@ void minusBranch()
 {
     if (queryq(returnStack)) {
         Cell i = popq(returnStack);
-
-        if (i)
+        if (i) {
             pushq(--i, returnStack);
-        else
             branch();
+        } else
+            ip++;
     } else {
         msg( " return stack underflow " );
         quit();
