@@ -1493,6 +1493,6 @@ void init_cli() {
 	namedAction(dotPrompt);
     namedAction(run_cli);
     resetCli();
-    print("\n"CLI_TITLE);
+    print(CLI_TITLE);
     later(dotPrompt);
 }
