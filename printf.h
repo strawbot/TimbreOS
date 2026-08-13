@@ -4,6 +4,6 @@
 #define PRINTF_H
 
 #include "printers.h"
-#define printf(...)  { char buf[1024]; sprintf(buf, __VA_ARGS__); print(buf); }
+#define printf(...)  { char buf[128]; snprintf(buf, 128, __VA_ARGS__); print(buf); }
 
 #endif
