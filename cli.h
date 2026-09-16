@@ -8,6 +8,7 @@
 // stream tokens
 #define BEEP 7
 #define BSPACE 8
+#define HTAB 9
 #define LFEED 10
 #define CRETURN 13
 #define ESCAPE 27

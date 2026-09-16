@@ -1289,7 +1289,10 @@ static void parse_keyq() {
 			tib_state = TIB_LINE;
 			end_tib();
 			return;
-		default:
+        case HTAB: // replace horizontal tabs
+            key = SPACE;
+            // fall through
+ 		default:
 			if (ESCAPE < key && key < DELETE && tib.in < LINE_LENGTH) {
 				tib.buffer[tib.in++] = key;
 				tib_state = TIB_FILL;
