@@ -7,7 +7,13 @@ from .conformance import EffectResult, check_effect, derive_expected, is_probe, 
 from .session import ProtocolError, Response, Session
 from .stack import StackParseError, StackSnapshot, is_sentinel, parse_stack_output, sentinel
 from .timing import ActionTiming, TimingInstrument, TimingViolation
-from .transport import HostTransport, SerialTransport, Transport, TransportError
+from .transport import (
+    HostTransport,
+    SerialTransport,
+    Transport,
+    TransportError,
+    wait_until_responsive,
+)
 
 __all__ = [
     "Cli", "CommandSpec", "StackError",
@@ -18,4 +24,5 @@ __all__ = [
     "StackParseError", "StackSnapshot", "is_sentinel", "parse_stack_output", "sentinel",
     "ActionTiming", "TimingInstrument", "TimingViolation",
     "HostTransport", "SerialTransport", "Transport", "TransportError",
+    "wait_until_responsive",
 ]

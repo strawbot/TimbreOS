@@ -24,6 +24,29 @@ class TransportError(RuntimeError):
     pass
 
 
+def wait_until_responsive(transport: "Transport", probe_cmd: str, timeout: float) -> None:
+    """Poll with a real command until the target actually answers.
+
+    Real hardware has shown an extended unresponsive window right after
+    the port opens - tens of seconds, observed up to roughly a minute -
+    before the CLI starts answering at all. Diving straight into real
+    traffic during that window means every attempt burns a full read
+    timeout before failing, which looks exactly like a link/corruption
+    problem when the board is simply still not listening yet. Shared by
+    the pytest transport fixture and any standalone script (e.g.
+    tools/checkpoint_run.py) that opens its own connection.
+    """
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        transport.write_line(probe_cmd)
+        if transport.drain(quiet_for=0.3, limit=1.0):
+            return
+    raise TransportError(
+        f"target never answered {probe_cmd!r} within timeout={timeout}s. "
+        f"Board may still be booting, wedged, or something else is holding the port."
+    )
+
+
 def warn_if_tty_node(port: str) -> None:
     """The macOS tty/cu trap, caught before it costs anyone an afternoon.
 

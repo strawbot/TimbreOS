@@ -24,7 +24,6 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
-import time
 
 import pytest
 
@@ -36,6 +35,7 @@ from timbre import (
     TargetConfig,
     TimingInstrument,
     build_codec,
+    wait_until_responsive,
 )
 from timbre.timing import parse_timing_table
 
@@ -87,37 +87,16 @@ def transport(request, cfg):
         )
         t.open()
         t.drain(quiet_for=0.3)  # banner, prompt, boot chatter
-        _wait_until_responsive(t, cfg)
+        # connect_timeout was declared in config.py but never actually
+        # used anywhere - this is that use. See wait_until_responsive's
+        # own docstring for why it's needed at all.
+        wait_until_responsive(t, cfg.stack_cmd, cfg.connect_timeout)
     else:
         t = HostTransport(cfg.host_binary, conversation_log=log_path)
         t.open()
         t.drain(quiet_for=0.3)
     yield t
     t.close()
-
-
-def _wait_until_responsive(t, cfg) -> None:
-    """Poll with a real command until the target actually answers.
-
-    Real hardware has shown an extended unresponsive window right after the
-    port opens - tens of seconds, observed up to roughly a minute - before
-    the CLI starts answering at all. Diving straight into framed test
-    traffic during that window means every single command burns a full
-    command_timeout before failing, which is what made the first ~40
-    commands of a run look like a link/corruption problem when the board
-    was simply still not listening yet. connect_timeout was declared in
-    config.py but never actually used anywhere - this is that use.
-    """
-    deadline = time.monotonic() + cfg.connect_timeout
-    while time.monotonic() < deadline:
-        t.write_line(cfg.stack_cmd)
-        if t.drain(quiet_for=0.3, limit=1.0):
-            return
-    raise RuntimeError(
-        f"{cfg.port} never answered {cfg.stack_cmd!r} within "
-        f"connect_timeout={cfg.connect_timeout}s. Board may still be "
-        f"booting, wedged, or something else is holding the port."
-    )
 
 
 @pytest.fixture(scope="session")

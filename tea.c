@@ -107,7 +107,10 @@ static void run_dueDate() {
 	// verify_todo();
 }
 
-static Long max_delta = 0;
+// Signed: an event firing up to MIN_DELTA ticks early makes elapsed < d,
+// and unsigned subtraction below would wrap that to a huge positive
+// value that then beats every real overdue sample and clobbers this.
+static Lint max_delta = 0;
 
 // delta_alarm_handler advances last_load_ticks by each head's delta before firing
 // it, so that schedule_te called from inside an action gets a fresh reference.
@@ -126,7 +129,11 @@ static void delta_alarm_handler() {
             last_load_ticks = get_ticks();
             break;
         }
-        Long overshoot = elapsed - d;
+        // Cast to signed before subtracting, not after: elapsed and d are
+        // both well inside 31 bits, so this never loses range, and it's
+        // what lets an early fire (elapsed < d) come out genuinely
+        // negative instead of wrapping to a huge unsigned value.
+        Lint overshoot = (Lint)elapsed - (Lint)d;
         if (overshoot > max_delta) max_delta = overshoot;
         if (overshoot > 0) over_due();
         last_load_ticks += d; // advance reference to head's intended fire time
@@ -298,9 +305,21 @@ static int metrix[TABLE][MEASURES];
 static Long stamps[MEASURES];
 static void measure_latency();
 
+// Sentinel meant to be "very negative µs" so any real (small, positive)
+// latency immediately exceeds it and becomes the true max via max() in
+// measure_later() below. to_usec(-secs(1)) computed this by negating an
+// unsigned Long (secs(1) wraps to a huge tick count), then round-tripping
+// it through an unsigned Octet - even with 64-bit intermediate math, the
+// final truncation back to (Long) lands on another huge POSITIVE 32-bit
+// value (1,430,655,765 at this board's ONE_SECOND), not a negative one,
+// so nothing ever beats it and MAX sticks at the bogus value forever.
+// metrix[] is µs and already `int` (signed) - skip the broken unsigned
+// round-trip and seed it directly with the value that was actually intended.
+#define NEGATIVE_ONE_SECOND_USEC (-1000000)
+
 static void init_latency() {
 	metrix[MIN][IN] = metrix[MIN][AFTER] = metrix[MIN][LATER] = to_usec(secs(1));
-	metrix[MAX][IN] = metrix[MAX][AFTER] = metrix[MAX][LATER] = to_usec(-secs(1));
+	metrix[MAX][IN] = metrix[MAX][AFTER] = metrix[MAX][LATER] = NEGATIVE_ONE_SECOND_USEC;
 	metrix[AVG][IN] = metrix[AVG][AFTER] = metrix[AVG][LATER] = 0;
 }
 /*
@@ -322,7 +341,7 @@ void show_latency() {
 void reset_latency() {
 	for (Byte i = IN; i < MEASURES; i++) {
 		metrix[MIN][i] = to_usec(secs(1));
-		metrix[MAX][i] = to_usec(-secs(1));
+		metrix[MAX][i] = NEGATIVE_ONE_SECOND_USEC;
 		metrix[AVG][i] = 0;
 	}
 }
