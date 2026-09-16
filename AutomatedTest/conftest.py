@@ -1,15 +1,17 @@
 """
-Fixtures and the two automatic guards.
+Fixtures, the automatic stack guard, and a session-wide timing snapshot.
 
-The guards are the point of this file. Both failure modes they catch are
-invisible at the point where they are caused and only show up later
-somewhere unrelated, which is exactly the kind of bug a human-written test
-suite never covers:
+stack_guard catches a failure mode that's invisible at the point where it's
+caused and only shows up later somewhere unrelated - exactly the kind of
+bug a human-written test suite never covers: a command that leaves a value
+on the parameter stack. It runs around every test, with no per-test
+authoring cost.
 
-  stack_guard   a command that leaves a value on the parameter stack
-  timing_guard  a command that blocks longer than an action's design limit
-
-Both run around every test, with no per-test authoring cost.
+timing_snapshot is not a per-test guard: mstats/0stats measure the
+C-level TEA action stats (the state machines), a session-wide concern
+independent of which CLI command any given test happens to exercise. It
+resets once at the start of the run and reports once at the end - see its
+own docstring below.
 
 Usage:
     pytest --transport=host            # fast, no board
@@ -19,6 +21,9 @@ Usage:
 
 from __future__ import annotations
 
+import re
+import subprocess
+import sys
 import time
 
 import pytest
@@ -32,6 +37,7 @@ from timbre import (
     TimingInstrument,
     build_codec,
 )
+from timbre.timing import parse_timing_table
 
 
 def pytest_addoption(parser):
@@ -170,11 +176,32 @@ def isolation(request, cli):
         cli.reset()
 
 
-@pytest.fixture(autouse=True)
-def timing_guard(request, cfg):
-    """No action may exceed its design limit during any test.
+@pytest.fixture(scope="session", autouse=True)
+def timing_snapshot(request, cfg):
+    """0stats once before the run, mstats once after - not per test.
 
-    Hardware only. Timings from the host build measure the host.
+    mstats/0stats measure the C-level TEA action stats (the state
+    machines: motor updates, telemetry, the CLI's own service action), a
+    session-wide concern that exists independently of which CLI command a
+    given test happens to be exercising. Resetting and re-snapshotting it
+    around every individual test asked the same question a hundred times
+    instead of once, and cost a full mstats round-trip (a long, multi-line
+    report) on every single test regardless of transport speed - that
+    overhead, not link flakiness, was the dominant cause of the slow,
+    unreliable runs earlier in this session.
+
+    No assertion: mstats reports only observed max time, never a
+    configured limit (see config.timing_report_cmd), so there's nothing to
+    compare against yet. This just captures the table so a human can look
+    for anything unusual accumulated over the whole session.
+
+    Also snapshots `te` at the same point - empty is the expected/healthy
+    state once everything's settled at the end of a run, so a non-empty
+    list is itself worth a look. Any bare hex address either report
+    printed (an action with no namedAction() name) is resolved
+    automatically via Scripts/resolve_action.py, so the summary names a
+    function and source line instead of a pointer - see
+    pytest_terminal_summary below for where all of this is printed.
     """
     if (
         request.config.getoption("--no-timing-guard")
@@ -182,7 +209,85 @@ def timing_guard(request, cfg):
     ):
         yield
         return
-    instrument = TimingInstrument(request.getfixturevalue("cli"), cfg)
-    instrument.reset()
+    cli = request.getfixturevalue("cli")
+    cli.execute(cfg.timing_reset_cmd)
     yield
-    instrument.assert_within_limits(context=request.node.name)
+    mstats_resp = cli.execute(cfg.timing_report_cmd, timeout=max(cfg.command_timeout, 5.0))
+    te_resp = cli.execute("te", timeout=max(cfg.command_timeout, 5.0))
+    request.config._timing_snapshot_report = mstats_resp.text
+    request.config._te_report = te_resp.text
+    request.config._resolved_actions = _resolve_unnamed_actions(
+        mstats_resp.text, te_resp.text, cfg
+    )
+
+
+# Matches the bare hex address mstats/te print for an action with no
+# namedAction() name (tea.c machineStats(): "(machine + 2) & ~3";
+# printActionName()/action_key(): "(action + 1) & ~3" - equivalent for
+# any real function pointer, since Thumb code addresses only ever land on
+# a %4 of 0 or 1, where both formulas round to the same value). Anchored
+# to 4-8 hex digits with no letters required, matching the zero-padded
+# uppercase form these two words actually print, e.g. "0000BA40".
+_HEX_ACTION = re.compile(r"^[0-9A-Fa-f]{4,8}$")
+
+
+def _mstats_hex_names(report: str) -> list[str]:
+    return [t.name for t in parse_timing_table(report) if _HEX_ACTION.match(t.name)]
+
+
+def _te_hex_names(report: str) -> list[str]:
+    """te's rows look nothing like mstats's - "in "/"after ", a formatted
+    delay, tabTo(17), then the name - so this is parsed on its own rather
+    than reusing parse_timing_table. Deliberately anchored to lines that
+    start with the words print_te() actually uses, rather than scanning
+    the whole report for hex-looking tokens: a timing VALUE elsewhere in
+    the text (e.g. "3250") is valid hex too, and would false-match a blind
+    scan.
+    """
+    names = []
+    for line in report.splitlines():
+        line = line.strip()
+        if line.startswith("in ") or line.startswith("after "):
+            tokens = line.split()
+            if tokens and _HEX_ACTION.match(tokens[-1]):
+                names.append(tokens[-1])
+    return names
+
+
+def _resolve_unnamed_actions(mstats_report: str, te_report: str, cfg) -> str | None:
+    """Run resolve_action.py on every bare hex address mstats/te printed.
+
+    namedAction() is opt-in (see resolve_action.py's own docstring for
+    why), so most actions never get a name - this turns "here's a hex
+    address" into an actual function-and-line recommendation, automatically,
+    rather than relying on a human to notice, remember the tool exists, and
+    copy the address over by hand.
+    """
+    script = cfg.resolve_action_script
+    if not script or not script.exists():
+        return None
+    addresses = sorted(set(_mstats_hex_names(mstats_report) + _te_hex_names(te_report)))
+    if not addresses:
+        return None
+    result = subprocess.run(
+        [sys.executable, str(script), *addresses],
+        capture_output=True, text=True, timeout=15,
+    )
+    return result.stdout or result.stderr
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    report = getattr(config, "_timing_snapshot_report", None)
+    if report:
+        terminalreporter.section("mstats over the full session (0stats at start, mstats at end)")
+        terminalreporter.write_line(report)
+
+    te_report = getattr(config, "_te_report", None)
+    if te_report and te_report.strip():
+        terminalreporter.section("te at the end of the session (should be empty if everything settled)")
+        terminalreporter.write_line(te_report)
+
+    resolved = getattr(config, "_resolved_actions", None)
+    if resolved:
+        terminalreporter.section("unnamed actions resolved (Scripts/resolve_action.py)")
+        terminalreporter.write_line(resolved)

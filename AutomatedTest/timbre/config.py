@@ -16,6 +16,11 @@ from dataclasses import dataclass, field
 # one level above the harness, and a relative path would silently fail there.
 _HARNESS_ROOT = pathlib.Path(__file__).resolve().parent.parent
 _FAKE_TARGET = _HARNESS_ROOT / "tools" / "fake_target.py"
+# AutomatedTest/../.. is ActiveRobot - sibling of board-NanoR4, where the
+# firmware ELF and the address-resolution script actually live.
+_RESOLVE_ACTION_SCRIPT = (
+    _HARNESS_ROOT.parent.parent / "board-NanoR4" / "Scripts" / "resolve_action.py"
+)
 
 
 @dataclass
@@ -230,6 +235,14 @@ class TargetConfig:
     timing_reset_cmd: str = "0stats"
     # Units the instrument reports in, for readable failure messages.
     timing_units: str = "us"
+
+    # Script that turns a bare hex address from mstats/te into a function
+    # name and source line via addr2line - see its own docstring for why
+    # most actions are left unnamed (namedAction() costs flash per name)
+    # and this exists instead. None (or a path that doesn't exist) just
+    # disables the automatic resolve-and-recommend step in the
+    # timing_snapshot report - conftest.py checks for that, not an error.
+    resolve_action_script: pathlib.Path | None = _RESOLVE_ACTION_SCRIPT
 
     # ------------------------------------------------------------------
     # CRC

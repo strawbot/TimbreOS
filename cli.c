@@ -1495,6 +1495,7 @@ void init_cli() {
 	namedAction(cli);
 	namedAction(dotPrompt);
     namedAction(run_cli);
+    namedAction(resetCli);
     resetCli();
     print(CLI_TITLE);
     later(dotPrompt);

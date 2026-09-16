@@ -16,3 +16,4 @@ build-*
 ._*
 *.pyc
 .claude/worktrees/flamboyant-colden-bc694c/
+AutomatedTest/conversation.log
