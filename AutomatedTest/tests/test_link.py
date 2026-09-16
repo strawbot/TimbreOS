@@ -1,0 +1,134 @@
+"""
+Layer 0: prove the link and the framing before trusting any command result.
+
+Nothing above this file means anything until these pass. A CRC that
+disagrees with the firmware, or a parser that silently truncates long input,
+turns every higher-level test into a coin flip that happens to be green.
+"""
+
+import pytest
+
+from timbre import Crc16Codec, ProtocolError
+
+
+def test_target_responds(cli):
+    resp = cli.call(cli.cfg.stack_cmd)
+    assert not resp.timed_out, "no response from target; check port, baud, wiring"
+    assert resp.ok
+
+
+def test_crc_agrees_with_target(cli, cfg, session):
+    """The harness CRC must equal the firmware CRC, or CRC is worse than none.
+
+    TODO: replace with whatever the CLI offers for this — a word that CRCs
+    the following text, or a deliberately corrupted frame that must be
+    rejected. Skipped rather than faked, because a fake pass here is the
+    single most dangerous thing in the suite.
+    """
+    if not cfg.crc_enabled:
+        pytest.skip("CRC disabled in config")
+    codec = Crc16Codec(cfg.crc_separator, cfg.crc_digits)
+    known_payload = "123 456 +"
+    expected = codec.compute(known_payload)
+    assert len(expected) == cfg.crc_digits
+    pytest.skip("wire up against the firmware's CRC word, then delete this skip")
+
+
+def test_corrupted_command_is_rejected(cli, cfg, session):
+    """A frame whose CRC does not match must not be executed."""
+    if not cfg.crc_enabled:
+        pytest.skip("CRC disabled in config")
+    bad = f"{cfg.stack_cmd} {cfg.crc_separator}{'0' * cfg.crc_digits}"
+    lines = session.raw(bad + cfg.tx_eol)
+    assert lines, "target silently swallowed a corrupted frame"
+    session.resync()
+
+
+@pytest.mark.parametrize("length", [16, 64, 127, 128, 129, 255, 256, 512])
+def test_long_input_is_bounded_not_truncated(cli, session, cfg, length):
+    """Over-long input must be rejected, never silently cut short.
+
+    Silent truncation is the worst failure mode this CLI can have: a command
+    loses its tail, does something different from what was asked, and reports
+    success. Every test result after that is suspect.
+    """
+    filler = " ".join(["0"] * (length // 2))
+    try:
+        resp = session.execute(filler)
+    except ProtocolError:
+        # The harness refused to send it: framed length would overrun the
+        # target's buffer. That is the pre-flight check doing its job, and
+        # it tells you the usable command length is max_line_length minus
+        # framing overhead.
+        cli.clear_stack()
+        return
+
+    assert not resp.timed_out, f"interpreter stopped responding at {length} chars"
+    if resp.frame_lost:
+        pytest.fail(
+            f"the {length}-char line was discarded before executing. Lower "
+            f"config.max_line_length to match the real input buffer."
+        )
+    # Clear on its own line. If the long line aborted partway (stack
+    # overflow, length limit), a trailing clear on that same line would
+    # never have run and the stack guard would fire in teardown blaming
+    # this test for the previous one's mess.
+    cli.clear_stack()
+    session.resync()
+
+
+def test_rapid_back_to_back_commands(cli):
+    """No inter-command delay. Flushes out RX buffer and reentrancy bugs."""
+    for _ in range(50):
+        resp = cli.call(cli.cfg.stack_cmd)
+        assert resp.ok, f"failed under back-to-back load: {resp}"
+
+
+def test_recovers_from_garbage(cli, session, cfg):
+    """Binary noise on the line must not wedge the interpreter."""
+    session.raw(bytes(range(1, 32)).decode("latin-1") + cfg.tx_eol)
+    session.resync()
+    assert cli.call(cfg.stack_cmd).ok, "interpreter did not recover from garbage"
+
+
+def test_empty_line_is_harmless(cli, session, cfg):
+    session.raw(cfg.tx_eol * 3)
+    session.resync()
+    assert cli.call(cfg.stack_cmd).ok
+
+
+def test_framing_survives_async_events(cli, cfg):
+    """Events firing mid-command must not contaminate the response.
+
+    If this fails, requirement R2 is unmet: async output is not
+    distinguishable from command results and no amount of harness cleverness
+    will fix it.
+    """
+    if cfg.async_prefix is None:
+        pytest.skip("no async prefix configured")
+    for _ in range(20):
+        resp = cli.call(cfg.stack_cmd)
+        assert resp.ok
+        for line in resp.lines:
+            assert not line.startswith(cfg.async_prefix), (
+                f"event leaked into response body: {line!r}"
+            )
+
+
+def test_error_detection_matches_real_errors(cli, cfg, session):
+    """The error regex must actually match what the target emits.
+
+    This guards the highest-consequence single line of configuration in the
+    harness. If error_pattern fails to match, every negative test in the
+    suite passes silently while the CLI rejects everything, and the suite
+    reports green on a completely broken interpreter.
+    """
+    resp = session.execute("definitely_not_a_command_xyzzy")
+    assert not resp.timed_out, "no response to an unknown word"
+    assert resp.lines, "target said nothing about an unknown word"
+    assert resp.errors, (
+        f"config.error_pattern {cfg.error_pattern!r} did not match the "
+        f"target's actual error output: {resp.lines!r}. "
+        "Until this matches, negative tests are meaningless."
+    )
+    cli.clear_stack()

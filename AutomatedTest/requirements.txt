@@ -1,0 +1,29 @@
+# Dependencies for the TimbreOS CLI test harness.
+#
+#   pip install -r requirements.txt
+#
+# Deliberately small. Everything else the harness uses is standard library,
+# which matters for something that gates firmware releases: the fewer moving
+# parts between a test result and the truth, the better.
+
+# Test runner. Floor rather than an exact pin, because the harness uses only
+# stable pytest API (fixtures, parametrize, markers, record_property).
+pytest>=8.0
+
+# Serial transport. Not needed for --transport=host; required for hardware.
+# 3.5 has been the stable release for years.
+pyserial>=3.5
+
+
+# ---------------------------------------------------------------------------
+# For CI, pin exactly instead. A pytest minor upgrade changing collection or
+# assertion-rewriting behaviour should not be able to silently change what
+# your firmware test suite reports:
+#
+#     pip freeze > requirements.lock.txt
+#     pip install -r requirements.lock.txt
+#
+# Keep the lock file in the repo next to the firmware it tests, so an old
+# release tag can still be rebuilt and retested with the toolchain it shipped
+# against.
+# ---------------------------------------------------------------------------
