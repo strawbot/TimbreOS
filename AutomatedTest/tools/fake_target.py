@@ -19,7 +19,9 @@ Implements the contract the harness depends on:
 
 from __future__ import annotations
 
+import math
 import random
+import struct
 import sys
 
 STACK: list[int] = []
@@ -58,7 +60,88 @@ HELP = {
     "strlen": "strlen ( a -- c ) return length of a string",
     "type": "type ( a n -- ) output n characters starting at a",
     "cr": "cr ( -- ) send end of line to output device",
+    ".f": ".f ( f -- ) print f as a floating point number",
+    "pi": "pi ( -- f ) return 32 bit value for pi",
+    "i>f": "i>f ( i -- f ) convert integer to 32 bit float",
+    "f>i": "f>i ( f -- i ) convert 32 bit float to integer",
+    "fabs": "fabs ( f -- f ) get absolute value of float",
+    "fneg": "fneg ( f -- f ) reverse the sign of the float",
+    "f+": "f+ ( f m -- f ) add two floats",
+    "f-": "f- ( f m -- f ) subtract float m from f",
+    "f*": "f* ( f m -- m ) multiply two floats",
+    "f/": "f/ ( f m -- m ) divide float f by float m",
+    "f>": "f> ( f m -- flag ) flag is true if f is greater",
+    "sqrt": "sqrt ( f -- f ) calculate the square root of f",
+    "cbrt": "cbrt ( f -- f ) calculate the cube root of f",
+    "pow": "pow ( f m -- f ) calculate the power of f to m",
+    "exp": "exp ( f -- f ) calculate the value of e to the power of f",
+    "ln": "ln ( f -- f ) calculate the natural log of f",
+    "log": "log ( f -- f ) calculate the log 10 of f",
+    "sin": "sin ( f -- f ) calculate the sine of f",
+    "cos": "cos ( f -- f ) calculate the cosine of f",
+    "tan": "tan ( f -- f ) calculate the tangent of f",
+    "asin": "asin ( f -- f ) calculate the inverse sine of f",
+    "acos": "acos ( f -- f ) calculate the inverse cos of f",
+    "atan": "atan ( f -- f ) calculate the inverse tan of f",
+    "atan2": "atan2 ( f m -- m ) calculate the inverse tan of f/m",
 }
+
+
+def _pack_f32(x: float) -> bytes:
+    try:
+        return struct.pack("f", x)
+    except OverflowError:
+        # x is finite but exceeds float32 range (e.g. exp(1000) as a
+        # double) - real 32-bit float overflow saturates to +-inf rather
+        # than faulting, so that's what gets stored here too.
+        return struct.pack("f", math.inf if x > 0 else -math.inf)
+
+
+def to_f32(x: float) -> float:
+    return struct.unpack("f", _pack_f32(x))[0]
+
+
+def push_float(f: float) -> None:
+    STACK.append(struct.unpack("I", _pack_f32(f))[0])
+
+
+def pop_float() -> float:
+    bits = STACK.pop() & 0xFFFFFFFF
+    return struct.unpack("f", struct.pack("I", bits))[0]
+
+
+def safe_math(fn, *args):
+    """C's libm returns NaN/inf for domain errors instead of raising, so
+    the conformance/sentinel sweeps that call every discovered command
+    with garbage values don't crash real hardware - a sentinel bit
+    pattern reinterpreted as a float is still a legal (if wild) float32,
+    including actual NaN/Inf patterns. Python's math module raises
+    instead, which took the whole fake_target.py subprocess down the
+    first time a sweep handed sqrt/ln/etc. a negative sentinel. This
+    matches the non-crashing behavior instead.
+    """
+    try:
+        result = fn(*args)
+    except (ValueError, OverflowError, ZeroDivisionError):
+        return float("nan")
+    return float("nan") if isinstance(result, complex) else result
+
+
+def looks_like_float(word: str) -> bool:
+    """Same shape cli.c's signDigits() accepts under FLOAT_SUPPORT: digits
+    with exactly one decimal point, optionally signed. No exponents -
+    Python's float() accepts "1e10"; the real parser doesn't, so that's
+    explicitly excluded rather than just delegated to float()'s own rules.
+    """
+    if "e" in word.lower():
+        return False
+    if "." not in word:
+        return False
+    try:
+        float(word)
+    except ValueError:
+        return False
+    return True
 
 
 def intern_string(text: str) -> int:
@@ -245,10 +328,148 @@ def run_word(word: str, rest: list[str]) -> bool:
         STACK.append(addr ^ 0xA5A5A5A5)
         return True
 
+    if word == ".f":
+        if not STACK:
+            emit("? stack underflow")
+            return False
+        emit(f"{pop_float():.4f} ")
+        return True
+
+    if word == "pi":
+        push_float(math.pi)
+        return True
+
+    if word == "i>f":
+        if not STACK:
+            emit("? stack underflow")
+            return False
+        push_float(to_f32(float(STACK.pop())))
+        return True
+
+    if word == "f>i":
+        # Rounds, not truncates - matches float.c cliFtoi()'s +-0.5 before
+        # the cast (test_f_to_i_rounds_rather_than_truncates pins this).
+        if not STACK:
+            emit("? stack underflow")
+            return False
+        f = pop_float()
+        if not math.isfinite(f):
+            # int(nan) / int(inf) raise in Python; the real (Integer) cast
+            # in C is implementation-defined but doesn't fault. 0 is a
+            # reasonable non-crashing stand-in, not a claim about what the
+            # real board would produce.
+            STACK.append(0)
+            return True
+        f += -0.5 if f < 0.0 else 0.5
+        STACK.append(int(f))
+        return True
+
+    if word == "fabs":
+        if not STACK:
+            emit("? stack underflow")
+            return False
+        push_float(abs(pop_float()))
+        return True
+
+    if word == "fneg":
+        if not STACK:
+            emit("? stack underflow")
+            return False
+        push_float(-pop_float())
+        return True
+
+    if word in ("f+", "f-", "f*", "f/"):
+        # ( f m -- ): m is on top, f below - popped in that order.
+        if len(STACK) < 2:
+            emit("? stack underflow")
+            return False
+        m = pop_float()
+        n = pop_float()
+        if word == "f/":
+            push_float(safe_math(lambda: n / m))
+        else:
+            push_float({"f+": n + m, "f-": n - m, "f*": n * m}[word])
+        return True
+
+    if word == "f>":
+        if len(STACK) < 2:
+            emit("? stack underflow")
+            return False
+        m = pop_float()
+        n = pop_float()
+        STACK.append(1 if n > m else 0)
+        return True
+
+    if word == "sqrt":
+        if not STACK:
+            emit("? stack underflow")
+            return False
+        push_float(safe_math(math.sqrt, pop_float()))
+        return True
+
+    if word == "cbrt":
+        if not STACK:
+            emit("? stack underflow")
+            return False
+        v = pop_float()
+        push_float(math.copysign(abs(v) ** (1 / 3), v))
+        return True
+
+    if word == "pow":
+        if len(STACK) < 2:
+            emit("? stack underflow")
+            return False
+        m = pop_float()
+        n = pop_float()
+        push_float(safe_math(lambda: n ** m))
+        return True
+
+    if word == "exp":
+        if not STACK:
+            emit("? stack underflow")
+            return False
+        push_float(safe_math(math.exp, pop_float()))
+        return True
+
+    if word == "ln":
+        if not STACK:
+            emit("? stack underflow")
+            return False
+        push_float(safe_math(math.log, pop_float()))
+        return True
+
+    if word == "log":
+        if not STACK:
+            emit("? stack underflow")
+            return False
+        push_float(safe_math(math.log10, pop_float()))
+        return True
+
+    if word in ("sin", "cos", "tan", "asin", "acos", "atan"):
+        if not STACK:
+            emit("? stack underflow")
+            return False
+        fn = {"sin": math.sin, "cos": math.cos, "tan": math.tan,
+              "asin": math.asin, "acos": math.acos, "atan": math.atan}[word]
+        push_float(safe_math(fn, pop_float()))
+        return True
+
+    if word == "atan2":
+        if len(STACK) < 2:
+            emit("? stack underflow")
+            return False
+        m = pop_float()
+        n = pop_float()
+        push_float(safe_math(math.atan2, n, m))
+        return True
+
     # Not a command, so try to read it as a number.
     try:
         value = int(word, 0)
     except ValueError:
+        if looks_like_float(word):
+            push_float(to_f32(float(word)))
+            return True
         # Matches the real firmware's format (cli.c interpret_word): the
         # word is echoed back followed by "<- eh?", not a leading "?".
         emit(f"{word}<- eh?")

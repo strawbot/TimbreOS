@@ -77,6 +77,23 @@ PROBE_EXEMPT = {"resetcli", "sp!"}
 # terminator is covered in tests/test_macros.py.
 SYNTAX_ONLY = {";"}
 
+# Float words whose comment reuses an argument name for the result - e.g.
+# sqrt ( f -- f ), f+ ( f m -- f ) - not because the command claims to
+# hand the same VALUE back unchanged (dup/swap/over's actual claim), but
+# because both slots hold the same TYPE (a float) and single-letter names
+# are doing double duty as type labels. derive_expected() can't tell these
+# two conventions apart from the text alone: by the "result name is an
+# argument name" rule it reads sqrt as a claimed passthrough, and the
+# derivable-tier sweep then expects sqrt(probe) to equal probe, which a
+# square root will never do. Forced onto the depth-only tier instead via
+# check_effect(..., derivable=False) - their arity is still checked, just
+# not value identity. See test_float.py for the real behavioral tests.
+FLOAT_TYPE_LABELED = {
+    "f+", "f-", "f*", "f/", "fabs", "fneg", "pow", "atan2",
+    "sqrt", "cbrt", "exp", "ln", "log",
+    "sin", "cos", "tan", "asin", "acos", "atan",
+}
+
 
 def _testable(spec):
     return (
@@ -88,6 +105,10 @@ def _testable(spec):
         and spec.raw
         and "--" in spec.raw
     )
+
+
+def _is_derivable(spec):
+    return spec.name not in FLOAT_TYPE_LABELED and derive_expected(spec.args, spec.results) is not None
 
 
 # ----------------------------------------------------------------------
@@ -103,7 +124,7 @@ def test_shufflers_match_their_comments(cli, commands):
     for name, spec in sorted(commands.items()):
         if not _testable(spec):
             continue
-        if derive_expected(spec.args, spec.results) is None:
+        if not _is_derivable(spec):
             continue
         result = check_effect(cli, spec)
         checked.append(name)
@@ -130,9 +151,9 @@ def test_declared_arity_matches_observed(cli, commands):
     for name, spec in sorted(commands.items()):
         if not _testable(spec):
             continue
-        if derive_expected(spec.args, spec.results) is not None:
+        if _is_derivable(spec):
             continue  # covered exactly above
-        result = check_effect(cli, spec)
+        result = check_effect(cli, spec, derivable=False)
         if not result.ok:
             failures.append(f"  {result}\n      {result.reason}")
 
@@ -154,7 +175,7 @@ def test_effect_report(cli, commands, record_property):
         if not _testable(spec):
             lines.append(f"{name:<14} {spec.raw.strip() or '(no comment)'}  [skipped]")
             continue
-        result = check_effect(cli, spec)
+        result = check_effect(cli, spec, derivable=_is_derivable(spec))
         verdict = "ok" if result.ok else f"MISMATCH: {result.reason}"
         kind = "exact" if result.derivable else "depth"
         lines.append(f"{name:<14} {spec.raw.strip():<40} [{kind}] {verdict}")

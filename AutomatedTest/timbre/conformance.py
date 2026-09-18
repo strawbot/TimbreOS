@@ -92,8 +92,17 @@ class EffectResult:
         )
 
 
-def check_effect(cli, spec, floor: int = 2) -> EffectResult:
-    """Run one command with probe arguments and compare against its comment."""
+def check_effect(cli, spec, floor: int = 2, derivable: bool | None = None) -> EffectResult:
+    """Run one command with probe arguments and compare against its comment.
+
+    derivable=False forces the depth-only path even when derive_expected()
+    would naively call it derivable. Needed for words like sqrt ( f -- f )
+    where the result name matches an argument name because both are
+    labeled by TYPE (float), not because the command claims to hand the
+    same VALUE back unchanged - derive_expected can't tell those two
+    conventions apart from the comment text alone. See callers for the
+    curated list.
+    """
     cfg = cli.cfg
     # A stack clear, not a full reset: this runs inside a test the isolation
     # fixture has already reset, and a reset per command would dominate the
@@ -113,7 +122,7 @@ def check_effect(cli, spec, floor: int = 2) -> EffectResult:
     observed = tuple(v for v in after.values if not is_sentinel_value(v, cfg))
     depth_delta = after.depth - before
     declared_delta = len(spec.results) - len(spec.args)
-    expected = derive_expected(spec.args, spec.results)
+    expected = derive_expected(spec.args, spec.results) if derivable is not False else None
 
     result = EffectResult(
         name=spec.name,
