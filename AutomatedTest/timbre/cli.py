@@ -43,6 +43,13 @@ class CommandSpec:
     results: list[str] = field(default_factory=list)
     help: str = ""
     raw: str = ""
+    # True whenever parse_spec() actually matched a stack-effect comment -
+    # _STACK_EFFECT or its dash-less fallback _ARGS_ONLY - regardless of
+    # whether that comment turned out to declare zero args and zero
+    # results (a real, parseable "( - )", as opposed to no comment at
+    # all). args/results being empty can't answer that question on their
+    # own; this can.
+    has_declared_effect: bool = False
 
     @property
     def arity(self) -> int:
@@ -64,6 +71,20 @@ class CommandSpec:
         if re.search(r"<[^>]+>", self.raw):
             return True
         return any(a.lower() in ("text", "str", "string", "name") for a in self.args)
+
+    @property
+    def is_immediate(self) -> bool:
+        """True for control-flow/compiler words marked "[i]" in their help.
+
+        `again`, `if`, `;`, `[`, ... only mean something while a macro build
+        is in progress (or, for a few, only *because* one is): they jump on
+        the return stack, toggle compile state, or terminate a definition
+        that isn't there. Their stack comment - often none at all - can't
+        capture that. A sweep that invokes every zero-arity command bare to
+        check its stack effect must skip these for a different reason: not
+        "wrong depth", but "undefined interpreter state outside a macro".
+        """
+        return bool(re.search(r"\[i\]", self.raw))
 
 
 class Cli:
@@ -239,12 +260,56 @@ class Cli:
     def commands(self, refresh: bool = False) -> dict[str, CommandSpec]:
         """Full registry, fetched from the target itself.
 
+        A bare `help` (no filter) lists every word with its one-line help
+        in a single response, replacing one `help <name>` round trip per
+        word - at ~165 real commands, each paying its own marker-framing
+        overhead, that per-word loop was the single most expensive thing
+        this harness did every session. Cross-checked against
+        word_names() (one more cheap round trip) so a name that's
+        discoverable but somehow missing from the help dump still gets an
+        entry - the same guarantee the old per-word loop gave, just not
+        the primary source anymore.
+
         Discovering the command set at runtime is what keeps the test matrix
         honest: add a word to the firmware and the coverage test fails until
         someone writes a case for it.
         """
         if self._specs is None or refresh:
-            self._specs = {n: self.describe(n) for n in self.word_names()}
+            resp = self.call(self.cfg.describe_cmd, timeout=max(self.cfg.command_timeout, 5.0))
+            if not resp.ok:
+                raise ProtocolError(f"bare {self.cfg.describe_cmd!r} failed: {self._diag(resp)}")
+            specs: dict[str, CommandSpec] = {}
+            for line in resp.lines:
+                parts = line.split(None, 1)
+                if not parts:
+                    continue
+                name = parts[0]
+                specs[name] = parse_spec(name, line)
+
+            names = self.word_names()
+            # A command name that collides with cfg.async_prefix (e.g.
+            # "!") has its own help line misclassified as an unsolicited
+            # event by Session._is_event() - not a real event, just a name
+            # starting with the same character - and lands in resp.events
+            # instead of resp.lines. Recovered here rather than by
+            # loosening event detection itself, which would risk real
+            # events leaking into normal command responses. Matters more
+            # than a missing help string: a command that falls through to
+            # the blank CommandSpec(name=name) fallback below reads as
+            # arity 0, which pulls it into the "safe to run bare" sweeps
+            # with none of the real word's argument requirements - for a
+            # word like "!" (a raw memory store), that's a command that
+            # writes through whatever garbage is left on an underflowed
+            # stack instead of being excluded like a properly-parsed
+            # arity-2 word would be.
+            for line in resp.events:
+                parts = line.split(None, 1)
+                if parts and parts[0] in names and parts[0] not in specs:
+                    specs[parts[0]] = parse_spec(parts[0], line)
+
+            for name in names:
+                specs.setdefault(name, CommandSpec(name=name))
+            self._specs = specs
         return self._specs
 
     # -- helpers ----------------------------------------------------------
@@ -283,8 +348,23 @@ class Cli:
 #
 # Falls back to a bare spec rather than raising, so an unparseable help
 # string degrades coverage instead of breaking the run.
+#
+# A handful of words - dac!, nap, tabto, set-utc, i2cpattern, ... - drop the
+# dash entirely and write just "(n)" or "(limb start_channel)". Per the
+# board's convention, the dash is only there to separate outputs from
+# inputs, so it's only required when there ARE outputs: "(n)" means exactly
+# what "(n -)" means. _ARGS_ONLY catches that case as a fallback once
+# _STACK_EFFECT (which requires the dash) has already had a chance to match.
+#
+# It's deliberately narrow - only a space/word-character run is accepted
+# inside the parens - so it can't misfire on a parenthesized aside that
+# isn't a stack comment at all, e.g. i2cscan's "(0x08-0x77)": that has a
+# bare, unspaced "-" in it, which is excluded from the character class, so
+# it correctly falls through to "no declared effect" instead of being read
+# as one argument named "0x08-0x77".
 # ----------------------------------------------------------------------
 _STACK_EFFECT = re.compile(r"\((?P<args>[^()]*?)\s--?\s(?P<results>[^()]*)\)")
+_ARGS_ONLY = re.compile(r"\((?P<args>[\w ]+)\)")
 
 
 def parse_spec(name: str, text: str) -> CommandSpec:
@@ -294,6 +374,13 @@ def parse_spec(name: str, text: str) -> CommandSpec:
         spec.args = match.group("args").split()
         spec.results = match.group("results").split()
         spec.help = text[match.end():].strip()
-    else:
-        spec.help = text.strip()
+        spec.has_declared_effect = True
+        return spec
+    match = _ARGS_ONLY.search(text)
+    if match:
+        spec.args = match.group("args").split()
+        spec.help = text[match.end():].strip()
+        spec.has_declared_effect = True
+        return spec
+    spec.help = text.strip()
     return spec

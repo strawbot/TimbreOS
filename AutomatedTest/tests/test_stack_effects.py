@@ -70,12 +70,17 @@ PROBE_UNSAFE = {
 PROBE_EXEMPT = {"resetcli", "sp!"}
 
 # Syntactic particles: only meaningful inside a construct, so invoking one
-# standalone correctly errors. They appear in the word list and carry a
-# stack comment, but they are not commands in the sense this sweep assumes.
+# standalone correctly errors. They appear in the word list and some carry
+# a stack comment (if, for, until, while all declare "( n - )"), but they
+# are not commands in the sense this sweep assumes - probing them exercises
+# compiler/control-flow state, not a stack effect.
 #
-# TODO: add any other context-only words. They still need tests - the macro
-# terminator is covered in tests/test_macros.py.
-SYNTAX_ONLY = {";"}
+# The board marks every one of these "[i]" in its own help text (immediate:
+# executed rather than compiled into a macro), which is exactly the
+# "context-only, not a plain command" property this sweep needs to exclude
+# on - see CommandSpec.is_immediate. So nothing needs to be hand-listed
+# here; ";" is covered the same way (its help is "[i] end a macro build")
+# and is tested directly in tests/test_macros.py.
 
 # Float words whose comment reuses an argument name for the result - e.g.
 # sqrt ( f -- f ), f+ ( f m -- f ) - not because the command claims to
@@ -100,10 +105,9 @@ def _testable(spec):
         spec.name not in DESTRUCTIVE
         and spec.name not in PROBE_UNSAFE
         and spec.name not in PROBE_EXEMPT
-        and spec.name not in SYNTAX_ONLY
+        and not spec.is_immediate
         and not spec.takes_text
-        and spec.raw
-        and "--" in spec.raw
+        and spec.has_declared_effect
     )
 
 

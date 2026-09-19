@@ -48,7 +48,7 @@ HELP = {
     "add": "add ( a b -- sum ) add the top two values",
     "peek": "peek ( addr -- value ) read a 32-bit word",
     ":": ": ( -- ) <name> begin a macro definition",
-    ";": "; ( -- ) end a macro definition",
+    ";": "; [i] ( -- ) end a macro definition",
     "forget": "forget ( -- ) <name> remove a macro",
     "dup": "dup ( n -- n n ) duplicate the top value",
     "drop": "drop ( n -- ) discard the top value",
@@ -291,8 +291,12 @@ def run_word(word: str, rest: list[str]) -> bool:
 
     if word == "help":
         if not rest:
-            emit("? help needs a name")
-            return False
+            # Bare help: one line per word, same format help <name> gives
+            # for a single one - this is what cli.commands() now reads
+            # instead of looping help <name> per word.
+            for n in sorted(set(HELP) | set(MACROS)):
+                emit(HELP.get(n, n))
+            return True
         name = rest.pop(0)
         emit(HELP.get(name, f"? unknown command {name}"))
         return True

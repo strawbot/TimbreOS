@@ -54,7 +54,7 @@ Words // memory
 	here	here // ( - a ) return address of end of dictionary
 	allot	cliAllot // ( n - ) reserve n bytes after end of dictionary
 	c,		cComma // ( c - ) allocate and 1 byte and put value in it
-	,		comma // ( n -s ) allocate 1 cell and put n into it
+	,		comma // ( n - ) allocate 1 cell and put n into it
 End
 
 Words // IO

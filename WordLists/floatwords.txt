@@ -27,5 +27,5 @@ Words
 End
 
 Constants
-	decimals decimals ( - a ) number of decimal places  access with @ !
+	decimals decimals // ( - a ) number of decimal places  access with @ !
 End

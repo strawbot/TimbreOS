@@ -236,6 +236,12 @@ class TargetConfig:
     # Units the instrument reports in, for readable failure messages.
     timing_units: str = "us"
 
+    # Word whose last line reports canary-based stack health: board_cli.c's
+    # show_sys() ends with "stack:   OK  hwm=<high-water mark>/<limit> B" (or
+    # WARNING/OVERFLOW/CRITICAL - see Robot/diagnostics/canary/canary.c
+    # stack_render()). Run once at session end, same point as mstats/te.
+    show_sys_cmd: str = "show-sys"
+
     # Script that turns a bare hex address from mstats/te into a function
     # name and source line via addr2line - see its own docstring for why
     # most actions are left unnamed (namedAction() costs flash per name)

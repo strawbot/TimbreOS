@@ -200,6 +200,39 @@ def timing_snapshot(request, cfg):
     )
 
 
+@pytest.fixture(scope="session", autouse=True)
+def stack_health_snapshot(request, cfg):
+    """show-sys once at session end: the canary's verdict on stack health.
+
+    Unlike timing_snapshot, this DOES assert. board_cli.c's show_sys() ends
+    with a "stack:" line rendered by Robot/diagnostics/canary/canary.c's
+    stack_render(): "OK  hwm=<high-water mark>/<limit> B", or WARNING (hwm
+    exceeds _Min_Stack_Size), OVERFLOW (usage ran into BSS - the line
+    includes a hex dump of the incursion), or CRITICAL (consumed all free
+    RAM). Any of those three means the canary caught real corruption
+    sometime during the run - not necessarily caused by whichever test
+    happens to run last - so this is one check at the end of the whole
+    session rather than a per-test assertion.
+    """
+    if request.config.getoption("--transport") != "serial":
+        yield
+        return
+    cli = request.getfixturevalue("cli")
+    yield
+    resp = cli.execute(cfg.show_sys_cmd, timeout=max(cfg.command_timeout, 5.0))
+    request.config._show_sys_report = resp.text
+    stack_line = next((l for l in resp.lines if l.strip().startswith("stack:")), None)
+    if stack_line is None:
+        return  # show-sys changed shape or didn't answer; reported, not asserted
+    status = stack_line.split(None, 2)[1:2]
+    assert status and status[0] == "OK", (
+        f"canary reports stack health is not OK at session end: {stack_line.strip()!r}\n"
+        "WARNING means the high-water mark exceeded _Min_Stack_Size; OVERFLOW "
+        "means usage ran into BSS; CRITICAL means it consumed all free RAM. "
+        "See Robot/diagnostics/canary/canary.c stack_render()."
+    )
+
+
 # Matches the bare hex address mstats/te print for an action with no
 # namedAction() name (tea.c machineStats(): "(machine + 2) & ~3";
 # printActionName()/action_key(): "(action + 1) & ~3" - equivalent for
@@ -270,3 +303,8 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     if resolved:
         terminalreporter.section("unnamed actions resolved (Scripts/resolve_action.py)")
         terminalreporter.write_line(resolved)
+
+    show_sys_report = getattr(config, "_show_sys_report", None)
+    if show_sys_report:
+        terminalreporter.section("show-sys at the end of the session (canary stack check)")
+        terminalreporter.write_line(show_sys_report)

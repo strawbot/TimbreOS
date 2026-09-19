@@ -190,7 +190,7 @@ def main() -> None:
     if sample:
         spec = cli.describe(sample)
         print(f"       | {sample}: {spec.raw.strip()}")
-        if spec.args or spec.results or "--" in spec.raw:
+        if spec.has_declared_effect:
             say(OK, "stack comments are parseable")
         else:
             say(INFO, "no parseable stack effect; the conformance sweep will skip")
