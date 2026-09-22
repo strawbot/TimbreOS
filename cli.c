@@ -602,6 +602,18 @@ void endNumberConversion() /* n -- addr \ count */
     *a = 0; // add null terminator for use as a C string
 }
 
+// Upper bound on .r's padding count. field_width - digit_count is clamped
+// to [0, DOTR_MAX_PAD] before reaching spaces(), which otherwise has no
+// bound of its own - it just emits bytes one at a time until its count
+// hits zero. A garbage or absurd field width (a sentinel probe value,
+// a typo, anything of that shape) used to turn into a spaces() loop in
+// the billions: not a crash, just the CPU faithfully emitting bytes for
+// as long as it takes, which is indistinguishable from a hang to anyone
+// watching the terminal. Confirmed live: this exact shape of call left a
+// real board needing a physical reset. 80 is generously more than any
+// real terminal field width this CLI ever prints.
+#define DOTR_MAX_PAD 80
+
 void dotr() /* n \ m -- */
 {
     tor();
@@ -621,6 +633,8 @@ void dotr() /* n \ m -- */
     minusOp();
     lit(0);
     maxOp();
+    lit(DOTR_MAX_PAD);
+    minOp();
     spaces(pop());
     type();
 }
@@ -1031,6 +1045,38 @@ bool toDigit(Byte* n) // convert character to number according to base
     return true;
 }
 
+#ifdef FLOAT_SUPPORT
+// Scales f by 10^exponent using repeated multiply/divide rather than
+// powf(), so float support pulls in no new library dependency beyond
+// what float.c already links. exponent is clamped to a small, bounded
+// range first - not because larger exponents are invalid input, but
+// because the *correct* result for anything past this range is exactly
+// what clamping produces anyway (0 or +-inf, float32 cannot represent
+// finite values outside roughly 1e-45..3.4e38), and a loop bounded by an
+// unchecked parsed value is exactly the bug ".r"'s padding count turned
+// out to be elsewhere in this file. 64 is comfortably past float32's own
+// range in either direction.
+#define MAX_DECIMAL_EXPONENT 64
+
+static float scaleByPow10(float f, Integer exponent)
+{
+    if (exponent > MAX_DECIMAL_EXPONENT)
+        exponent = MAX_DECIMAL_EXPONENT;
+    else if (exponent < -MAX_DECIMAL_EXPONENT)
+        exponent = -MAX_DECIMAL_EXPONENT;
+
+    while (exponent > 0) {
+        f *= 10.0f;
+        exponent--;
+    }
+    while (exponent < 0) {
+        f /= 10.0f;
+        exponent++;
+    }
+    return f;
+}
+#endif
+
 Cell signDigits(Byte* cstring, bool sign) // convert string to number according to base
 {
     Cell n = 0;
@@ -1039,6 +1085,70 @@ Cell signDigits(Byte* cstring, bool sign) // convert string to number according 
         error_occurred();
         return 0;
     }
+
+#ifdef FLOAT_SUPPORT
+    // Exponent notation ("1e10", "1.5e-3") is only meaningful in decimal -
+    // 'e'/'E' is itself a valid hex digit, so this must not fire outside
+    // base 10, or a legitimate hex literal like "0xE" would be misread.
+    //
+    // Located and stripped up front, before the digit loop below ever
+    // runs, because the '.' branch further down scans backward from the
+    // *end* of the string to find the decimal point, assuming everything
+    // from there to the end is a fractional digit - an exponent suffix
+    // sitting past the fraction would break that assumption. Truncating
+    // the string here (restored before any error_occurred(), so a bad
+    // literal is still reported exactly as typed) lets the rest of this
+    // function parse the mantissa exactly as it did before exponents
+    // existed, with the exponent applied to the result afterward.
+    Byte* expAt = NULL;
+    Byte expOriginal = 0;
+    bool haveExponent = false;
+    Integer exponent = 0;
+    if (base == 10) {
+        for (Byte* scan = cstring; *scan; scan++) {
+            if (*scan == 'e' || *scan == 'E') {
+                expAt = scan;
+                break;
+            }
+        }
+    }
+    if (expAt) {
+        Byte* d = expAt + 1;
+        bool expSign = (*d == '-');
+        if (expSign || *d == '+')
+            d++;
+        Byte* firstDigit = d;
+        while (*d >= '0' && *d <= '9') {
+            // Capped well short of overflowing Integer during accumulation
+            // itself - scaleByPow10() clamps to +-MAX_DECIMAL_EXPONENT
+            // regardless, so any value already this large scales exactly
+            // the same as one a few digits shorter would.
+            if (exponent < 1000000)
+                exponent = exponent * 10 + (*d - '0');
+            d++;
+        }
+        if (d == firstDigit || *d != 0) {
+            // "1e", "1e-", or junk after the exponent digits: not a
+            // number at all, same as any other unparseable token.
+            error_occurred();
+            return 0;
+        }
+        if (expSign)
+            exponent = -exponent;
+        expOriginal = *expAt;
+        *expAt = 0;
+        haveExponent = true;
+
+        if (*cstring == 0) {
+            // "e5" alone: an exponent with no mantissa digits in front of
+            // it at all. The empty-string check above already ran before
+            // this truncation existed, so it never caught this case.
+            *expAt = expOriginal;
+            error_occurred();
+            return 0;
+        }
+    }
+#endif
 
     while (*cstring) {
         Byte c = *cstring++;
@@ -1051,12 +1161,28 @@ Cell signDigits(Byte* cstring, bool sign) // convert string to number according 
                 	Cell  n;
                 }num = {0};
 
+                // A second decimal point (e.g. "1.2.3") is not a valid
+                // literal. Without this check the backward scan below
+                // finds *a* '.' - whichever one is closest to the end of
+                // the string, not necessarily this one - and silently
+                // parses a number nobody typed instead of rejecting the
+                // input. cstring is already past the point just consumed,
+                // so this only looks for a second one.
+                for (Byte* extra = cstring; *extra; extra++) {
+                    if (*extra == '.') {
+                        if (expAt) *expAt = expOriginal;
+                        error_occurred();
+                        return n;
+                    }
+                }
+
                 while (*cstring) // start at end of string to work back to decimal
                     cstring++;
 
                 while (*--cstring != '.') {
                     c = *cstring;
                     if (!toDigit(&c)) {
+                        if (expAt) *expAt = expOriginal;
                         error_occurred();
                         return n;
                     }
@@ -1065,9 +1191,13 @@ Cell signDigits(Byte* cstring, bool sign) // convert string to number according 
                 num.f = num.f + n;
                 if (sign)
                     num.f = -num.f;
+                if (haveExponent)
+                    num.f = scaleByPow10(num.f, exponent);
+                if (expAt) *expAt = expOriginal;
                 return num.n;
             }
 #endif
+            if (expAt) *expAt = expOriginal;
             error_occurred();
             return n;
         }
@@ -1075,6 +1205,19 @@ Cell signDigits(Byte* cstring, bool sign) // convert string to number according 
     }
     if (sign)
         n = -n;
+#ifdef FLOAT_SUPPORT
+    if (haveExponent) {
+        // No decimal point, but "1e10" is still exponent notation, not
+        // an integer - always resolves to a float, same as "1.0e10" would.
+        union {
+        	float f;
+        	Cell  n;
+        }num = {.f = (float)(Integer)n};
+        num.f = scaleByPow10(num.f, exponent);
+        if (expAt) *expAt = expOriginal;
+        return num.n;
+    }
+#endif
     return n;
 }
 
@@ -1196,7 +1339,18 @@ char * postQuote() {
 
 void makeString(char * string) // ( - a )
 {
-    strncpy((char *)hp, string, here_left()); // remove leading count
+    // string is always hp+1 here (postQuote()'s quoted-string branch
+    // returns &hp[1], the count-prefixed text parse() just wrote), so
+    // source and destination overlap by one byte - this is shifting the
+    // string left to drop that leading count byte, in place. strncpy()
+    // does not guarantee correct behavior on overlapping regions; it
+    // happened to work on the embedded target's libc, but is undefined
+    // behavior per the C standard and traps under a hardened libc that
+    // checks for it (confirmed live: caught immediately running this
+    // same source against Tea-host on macOS - see
+    // AutomatedTest/tools/tea_host_cli). memmove() is the correct,
+    // portable tool for an overlapping copy regardless of direction.
+    memmove(hp, string, strlen(string) + 1); // remove leading count
     lit((Cell)hp);
     Cell n = strlen((char *)hp);
     allot(n + 1); // account for null terminator

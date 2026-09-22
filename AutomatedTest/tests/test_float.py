@@ -11,17 +11,23 @@ words that actually convert the representation; verified directly here
 by pushing an int and a float side by side and reading the raw stack
 (test_float_and_int_share_one_stack).
 
-A literal float is written as digits with exactly one decimal point
+A literal float is written as digits with at most one decimal point
 (cli.c's signDigits(), #ifdef FLOAT_SUPPORT); everything after the point
-is the fractional part, and there's no exponent notation. Values round to
-32-bit float precision on the way in (per the project's own documented
-invariant: 8.95 stores as ~8.9499998 - expected, not a bug), and `.f`
-prints with a fixed 4 decimal places (float.c: `decimals = 4`) - enough
-to hide most of that imprecision but not guaranteed to for every value,
-so comparisons here go through a tolerance (assert_float_close) rather
-than exact string equality, and stick to values that land cleanly at 4
-decimal places (halves, quarters, small integers) wherever the exact
-printed result matters.
+is the fractional part. It can also carry a decimal exponent ("1.5e-3",
+"2E4"), only in base 10 - 'e'/'E' is itself a valid hex digit, so
+exponent notation is not recognized outside decimal, matching how a
+literal like "0xE" is read. An exponent forces a float result even with
+no decimal point ("5e2" is a float, not the integer 500). A second
+decimal point ("1.2.3") or an exponent marker with no digits ("1e",
+"1e-", "e5") is rejected the same way an unknown word is - not silently
+misparsed. Values round to 32-bit float precision on the way in (per the
+project's own documented invariant: 8.95 stores as ~8.9499998 -
+expected, not a bug), and `.f` prints with a fixed 4 decimal places
+(float.c: `decimals = 4`) - enough to hide most of that imprecision but
+not guaranteed to for every value, so comparisons here go through a
+tolerance (assert_float_close) rather than exact string equality, and
+stick to values that land cleanly at 4 decimal places (halves, quarters,
+small integers) wherever the exact printed result matters.
 """
 
 import struct
@@ -105,6 +111,126 @@ def test_float_and_int_share_one_stack(cli, cfg):
         assert snap.values[0] == 5
         assert snap.values[1] == struct.unpack("I", struct.pack("f", 3.5))[0]
     finally:
+        cli.reset()
+
+
+# ----------------------------------------------------------------------
+# Exponent notation
+# ----------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "literal,expected",
+    [
+        ("1.5e2", 150.0),
+        ("1.5E2", 150.0),        # uppercase E, same as lowercase
+        ("1.5e+2", 150.0),       # explicit '+' on the exponent
+        ("1.5e-2", 0.015),
+        ("5e2", 500.0),          # no decimal point - still a float, not int 500
+        ("2e-3", 0.002),
+        ("1.e2", 100.0),         # decimal point with no fractional digits
+    ],
+)
+def test_exponent_literal_pushes_a_float(cli, cfg, literal, expected):
+    cli.reset()
+    try:
+        before = cli.depth()
+        resp = cli.execute(literal)
+        assert resp.ok, f"{literal!r} failed: {resp.text!r} {resp.errors}"
+        assert cli.depth() == before + 1
+        assert read_float(cli) == pytest.approx(to_f32(expected), abs=5e-4)
+    finally:
+        cli.reset()
+
+
+def test_exponent_literal_with_no_decimal_point_is_still_a_float(cli, cfg):
+    """"5e2" must behave exactly like "500.0", not like the integer 500 -
+    confirmed by checking the raw bit pattern on the stack, the same way
+    test_float_and_int_share_one_stack tells floats and ints apart.
+    """
+    cli.reset()
+    try:
+        resp = cli.execute("5e2 .s")
+        assert resp.ok, f"failed: {resp.text!r} {resp.errors}"
+        snap = cli.stack()
+        assert snap.depth == 1
+        assert snap.values[0] == struct.unpack("I", struct.pack("f", 500.0))[0]
+    finally:
+        cli.reset()
+
+
+@pytest.mark.parametrize("word", ["1e", "1e-", "1e+", "e5", "1e1.5", "1.2.3"])
+def test_malformed_exponent_is_rejected(cli, cfg, word):
+    """An exponent marker with no digits, or no mantissa at all, is not a
+    number - rejected the same way an unknown word is, not silently
+    misparsed into some other value.
+    """
+    cli.reset()
+    try:
+        cli.expect_error(word)
+    finally:
+        cli.clear_stack()
+        cli.reset()
+
+
+# ----------------------------------------------------------------------
+# Exponent notation in output (reciprocity with input)
+# ----------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "literal,expected_text",
+    [
+        ("1.5e10", "1.5000e10"),
+        ("1.5e-10", "1.5000e-10"),
+        ("-1.5e10", "-1.5000e10"),
+    ],
+)
+def test_dot_f_uses_exponent_notation_for_extreme_magnitudes(cli, cfg, literal, expected_text):
+    """printFloat0 (printers.c) gained the mirror image of signDigits()'s
+    exponent parsing: a magnitude too large to print in 4 decimal places
+    without overflowing the firmware's (Long) cast, or too small to show
+    any digits at all that way, switches to the same "1.5000e10" notation
+    the parser now accepts back in as input.
+    """
+    cli.reset()
+    try:
+        resp = cli.execute(f"{literal} .f")
+        assert resp.ok, f"failed: {resp.text!r} {resp.errors}"
+        assert resp.text.strip() == expected_text
+    finally:
+        cli.reset()
+
+
+def test_dot_f_stays_plain_for_ordinary_magnitudes(cli, cfg):
+    """A value that was always printable in 4 decimal places must not
+    gain an exponent suffix just because the feature now exists.
+    """
+    cli.reset()
+    try:
+        resp = cli.execute("123456.0 .f")
+        assert resp.ok, f"failed: {resp.text!r} {resp.errors}"
+        assert resp.text.strip() == "123456.0000"
+    finally:
+        cli.reset()
+
+
+@pytest.mark.hw
+def test_exponent_notation_does_not_fire_in_hex_mode(cli, cfg):
+    """'e' is a valid hex digit (14) - exponent parsing must not hijack a
+    legitimate hex literal like "0xE" or a bare hex "e" once in hex mode.
+
+    Hardware only: the host simulator has no base-switching state at all
+    (`hex`/`decimal`/`oct`/`bin` aren't modeled there), so this can't run
+    against it.
+    """
+    cli.reset()
+    try:
+        # "E" is pushed while in hex mode, but .s prints in whatever base
+        # is currently active - switching back to decimal first doesn't
+        # touch the pushed value, only how it's displayed, so cli.stack()
+        # (which assumes decimal) can read it normally.
+        resp = cli.execute("hex E decimal .s")
+        assert resp.ok, f"failed: {resp.text!r} {resp.errors}"
+        assert cli.stack().top == 14
+    finally:
+        cli.execute("decimal")
         cli.reset()
 
 

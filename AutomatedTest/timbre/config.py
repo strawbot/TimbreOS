@@ -83,7 +83,23 @@ class TargetConfig:
     # `dup strlen type` prints it from address+count. Net stack effect is
     # zero (quote pushes one value, strlen replaces it with a count, type
     # consumes both), so it is safe to splice around a test's own stack use.
-    mark_template: str = '"{marker}" dup strlen type cr'
+    #
+    # A quoted string is not free, though: it allot()s space in the CLI's
+    # dictionary/"here" area (cli.c's makeString()) that is only ever
+    # reclaimed by a full resetcli. Every framed command sends two of
+    # these (begin marker and end marker), and a long run sends thousands
+    # - confirmed live: sustained traffic eventually runs "here" space
+    # into whatever memory follows it, producing exactly the garbled,
+    # dictionary-fragment-laced output and "return stack underflow"
+    # reports seen during a long sweep. `here - allot` after printing
+    # computes the negative of the string's own length (the earlier
+    # `addr`, minus current `here`) and allot()s that back, which - via
+    # ordinary two's-complement wraparound, not a special "negative
+    # allot" case in the firmware - rewinds the dictionary pointer to
+    # exactly where it stood before the string was ever created. Net
+    # effect: this template no longer consumes dictionary space at all,
+    # no matter how many commands a session sends.
+    mark_template: str = '"{marker}" dup dup strlen type cr here - allot'
 
     begin_marker: str = "TH-B"
     end_marker: str = "TH-E"
@@ -215,10 +231,12 @@ class TargetConfig:
     # fixtures readable instead of a wall of repeated words.
     macro_begin_cmd: str = ":"
     macro_end_cmd: str = ";"
-    # TODO: word that removes a macro, or None if the CLI cannot.
-    # Without it, macros accumulate across a session and tests stop being
-    # independent.
-    macro_forget_cmd: str | None = "forget"
+    # This board has no word for removing a macro - confirmed against
+    # board-NanoR4's own word list, and "forget" (the previous guess)
+    # doesn't exist there at all: invoking it returned "forget<- eh?".
+    # Macros accumulate across a session as a result; cli.reset() between
+    # tests is what keeps them from leaking into later tests, not this.
+    macro_forget_cmd: str | None = None
 
     # ------------------------------------------------------------------
     # Execution-time instrument

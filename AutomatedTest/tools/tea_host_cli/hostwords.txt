@@ -1,0 +1,8 @@
+// Word list for the Tea-host CLI build: core interpreter + float words
+// only, no board-specific hardware words (no DAC/I2C/limb/USB/filesystem -
+// none of that exists on a host build). Run as prebuild step:
+//   python3 ../../../../TimbreOS/WordLists/parsewords.py hostwords.txt
+// Generates: help.c  wordlist.c  wordlist.txt  (in this directory)
+
+Include ../../../WordLists/clibindings.txt
+Include ../../../WordLists/floatwords.txt

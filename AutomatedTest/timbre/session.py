@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 
 from .codec import Codec
 from .config import TargetConfig
-from .transport import Transport
+from .transport import UNTERMINATED_STREAM_MARKER, Transport
 
 
 class ProtocolError(RuntimeError):
@@ -227,6 +227,18 @@ class Session:
             text = self._strip_prompt(decoded.payload)
             stripped = text.strip()
 
+            if stripped.startswith(UNTERMINATED_STREAM_MARKER):
+                # Transport._read_loop()'s synthetic line for an anomalous
+                # unterminated run (see its docstring). Treated as a hard
+                # failure here rather than ordinary line content - without
+                # this, it silently becomes a "word" to commands()/
+                # word_names(), and a later sweep test resends that literal
+                # marker text as a command. Confirmed live: exactly that
+                # happened once this marker started existing.
+                resp.errors.append(stripped)
+                resp.timed_out = True
+                return
+
             # Markers must arrive alone on a line (requirement R1). This is
             # what makes framing survive command echo: the echoed command
             # line contains the marker but is not equal to it.
@@ -246,6 +258,20 @@ class Session:
             if stripped == end:
                 return
 
+            if stripped == self._mark_line(end):
+                # keyEcho (on by default in cli.c) echoes every typed line
+                # back verbatim before executing it - including the closing
+                # marker's own framing line, which lands here, in the body,
+                # one line before that marker's actual execution (the bare
+                # `end` text, matched above, is what ends collection). Not
+                # real command output: e.g. `words`/bare `help` picked up
+                # the literal marker text as a spurious extra "word" or
+                # "command" once this started showing up as ordinary body
+                # content. The begin marker's own echo gets the same
+                # tolerance for free, since it arrives before in_body is
+                # set and is simply not equal to the bare begin text.
+                continue
+
             if self._is_event(stripped):
                 resp.events.append(stripped)
                 continue
@@ -256,9 +282,20 @@ class Session:
             resp.lines.append(text)
 
     def _strip_prompt(self, line: str) -> str:
+        """Strip every leading prompt, not just one.
+
+        Normally there's at most one. But the interpreter prints an extra
+        prompt of its own after some recoveries - rejecting a garbage line,
+        or an empty line typed more than once in a row - and those stack
+        up on the front of the next real line: "ar: ar: TH-B0585". A single
+        strip leaves "ar: TH-B0585", which matches neither marker in
+        _collect(), so the begin marker is missed and the run misreads it
+        as frame_lost once the end marker turns up. Observed live: this is
+        what a "board recovers from garbage" test was actually hitting.
+        """
         prompt = self.cfg.prompt
-        if prompt and line.startswith(prompt):
-            return line[len(prompt):]
+        while prompt and line.startswith(prompt):
+            line = line[len(prompt):]
         return line
 
     def _is_event(self, line: str) -> bool:

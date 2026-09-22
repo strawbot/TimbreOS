@@ -24,6 +24,28 @@ class TransportError(RuntimeError):
     pass
 
 
+# Prefix for the synthetic line Transport._read_loop() manufactures when the
+# target sends an unreasonably long run of bytes with no newline at all - a
+# real, observed board fault mode ("just continuously outputs spaces") that
+# otherwise looks exactly like silence to every caller above this layer,
+# since read_line()/drain() only ever yield newline-terminated lines.
+UNTERMINATED_STREAM_MARKER = "\x00UNTERMINATED_STREAM\x00"
+
+# No legitimate single response line on this board approaches this length.
+# "help" with no argument is dozens of short lines, not one long one - but
+# "words" *is* one long line, every command name on the board space-
+# separated with no newline until the very end, and it's the longest
+# single line this board ever sends. Measured directly off the wire at
+# 1054 bytes (confirmed live: an earlier, lower threshold here caused
+# false positives that took down word_names() itself, since 512 turned
+# out to be smaller than this real, legitimate line). It will keep
+# growing as words are added to the firmware, so this leaves several
+# times that much headroom rather than trimming close to today's actual
+# number - comfortably above any real line, still small enough to catch
+# a genuine unterminated flood fast rather than waiting it out.
+MAX_UNTERMINATED_BUFFER = 4096
+
+
 def wait_until_responsive(transport: "Transport", probe_cmd: str, timeout: float) -> None:
     """Poll with a real command until the target actually answers.
 
@@ -35,11 +57,28 @@ def wait_until_responsive(transport: "Transport", probe_cmd: str, timeout: float
     problem when the board is simply still not listening yet. Shared by
     the pytest transport fixture and any standalone script (e.g.
     tools/checkpoint_run.py) that opens its own connection.
+
+    A known board fault mode looks identical to silence from here unless
+    specifically checked for: a hang that continuously emits spaces with
+    no newline, ever. Transport._read_loop() already turns a very long
+    unterminated run into a synthetic UNTERMINATED_STREAM line rather than
+    burying it forever in an internal buffer (see MAX_UNTERMINATED_BUFFER)
+    - this is what actually looks for that line and gives it a specific
+    diagnosis instead of the generic timeout below, which used to be the
+    only outcome and read exactly like "board never came up."
     """
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         transport.write_line(probe_cmd)
-        if transport.drain(quiet_for=0.3, limit=1.0):
+        lines = transport.drain(quiet_for=0.3, limit=1.0)
+        if any(line.startswith(UNTERMINATED_STREAM_MARKER) for line in lines):
+            raise TransportError(
+                f"target is emitting a continuous unterminated stream (no "
+                f"newline) instead of answering {probe_cmd!r} - the known "
+                f"'spaces forever' fault mode, not silence. This needs a "
+                f"physical reset; resending commands will not recover it."
+            )
+        if lines:
             return
     raise TransportError(
         f"target never answered {probe_cmd!r} within timeout={timeout}s. "
@@ -257,6 +296,19 @@ class Transport(ABC):
                 line = line.rstrip("\r")
                 self._log_conversation("RX", line)
                 self._lines.put(line)
+            if len(self._buf) > MAX_UNTERMINATED_BUFFER:
+                # This much data with no newline in sight isn't a slow
+                # response, it's the "continuously outputs spaces" fault
+                # mode - surface it as a distinguishable synthetic line
+                # instead of silently growing self._buf forever, which
+                # otherwise makes this indistinguishable from the board
+                # simply not answering at all. See wait_until_responsive().
+                stuck, self._buf = self._buf, ""
+                preview = stuck[:60]
+                self._log_conversation(
+                    "RX", f"<{len(stuck)} bytes, no newline, {stuck.count(' ')} spaces> {preview!r}..."
+                )
+                self._lines.put(f"{UNTERMINATED_STREAM_MARKER}{len(stuck)} bytes: {preview!r}...")
 
     def __enter__(self):
         self.open()

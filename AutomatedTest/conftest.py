@@ -14,13 +14,19 @@ resets once at the start of the run and reports once at the end - see its
 own docstring below.
 
 Usage:
-    pytest --transport=host            # fast, no board
+    pytest --transport=host            # fast, no board - tools/fake_target.py,
+                                        # a hand-written Python reimplementation
+    pytest --transport=tea-host        # fast, no board - the real firmware
+                                        # source (cli.c/float.c/printers.c)
+                                        # compiled and run natively via
+                                        # Tea-host (see tools/tea_host_cli)
     pytest --transport=serial          # real hardware
     pytest --transport=serial -m hw    # hardware-only tests
 """
 
 from __future__ import annotations
 
+import pathlib
 import re
 import subprocess
 import sys
@@ -41,7 +47,9 @@ from timbre.timing import parse_timing_table
 
 
 def pytest_addoption(parser):
-    parser.addoption("--transport", default="host", choices=["host", "serial"])
+    parser.addoption(
+        "--transport", default="host", choices=["host", "serial", "tea-host"]
+    )
     parser.addoption("--port", default=None, help="override serial port")
     parser.addoption("--no-timing-guard", action="store_true")
     parser.addoption("--no-stack-guard", action="store_true")
@@ -61,7 +69,7 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    if config.getoption("--transport") != "host":
+    if config.getoption("--transport") not in ("host", "tea-host"):
         return
     skip_hw = pytest.mark.skip(reason="needs --transport=serial")
     for item in items:
@@ -77,10 +85,30 @@ def cfg(request) -> TargetConfig:
     return config
 
 
+_TEA_HOST_CLI_DIR = pathlib.Path(__file__).parent / "tools" / "tea_host_cli"
+
+
+def _tea_host_binary() -> list[str]:
+    """Build (if needed) and return the argv for the real-firmware host
+    binary - see tools/tea_host_cli/Makefile. `make` no-ops if the binary
+    is already newer than its sources, so this is cheap on repeat runs.
+    """
+    binary = _TEA_HOST_CLI_DIR / "tea_host_cli"
+    result = subprocess.run(
+        ["make"], cwd=_TEA_HOST_CLI_DIR, capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"tea-host build failed:\n{result.stdout}\n{result.stderr}"
+        )
+    return [str(binary)]
+
+
 @pytest.fixture(scope="session")
 def transport(request, cfg):
     log_path = request.config.getoption("--session-log")
-    if request.config.getoption("--transport") == "serial":
+    selected = request.config.getoption("--transport")
+    if selected == "serial":
         t = SerialTransport(
             cfg.port, cfg.baud, tx_eol=cfg.tx_eol, inter_write_delay=cfg.command_pacing,
             conversation_log=log_path,
@@ -91,6 +119,16 @@ def transport(request, cfg):
         # used anywhere - this is that use. See wait_until_responsive's
         # own docstring for why it's needed at all.
         wait_until_responsive(t, cfg.stack_cmd, cfg.connect_timeout)
+    elif selected == "tea-host":
+        # Unlike fake_target.py (a line-reading Python script, indifferent
+        # to what the line ending actually is), this binary runs the real
+        # cli.c: parse_keyq() only commits a line on CRETURN ('\r') and
+        # silently treats a bare LFEED as a no-op, exactly like real
+        # hardware over a serial port. HostTransport's own default tx_eol
+        # ("\n") means no command would ever be seen as complete.
+        t = HostTransport(_tea_host_binary(), tx_eol=cfg.tx_eol, conversation_log=log_path)
+        t.open()
+        t.drain(quiet_for=0.3)
     else:
         t = HostTransport(cfg.host_binary, conversation_log=log_path)
         t.open()
@@ -106,7 +144,19 @@ def session(transport, cfg) -> Session:
 
 @pytest.fixture(scope="session")
 def cli(session, cfg) -> Cli:
-    return Cli(session, cfg)
+    """Known state before anything else touches the board.
+
+    Without this, the very first thing a session does - commands()'s bare
+    help fetch - runs against whatever the board happens to be holding:
+    macros left behind by a person's own terminal session, an earlier
+    aborted run's stack contents, whatever. Confirmed live: a "msg" macro
+    from a manual test of the here-space fix showed up in commands() and
+    failed the coverage gate, because nothing had reset the board between
+    that session and this one.
+    """
+    c = Cli(session, cfg)
+    c.reset()
+    return c
 
 
 @pytest.fixture(scope="session")
@@ -198,6 +248,51 @@ def timing_snapshot(request, cfg):
     request.config._resolved_actions = _resolve_unnamed_actions(
         mstats_resp.text, te_resp.text, cfg
     )
+
+
+def _here_hex(cli, cfg) -> int | None:
+    resp = cli.execute("here .h", timeout=max(cfg.command_timeout, 5.0))
+    if not resp.ok or not resp.lines:
+        return None
+    try:
+        return int(resp.lines[0].strip(), 16)
+    except ValueError:
+        return None
+
+
+@pytest.fixture(scope="session", autouse=True)
+def here_space_snapshot(request, cfg):
+    """here (the CLI's dictionary/"here" pointer) at session start vs end.
+
+    Every quoted string allot()s space there, and it's only ever reclaimed
+    by a full resetcli - not by returning to the prompt, not by anything
+    short of that. config.mark_template's `here - allot` tail makes the
+    framing itself dictionary-neutral (see tests/test_strings.py), but
+    individual tests still legitimately push a handful of their own
+    quoted strings in the course of testing quote/strlen/type directly, so
+    ending the session at a slightly different "here" than it started
+    isn't automatically a bug the way a session-wide drift proportional to
+    the number of commands sent would be.
+
+    That's why this reports rather than asserts, unlike stack_health_snapshot:
+    there's no clean threshold between "a few tests' own strings" and "a
+    real leak" to hang a pass/fail on, but a human glancing at the two
+    numbers can tell the difference immediately. This is exactly the
+    monitor that would have caught the marker-template leak on its own,
+    without needing to reproduce a board hang first.
+    """
+    if request.config.getoption("--transport") != "serial":
+        yield
+        return
+    cli = request.getfixturevalue("cli")
+    start = _here_hex(cli, cfg)
+    yield
+    end = _here_hex(cli, cfg)
+    if start is not None and end is not None:
+        request.config._here_space_report = (
+            f"here: {start:08X} at session start -> {end:08X} at session end "
+            f"({end - start:+d} bytes)"
+        )
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -308,3 +403,8 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     if show_sys_report:
         terminalreporter.section("show-sys at the end of the session (canary stack check)")
         terminalreporter.write_line(show_sys_report)
+
+    here_space_report = getattr(config, "_here_space_report", None)
+    if here_space_report:
+        terminalreporter.section("here space: session start vs end (dictionary-leak monitor)")
+        terminalreporter.write_line(here_space_report)

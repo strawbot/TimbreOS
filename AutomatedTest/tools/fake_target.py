@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import math
 import random
+import re
 import struct
 import sys
 
@@ -60,6 +61,9 @@ HELP = {
     "strlen": "strlen ( a -- c ) return length of a string",
     "type": "type ( a n -- ) output n characters starting at a",
     "cr": "cr ( -- ) send end of line to output device",
+    "here": "here ( -- a ) return address of end of dictionary",
+    "allot": "allot ( n -- ) reserve n bytes after end of dictionary",
+    ".h": ".h ( n -- ) print number in hex",
     ".f": ".f ( f -- ) print f as a floating point number",
     "pi": "pi ( -- f ) return 32 bit value for pi",
     "i>f": "i>f ( i -- f ) convert integer to 32 bit float",
@@ -110,6 +114,36 @@ def pop_float() -> float:
     return struct.unpack("f", struct.pack("I", bits))[0]
 
 
+def format_float(f: float, n: int = 4) -> str:
+    """Mirrors printers.c's printFloat0 exactly, including its exponent
+    fallback: fixed n decimal places normally, switching to "1.5000e10"/
+    "1.5000e-10" style notation when the magnitude is too large (would
+    overflow the firmware's (Long)f cast) or too small (would round to
+    all zeroes at n decimal places) to print plainly. Reciprocity with
+    the exponent notation signDigits() accepts on input (looks_like_float
+    above) - see printFloat0's own comment for the full reasoning.
+    """
+    if math.isnan(f):
+        return "NAN"
+    if math.isinf(f):
+        return "INF"
+    sign = "-" if f < 0 else ""
+    f = abs(f)
+    multiplier = 10**n
+    exponent = 0
+    if f != 0.0 and (f >= 1.0e9 or f < 0.5 / multiplier):
+        while f >= 10.0 and exponent < 38:
+            f /= 10.0
+            exponent += 1
+        while 0.0 < f < 1.0 and exponent > -38:
+            f *= 10.0
+            exponent -= 1
+    text = f"{sign}{f:.{n}f}"
+    if exponent:
+        text += f"e{exponent}"
+    return text
+
+
 def safe_math(fn, *args):
     """C's libm returns NaN/inf for domain errors instead of raising, so
     the conformance/sentinel sweeps that call every discovered command
@@ -127,15 +161,22 @@ def safe_math(fn, *args):
     return float("nan") if isinstance(result, complex) else result
 
 
+# Same grammar cli.c's signDigits() accepts under FLOAT_SUPPORT: an
+# optionally-signed decimal literal with at most one decimal point,
+# optionally followed by an exponent (also optionally signed). Either the
+# decimal point or the exponent must be present - a bare integer isn't a
+# float literal, it's just a number, and stays on the plain integer path.
+# "1.2.3" (two decimal points) and "1e"/"e5" (an exponent marker with no
+# digits, or no mantissa) are deliberately excluded here exactly as the
+# real parser now rejects them.
+_FLOAT_LITERAL = re.compile(
+    r"^-?\d+\.\d*([eE][+-]?\d+)?$"   # has a decimal point, exponent optional
+    r"|^-?\d+[eE][+-]?\d+$"          # no decimal point, but has an exponent
+)
+
+
 def looks_like_float(word: str) -> bool:
-    """Same shape cli.c's signDigits() accepts under FLOAT_SUPPORT: digits
-    with exactly one decimal point, optionally signed. No exponents -
-    Python's float() accepts "1e10"; the real parser doesn't, so that's
-    explicitly excluded rather than just delegated to float()'s own rules.
-    """
-    if "e" in word.lower():
-        return False
-    if "." not in word:
+    if not _FLOAT_LITERAL.match(word):
         return False
     try:
         float(word)
@@ -195,6 +236,33 @@ def run_word(word: str, rest: list[str]) -> bool:
         sys.stdout.flush()
         return True
 
+    if word == ".h":
+        # doth() (cli.c): hex, space-padded (not zero-padded) to
+        # sizeof(Cell)*2 via dotr(), plus one trailing space.
+        if not STACK:
+            emit("? stack underflow")
+            return False
+        emit(f"{STACK.pop() & 0xFFFFFFFF:X}".rjust(8) + " ")
+        return True
+
+    if word == "here":
+        STACK.append(_next_addr[0])
+        return True
+
+    if word == "allot":
+        # Real firmware: hp += n, n signed - a negative n (as the
+        # marker template's "here - allot" computes: the string's own
+        # address minus the current, post-allocation here) rewinds the
+        # dictionary pointer. _next_addr is this simulator's stand-in
+        # for hp, incremented by one per interned string rather than by
+        # byte length, but the same "reclaim what you just allotted"
+        # arithmetic applies either way.
+        if not STACK:
+            emit("? stack underflow")
+            return False
+        _next_addr[0] += STACK.pop()
+        return True
+
     if word == "echo":
         if not rest:
             emit("? echo needs text")
@@ -218,6 +286,18 @@ def run_word(word: str, rest: list[str]) -> bool:
 
     if word == "naps":
         emit(str(len(NAPS)))
+        return True
+
+    if word == "-":
+        # Only the integer subtraction the marker template's "here -
+        # allot" needs; nothing in this simulator's word list otherwise
+        # calls plain "-".
+        if len(STACK) < 2:
+            emit("? stack underflow")
+            return False
+        n = STACK.pop()
+        m = STACK.pop()
+        STACK.append(m - n)
         return True
 
     if word == "dup":
@@ -336,7 +416,7 @@ def run_word(word: str, rest: list[str]) -> bool:
         if not STACK:
             emit("? stack underflow")
             return False
-        emit(f"{pop_float():.4f} ")
+        emit(f"{format_float(pop_float())} ")
         return True
 
     if word == "pi":

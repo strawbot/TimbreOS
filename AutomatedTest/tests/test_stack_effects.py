@@ -62,6 +62,33 @@ PROBE_UNSAFE = {
     # (s) blocks for s seconds to measure ticks/timeouts. A sentinel here
     # is a multi-billion-second sleep, not a fast failure.
     "testtime",
+    # >r/r>/r touch the RETURN stack, not a benign second data area - on
+    # this interpreter it's the same return stack used for its own control
+    # flow. Confirmed live: a generic sweep called bare ">r" (with plenty
+    # of data-stack headroom - this is not an underflow case) to push one
+    # value onto it, with nothing in the same line to balance it with a
+    # matching "r>". The board went completely silent afterward - no
+    # response even to a follow-up resetcli - and needed a physical reset.
+    # r> (pops the return stack) is excluded for the mirror-image reason;
+    # r (a non-destructive copy) is excluded too out of caution, since it
+    # hasn't been verified safe and the failure mode for getting this
+    # wrong is not "test fails", it's "board needs a physical reset".
+    ">r",
+    "r>",
+    "r",
+    # .r's second argument is a field width ("print m in right field of n
+    # digits"), acted on as a real padding count - not a benign moved
+    # value. Confirmed live: a sweep passed it a 32-bit sentinel
+    # (2119630850) as n, and the board went unresponsive immediately
+    # afterward for the rest of the session. Same shape of hazard as nap/
+    # testtime's duration argument, just for a padding loop instead of a
+    # sleep.
+    ".r",
+    # dump ( a n - ) reads real memory at an arbitrary address for n
+    # 16-byte rows - both the peek/@ hazard (a is acted on as a pointer,
+    # not moved) and the .r hazard (n is an unbounded row count) at once.
+    # Confirmed live: a sweep called it with a=2119630849, n=2119630850.
+    "dump",
 }
 
 # Commands that clear the stack as their purpose. A sentinel floor cannot

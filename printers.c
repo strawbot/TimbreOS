@@ -126,10 +126,33 @@ void printFloat0(float f, int n) {
             print("-");
             f = -f;
         }
-        Long intPart = (Long)f;
-        f = f - intPart;
         Long multiplier = 1;
         for(Byte i=0; i++<n;)  multiplier *= 10;
+
+        // Reciprocity with number-literal parsing (cli.c signDigits(),
+        // under FLOAT_SUPPORT): that accepts exponent notation on input,
+        // so output needs the same escape valve, or two things go wrong
+        // below. A magnitude too large overflows the (Long)f cast into a
+        // wrong integer part - silently, not an error, just a number
+        // nobody would recognize. One too small (below the smallest
+        // value n decimal places can even show) rounds to all zeroes,
+        // indistinguishable from an actual zero. Bounded to +-38
+        // iterations either way (float32's own decimal range), same
+        // reasoning as cli.c's scaleByPow10().
+        int exponent = 0;
+        if (f != 0.0f && (f >= 1.0e9f || f < 0.5f / multiplier)) {
+            while (f >= 10.0f && exponent < 38) {
+                f /= 10.0f;
+                exponent++;
+            }
+            while (f > 0.0f && f < 1.0f && exponent > -38) {
+                f *= 10.0f;
+                exponent--;
+            }
+        }
+
+        Long intPart = (Long)f;
+        f = f - intPart;
         Long frac = (Long)(f * multiplier + .5);
         if (frac >= multiplier) { // rounding carried into integer part
             intPart++;
@@ -139,6 +162,14 @@ void printFloat0(float f, int n) {
         if (n > 0) {
             print(".");
             dotnb(n,n,(Cell)frac,10);
+        }
+        if (exponent != 0) {
+            print("e");
+            if (exponent < 0) {
+                print("-");
+                exponent = -exponent;
+            }
+            printDec0((unsigned int)exponent);
         }
     }
 }
