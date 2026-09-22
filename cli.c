@@ -10,6 +10,7 @@
 
 #include <string.h>
 #include <ctype.h>
+#include <setjmp.h>
 
 Event EmitEvent = {no_action};
 Event KeyEvent = {run_cli};
@@ -18,6 +19,33 @@ Event KeyEvent = {run_cli};
 static QUEUE(DCELLS, dataStack);
 static QUEUE(RCELLS, returnStack);
 static BQUEUE(PAD_SIZE, padq); // safe place to format numbers
+
+// A data stack breach (push() finds it full, pop() finds it empty) means
+// whatever word is mid-execution is working from state that isn't what
+// it expects - its remaining C code has no way to know the breach
+// happened and will keep going, using default/garbage values as if they
+// were real. Concretely: pop()'s old underflow behavior returned 0 as a
+// "safe" placeholder, but stringLength() and type() (among others) use
+// their popped values as pointers with no validation - strlen((char*)0)
+// or *((char*)garbage) both fault immediately. Confirmed live: a single
+// line that pushes past DCELLS then immediately runs `dup dup strlen
+// type` segfaults, with the exact crash site (stringLength() vs. type())
+// varying run to run depending on heap layout - a clear sign this was
+// undefined behavior, not a "sometimes it prints a message" edge case.
+//
+// The only way to stop the current word's C code from running any
+// further - short of auditing every stack consumer in the dictionary for
+// pointer validation, which the next new word could just as easily lack
+// - is to unwind back out of it entirely. interpret_word() is the
+// natural place to catch that: it is the one word-at-a-time boundary
+// every path (interpret(), evaluate(), the normal interpreter loop) goes
+// through before a word's own code runs. push()/pop() longjmp here after
+// resetCli() has already put the machine back in a known-good state;
+// interpret_word() itself just returns, and since resetCli() cleared the
+// TIB, the interpreter loop that called it naturally stops trying to
+// continue the line that caused the fault instead of needing to notice
+// anything went wrong.
+static jmp_buf stack_fault;
 
 BQUEUE(EMITQ_SIZE, emitq);
 BQUEUE(KEYQ_SIZE, keyq);
@@ -47,21 +75,44 @@ Headless(minusBranch);
 Headless(tor);
 
 // data stack
-#define TOP p(dataStack)
+//
+// TOP (peek without popping) used to read straight from the queue via
+// p(dataStack) with no depth check, unlike pop(). That's the same class
+// of fault as the one push()/pop() now guard against, just reached a
+// different way: `1 *` (one operand, `*` needs two) pops its one real
+// operand via `Cell top = pop()` inside the binary() macro, leaving the
+// stack empty, and then reads its *other* operand through TOP - which,
+// unchecked, silently returned whatever stale value was still sitting in
+// that queue slot instead of reporting underflow. Several TOP callers
+// (@, s@, c@) go a step further and dereference that value as a pointer.
+// Checking depth here, once, protects all of them - dup/over/sign-check/
+// the binary and unary math ops/@ and friends - the same way pop() now
+// protects every word that pops its operands explicitly.
+static Cell checkedTop(void) {
+    if (queryq(dataStack) == 0) {
+        msg(" stack underflow - resetcli " );
+        resetCli();
+        longjmp(stack_fault, 1);
+    }
+    return p(dataStack);
+}
+#define TOP checkedTop()
 
 static void push(Cell c) {
     if (fullbq(dataStack)) {
-        msg(" stack overflow " );
-        spStore();
-    } else
-        pushq(c, dataStack);
+        msg(" stack overflow - resetcli " );
+        resetCli();
+        longjmp(stack_fault, 1);
+    }
+    pushq(c, dataStack);
 }
 
 static Cell pop() {
     if (queryq(dataStack))
         return popq(dataStack);
-    msg(" stack underflow " );
-    return 0;
+    msg(" stack underflow - resetcli " );
+    resetCli();
+    longjmp(stack_fault, 1);
 }
 
 Cell ret() /* m - */
@@ -1382,7 +1433,45 @@ void quit()
     cursorReturn();
 }
 
+void semiColon(); // defined below; needed by isCompileOnly() above its own definition
+
+// if/else/endif/begin/again/while/repeat/until/for/next/exit and ; are all
+// marked IMMEDIATE ("always execute, even when compiling" - see cli.h's
+// header-bit comment) so their compileXxx()/semiColon() bodies run at
+// all, including while actually compiling a definition. But "always
+// execute" was never meant to license running them stand-alone, outside
+// any definition: their C code unconditionally manipulates compile-time
+// state - the dictionary pointer (here/comma), branch-patch addresses
+// left on the data stack by a matching if/begin/for, or (semiColon)
+// wordlist, which resetCli() sets to NULL between definitions. Confirmed
+// live: bare `for` on an empty stack didn't underflow at all - it pushed
+// two garbage addresses, because compileFor() happily wrote a branch
+// target through `here`/`comma` and left unbalanced compile-time
+// bookkeeping on the data stack. Bare `;` would be worse: semiColon()
+// dereferences wordlist->name[0] unconditionally, which segfaults
+// whenever it is NULL - i.e. whenever no `:` definition is open.
+//
+// There being no third header-bit state ("compile-only": run while
+// compiling, error otherwise) short of repacking the header byte, this
+// checks identity against the fixed, known set of functions that need
+// it instead - smaller and lower-risk than changing how every word's
+// name byte encodes length vs flags for the sake of eleven words that
+// are not expected to grow much.
+static bool isCompileOnly(vector ii) {
+    return ii == compileIf || ii == compileElse || ii == compileEndif
+        || ii == compileBegin || ii == compileAgain || ii == compileWhile
+        || ii == compileRepeat || ii == compileUntil || ii == compileFor
+        || ii == compileNext || ii == compileExit || ii == semiColon;
+}
+
 static void interpret_word() {
+    if (setjmp(stack_fault)) {
+        // Landed here via longjmp from push()/pop() after a stack
+        // breach; resetCli() already ran and cleared the TIB, so simply
+        // returning is enough - the caller's "more to interpret?" check
+        // finds nothing left of the line that caused the fault.
+        return;
+    }
     skip(SPACE);
     if (peek() == QUOTE) {
         quote();
@@ -1392,7 +1481,17 @@ static void interpret_word() {
     tcbody* t = NULL;
     Byte headbits = lookup(cstring, &t);
 
-    if (headbits != 0) // compiling or executing regardless of compiling
+    if (headbits != 0 && !compiling && isCompileOnly(t->ii)) {
+        // Same "report clearly, do not continue" shape as the number-
+        // parse-failure path just below: message, mark the error, quit()
+        // to get back to a known-good state (this also matches how a
+        // real compile-only violation is conventionally reported in
+        // Forth systems, rather than as a bare "not found").
+        msg((char*)cstring);
+        msg(" compile only, use inside : ... ; <- eh?");
+        errors = interpretError = 1;
+        quit();
+    } else if (headbits != 0) // compiling or executing regardless of compiling
         headbits == compiling ? compileIt(t) : executeIt(t);
     else { // interpreting as a number
         Cell n = stringNumber((char *)cstring);

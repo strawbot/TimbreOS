@@ -44,6 +44,13 @@ PROBE_UNSAFE = {
     "-b",
     "cmove",
     "fill",
+    # strlen/type treat their argument as a real string/buffer address and
+    # dereference it directly (stringLength()/type() in cli.c) - same
+    # "acts on the value, doesn't just move it" hazard as @/c@/s@ above.
+    # Confirmed live: a generic arity-filler sweep passed strlen a bare
+    # "1" and segfaulted on strlen((char*)1).
+    "strlen",
+    "type",
     "erase",
     # DAC/I2C actuation on real limb hardware: a limb/channel argument is
     # an index into physical wiring, not just a number, and a probe or

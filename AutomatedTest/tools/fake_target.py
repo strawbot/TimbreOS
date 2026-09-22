@@ -206,6 +206,24 @@ def maybe_event() -> None:
         emit(f"! tick {random.randint(1000, 9999)}")
 
 
+def stack_fault(reason: str) -> bool:
+    """A stack boundary breach clears the whole stack, not just the
+    faulting command's own operands.
+
+    Matches cli.c's real behavior: push()/pop() (and the checked TOP
+    peek used by every binary/unary op) call resetCli() and unwind out
+    of the current word entirely rather than continuing with an
+    empty-stack default or stale/garbage data - the old approach could
+    read/write through values that were never validated as real
+    addresses. Clearing everything here, not just the operands the
+    faulting command declared, keeps this stand-in's behavior matching
+    what a real target now does on the same fault.
+    """
+    STACK.clear()
+    emit(f"? stack {reason} - resetcli")
+    return False
+
+
 def run_word(word: str, rest: list[str]) -> bool:
     """Execute one word. Returns False to abort the rest of the line."""
     if word.startswith('"'):
@@ -215,16 +233,14 @@ def run_word(word: str, rest: list[str]) -> bool:
 
     if word == "strlen":
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         addr = STACK.pop()
         STACK.append(len(STRINGS.get(addr, "")))
         return True
 
     if word == "type":
         if len(STACK) < 2:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         count = STACK.pop()
         addr = STACK.pop()
         sys.stdout.write(STRINGS.get(addr, "")[:count])
@@ -240,8 +256,7 @@ def run_word(word: str, rest: list[str]) -> bool:
         # doth() (cli.c): hex, space-padded (not zero-padded) to
         # sizeof(Cell)*2 via dotr(), plus one trailing space.
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         emit(f"{STACK.pop() & 0xFFFFFFFF:X}".rjust(8) + " ")
         return True
 
@@ -258,8 +273,7 @@ def run_word(word: str, rest: list[str]) -> bool:
         # byte length, but the same "reclaim what you just allotted"
         # arithmetic applies either way.
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         _next_addr[0] += STACK.pop()
         return True
 
@@ -279,8 +293,7 @@ def run_word(word: str, rest: list[str]) -> bool:
 
     if word == "nap":
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         NAPS.append(STACK.pop())
         return True
 
@@ -293,8 +306,7 @@ def run_word(word: str, rest: list[str]) -> bool:
         # allot" needs; nothing in this simulator's word list otherwise
         # calls plain "-".
         if len(STACK) < 2:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         n = STACK.pop()
         m = STACK.pop()
         STACK.append(m - n)
@@ -302,29 +314,25 @@ def run_word(word: str, rest: list[str]) -> bool:
 
     if word == "dup":
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         STACK.append(STACK[-1])
         return True
 
     if word == "drop":
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         STACK.pop()
         return True
 
     if word == "swap":
         if len(STACK) < 2:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         STACK[-1], STACK[-2] = STACK[-2], STACK[-1]
         return True
 
     if word == "over":
         if len(STACK) < 2:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         STACK.append(STACK[-2])
         return True
 
@@ -398,24 +406,21 @@ def run_word(word: str, rest: list[str]) -> bool:
         # but leaves the stack corrupted, which is exactly what the
         # sentinel tests are built to detect.
         if len(STACK) < 2:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         b, a = STACK.pop(), STACK.pop()
         STACK.append(a + b)
         return True
 
     if word == "peek":
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         addr = STACK.pop()
         STACK.append(addr ^ 0xA5A5A5A5)
         return True
 
     if word == ".f":
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         emit(f"{format_float(pop_float())} ")
         return True
 
@@ -425,8 +430,7 @@ def run_word(word: str, rest: list[str]) -> bool:
 
     if word == "i>f":
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         push_float(to_f32(float(STACK.pop())))
         return True
 
@@ -434,8 +438,7 @@ def run_word(word: str, rest: list[str]) -> bool:
         # Rounds, not truncates - matches float.c cliFtoi()'s +-0.5 before
         # the cast (test_f_to_i_rounds_rather_than_truncates pins this).
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         f = pop_float()
         if not math.isfinite(f):
             # int(nan) / int(inf) raise in Python; the real (Integer) cast
@@ -450,23 +453,20 @@ def run_word(word: str, rest: list[str]) -> bool:
 
     if word == "fabs":
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         push_float(abs(pop_float()))
         return True
 
     if word == "fneg":
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         push_float(-pop_float())
         return True
 
     if word in ("f+", "f-", "f*", "f/"):
         # ( f m -- ): m is on top, f below - popped in that order.
         if len(STACK) < 2:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         m = pop_float()
         n = pop_float()
         if word == "f/":
@@ -477,8 +477,7 @@ def run_word(word: str, rest: list[str]) -> bool:
 
     if word == "f>":
         if len(STACK) < 2:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         m = pop_float()
         n = pop_float()
         STACK.append(1 if n > m else 0)
@@ -486,23 +485,20 @@ def run_word(word: str, rest: list[str]) -> bool:
 
     if word == "sqrt":
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         push_float(safe_math(math.sqrt, pop_float()))
         return True
 
     if word == "cbrt":
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         v = pop_float()
         push_float(math.copysign(abs(v) ** (1 / 3), v))
         return True
 
     if word == "pow":
         if len(STACK) < 2:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         m = pop_float()
         n = pop_float()
         push_float(safe_math(lambda: n ** m))
@@ -510,29 +506,25 @@ def run_word(word: str, rest: list[str]) -> bool:
 
     if word == "exp":
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         push_float(safe_math(math.exp, pop_float()))
         return True
 
     if word == "ln":
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         push_float(safe_math(math.log, pop_float()))
         return True
 
     if word == "log":
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         push_float(safe_math(math.log10, pop_float()))
         return True
 
     if word in ("sin", "cos", "tan", "asin", "acos", "atan"):
         if not STACK:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         fn = {"sin": math.sin, "cos": math.cos, "tan": math.tan,
               "asin": math.asin, "acos": math.acos, "atan": math.atan}[word]
         push_float(safe_math(fn, pop_float()))
@@ -540,8 +532,7 @@ def run_word(word: str, rest: list[str]) -> bool:
 
     if word == "atan2":
         if len(STACK) < 2:
-            emit("? stack underflow")
-            return False
+            return stack_fault("underflow")
         m = pop_float()
         n = pop_float()
         push_float(safe_math(math.atan2, n, m))
@@ -560,8 +551,7 @@ def run_word(word: str, rest: list[str]) -> bool:
         return False
 
     if len(STACK) >= MAX_DEPTH:
-        emit("? stack overflow")
-        return False
+        return stack_fault("overflow")
     STACK.append(value)
     return True
 

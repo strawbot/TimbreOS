@@ -47,6 +47,24 @@ STACK_WORDS = {
     "over",
 }
 
+# if/else/endif/begin/again/while/repeat/until/for/next/exit and ; only make
+# sense inside a `:` definition - cli.c now rejects them outright ("compile
+# only, use inside : ... ;") when interpreted bare (see isCompileOnly() in
+# cli.c), and that rejection runs quit(), which clears the whole stack like
+# any other interpreter error. Most of these already fail to parse a stack
+# effect at all (see test_every_command_declares_a_stack_effect's own xfail
+# list) so the generic arity sweeps skip them for free; if/for/until/while
+# are the ones whose "( n - )"-style comments DO parse, which is what pulled
+# them into sweeps that assume a normal runtime word - a full-stack-clearing
+# rejection isn't "reached below its arguments" or "accepted a short stack",
+# it's the same fault the whole set is guarded against, so the whole set is
+# excluded here for consistency rather than only the ones that happened to
+# be reachable today.
+COMPILE_ONLY = {
+    "if", "else", "endif", "begin", "again", "while", "repeat", "until",
+    "for", "next", "exit", ";",
+}
+
 DESTRUCTIVE = {
     "reset",
     "reboot",

@@ -9,7 +9,7 @@ which is where hand-written suites are always thinnest.
 
 import pytest
 
-from tests.test_command_matrix import DESTRUCTIVE, STACK_WORDS
+from tests.test_command_matrix import COMPILE_ONLY, DESTRUCTIVE, STACK_WORDS
 from tests.test_stack_effects import PROBE_UNSAFE
 
 
@@ -101,10 +101,22 @@ def test_underflow_is_reported_not_crashed(cli, commands, cfg):
     Preloaded with marked values rather than run against an empty stack.
     An empty stack tells you only that the command errored; it cannot tell
     you whether the command checked depth before popping or after. Both
-    report the error. Only one leaves the stack intact.
+    report the error.
 
     Each command is given arity-1 sentinels: one short of what it needs,
-    with a recognisable floor underneath.
+    with a recognisable floor underneath - but the floor is not expected
+    to survive. A stack boundary breach now triggers a full resetcli
+    (cli.c's push()/pop()/checked-TOP fault path, see cli.c's
+    stack_fault jmp_buf), not a surgical "only this command's own
+    operands are lost" recovery: continuing to run the faulting word's
+    remaining C code against a stack that doesn't have what it expects
+    is what let `1 *` read a stale/garbage second operand silently
+    instead of reporting underflow at all, and what let a genuine
+    overflow-mid-expression segfault by handing a bad address to
+    type()/strlen(). A full reset is the only response that's actually
+    safe to keep running after. So the check here is that the sentinels
+    are GONE, not intact - the whole stack, not just this command's
+    declared arguments, was cleared.
     """
     checked = 0
     for name, spec in sorted(commands.items()):
@@ -119,11 +131,15 @@ def test_underflow_is_reported_not_crashed(cli, commands, cfg):
         # 0x5EED-class sentinel address hung the real board outright the
         # first time this sweep ran without this exclusion. See
         # test_stack_effects.PROBE_UNSAFE for the list and why.
-        if name in PROBE_UNSAFE or name in DESTRUCTIVE:
+        #
+        # if/for/until/while are compile-only (see COMPILE_ONLY) and error
+        # unconditionally when interpreted bare, regardless of what's on
+        # the stack - not an underflow in the sense this sweep is checking.
+        if name in PROBE_UNSAFE or name in DESTRUCTIVE or name in COMPILE_ONLY:
             continue
 
         cli.clear_stack()
-        marks = cli.push_sentinels(spec.arity - 1)
+        cli.push_sentinels(spec.arity - 1)
         resp = cli.execute(name)
 
         assert not resp.timed_out, f"{name!r} hung on stack underflow"
@@ -131,8 +147,12 @@ def test_underflow_is_reported_not_crashed(cli, commands, cfg):
             f"{name!r} accepted {spec.arity - 1} parameter(s) but declares "
             f"arity {spec.arity} ({spec.raw.strip()})"
         )
-        # The real check: it must not have taken anything on the way out.
-        cli.assert_sentinels_intact(marks, f"{name!r} on underflow")
+        # The real check: underflow must reset to a known-good state, not
+        # continue running with whatever was left on the stack.
+        assert cli.depth() == cfg.baseline_depth, (
+            f"{name!r} on underflow: expected a full reset to depth "
+            f"{cfg.baseline_depth}, found {cli.stack()}"
+        )
         checked += 1
 
     cli.clear_stack()
@@ -151,6 +171,11 @@ def test_commands_do_not_reach_below_their_arguments(cli, commands, cfg):
         if spec.arity == 0 or spec.takes_text:
             continue
         if name in DESTRUCTIVE or name in STACK_WORDS or name in PROBE_UNSAFE:
+            continue
+        # if/for/until/while are compile-only and error unconditionally
+        # when interpreted bare - the "floor" they leave is whatever a
+        # full resetcli leaves, not something the command declared.
+        if name in COMPILE_ONLY:
             continue
         cli.clear_stack()
         marks = cli.push_sentinels(2)
