@@ -107,11 +107,27 @@ def test_dot_h_prints_a_hex_value_and_consumes_it(cli):
     try:
         before = cli.depth()
         resp = cli.expect_ok(".h", 255)
-        # doth() space-pads to sizeof(Cell)*2 via dotr() (cli.c) - not
-        # zero-padded, so "FF" is "      FF" (6 leading spaces), not
-        # "000000FF".
+        # doth() (cli.c) space-pads to sizeof(Cell)*2 hex digits via
+        # dotr() - not zero-padded, so "FF" is right-justified with
+        # leading spaces, not "000000FF". The field width itself is not
+        # fixed: Cell is `uintptr_t` (ttypes.h), 4 bytes -> 8 hex digits
+        # on an embedded 32-bit target, 8 bytes -> 16 hex digits on a
+        # 64-bit host build (Tea-host). Assert the shape - right-
+        # justified "FF" in a field of spaces sized to one of those two
+        # widths, plus doth()'s own trailing space - rather than a
+        # specific width, so this test does not assume which target it's
+        # running against.
         assert resp.text.strip().upper() == "FF", f"expected FF, got {resp.text!r}"
-        assert resp.text.upper().startswith("      FF"), f"expected space-padding, got {resp.text!r}"
+        assert resp.text.endswith(" "), f"expected a trailing space, got {resp.text!r}"
+        field = resp.text[:-1]
+        assert len(field) in (8, 16), (
+            f"expected FF right-justified in an 8 or 16 char field "
+            f"(sizeof(Cell)*2, 32- or 64-bit target), got {field!r} "
+            f"({len(field)} chars)"
+        )
+        assert field.upper() == " " * (len(field) - 2) + "FF", (
+            f"expected space-padding, got {resp.text!r}"
+        )
         assert cli.depth() == before
     finally:
         cli.reset()
