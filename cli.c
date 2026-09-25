@@ -865,6 +865,12 @@ void colonii() { // macro threader
 }
 
 bool executing() {
+    // Words run from here a step at a time, after interpret_word() has
+    // returned, so its setjmp is gone by then; a stack fault inside a :
+    // word needs its own landing point or longjmp() jumps into a dead
+    // stack frame. resetCli() has already cleared ip and both stacks.
+    if (setjmp(stack_fault))
+        return false;
     if (ip && ip->lit)
         executeIt(ip++->call);
     else if (queryq(returnStack))
