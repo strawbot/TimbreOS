@@ -129,6 +129,7 @@ def format_float(f: float, n: int = 4) -> str:
         return "INF"
     sign = "-" if f < 0 else ""
     f = abs(f)
+    n = min(n, 9)  # same clamp as printers.c's MAX_FLOAT_DECIMALS
     multiplier = 10**n
     exponent = 0
     if f != 0.0 and (f >= 1.0e9 or f < 0.5 / multiplier):

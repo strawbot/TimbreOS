@@ -116,6 +116,8 @@ void printuDec(unsigned int dec) { print(unumString(0, 0, dec, 10)); }
 
 void printDec0(unsigned int dec) { printnDec(0, dec); }
 
+#define MAX_FLOAT_DECIMALS 9
+
 void printFloat0(float f, int n) {
     if (isnan(f))
         print("NAN");
@@ -126,6 +128,10 @@ void printFloat0(float f, int n) {
             print("-");
             f = -f;
         }
+        // 10^n must fit a 32-bit Long; 10^10 would wrap and print garbage
+        // digits. float32 has only ~7 significant digits, so 9 loses nothing.
+        if (n > MAX_FLOAT_DECIMALS)
+            n = MAX_FLOAT_DECIMALS;
         Long multiplier = 1;
         for(Byte i=0; i++<n;)  multiplier *= 10;
 

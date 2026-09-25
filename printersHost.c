@@ -158,6 +158,8 @@ void printFloat(float f, int n)
         f = -f;
     }
 
+    if (n > 9) // same clamp as printers.c's MAX_FLOAT_DECIMALS
+        n = 9;
     double multiplier = 1;
     for (int i = 0; i++ < n;) multiplier *= 10;
 
