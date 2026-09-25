@@ -139,6 +139,20 @@ void quit();
 void quote();
 void rat();
 void resetCli();
+// Report a fault, reset the CLI and abandon the current word, the same way a
+// stack underflow does. Only valid while the CLI is interpreting.
+__attribute__((noreturn)) void cliFault(const char * m);
+
+// float.c
+Cell floatCell(Real f); // a float as a stack cell
+void cliFdot(void);
+#ifdef FLOAT_DOUBLE
+bool isFloat(Cell c);
+void cliMarkStacks(void (*mark)(Cell)); // call mark() on every stack cell
+void floatPin(Cell c);   // keep a float stored in dictionary space alive
+void floatUnpin(Cell c);
+void floatReset(void);  // free every float, pinned or not
+#endif
 Cell ret();
 void rfrom();
 void rightBracket();

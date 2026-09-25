@@ -24,7 +24,15 @@ typedef unsigned short Word; /* next in size */
 typedef uintptr_t Cell; /* default memory transfer unit; big enough for pointer */
 typedef unsigned int Whole; /* whole numbers; 0 to finite infinity */
 typedef   signed int Integer; /* for operations requiring the set of signed numbers */
+// FLOAT_DOUBLE selects 64 bit floats for the CLI (see float.c). It must be
+// a compiler flag (-DFLOAT_DOUBLE), not a project_defs.h define: this
+// header is read before project_defs.h in most files, and every file must
+// agree on the size of Real.
+#ifdef FLOAT_DOUBLE
+typedef 		 double Real; // for floating point numbers
+#else
 typedef 		 float Real; // for floating point numbers
+#endif
 typedef unsigned short Short;
 typedef unsigned long Long;
 typedef signed long Lint;

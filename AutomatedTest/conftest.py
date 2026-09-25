@@ -48,7 +48,7 @@ from timbre.timing import parse_timing_table
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--transport", default="host", choices=["host", "serial", "tea-host"]
+        "--transport", default="host", choices=["host", "serial", "tea-host", "tea-host-double"]
     )
     parser.addoption("--port", default=None, help="override serial port")
     parser.addoption("--no-timing-guard", action="store_true")
@@ -69,7 +69,7 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    if config.getoption("--transport") not in ("host", "tea-host"):
+    if config.getoption("--transport") not in ("host", "tea-host", "tea-host-double"):
         return
     skip_hw = pytest.mark.skip(reason="needs --transport=serial")
     for item in items:
@@ -88,14 +88,16 @@ def cfg(request) -> TargetConfig:
 _TEA_HOST_CLI_DIR = pathlib.Path(__file__).parent / "tools" / "tea_host_cli"
 
 
-def _tea_host_binary() -> list[str]:
+def _tea_host_binary(double: bool = False) -> list[str]:
     """Build (if needed) and return the argv for the real-firmware host
     binary - see tools/tea_host_cli/Makefile. `make` no-ops if the binary
     is already newer than its sources, so this is cheap on repeat runs.
+    double selects the 64 bit float build (-DFLOAT_DOUBLE).
     """
-    binary = _TEA_HOST_CLI_DIR / "tea_host_cli"
+    binary = _TEA_HOST_CLI_DIR / ("tea_host_cli_double" if double else "tea_host_cli")
     result = subprocess.run(
-        ["make"], cwd=_TEA_HOST_CLI_DIR, capture_output=True, text=True
+        ["make", "double" if double else "all"], cwd=_TEA_HOST_CLI_DIR,
+        capture_output=True, text=True
     )
     if result.returncode != 0:
         raise RuntimeError(
@@ -119,14 +121,15 @@ def transport(request, cfg):
         # used anywhere - this is that use. See wait_until_responsive's
         # own docstring for why it's needed at all.
         wait_until_responsive(t, cfg.stack_cmd, cfg.connect_timeout)
-    elif selected == "tea-host":
+    elif selected in ("tea-host", "tea-host-double"):
         # Unlike fake_target.py (a line-reading Python script, indifferent
         # to what the line ending actually is), this binary runs the real
         # cli.c: parse_keyq() only commits a line on CRETURN ('\r') and
         # silently treats a bare LFEED as a no-op, exactly like real
         # hardware over a serial port. HostTransport's own default tx_eol
         # ("\n") means no command would ever be seen as complete.
-        t = HostTransport(_tea_host_binary(), tx_eol=cfg.tx_eol, conversation_log=log_path)
+        t = HostTransport(_tea_host_binary(selected == "tea-host-double"),
+                          tx_eol=cfg.tx_eol, conversation_log=log_path)
         t.open()
         t.drain(quiet_for=0.3)
     else:

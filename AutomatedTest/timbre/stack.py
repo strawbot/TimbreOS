@@ -31,7 +31,7 @@ class StackSnapshot:
     """Depth and contents at a moment in time. Index 0 is the bottom."""
 
     depth: int
-    values: tuple[int, ...] = field(default=())
+    values: tuple[int | float, ...] = field(default=())
 
     def __post_init__(self):
         if self.values and len(self.values) != self.depth:
@@ -62,17 +62,27 @@ def sentinel(index: int, base: int = 0x5EED0000) -> int:
     return base | (index & 0xFFFF)
 
 
-def is_sentinel(value: int, base: int = 0x5EED0000) -> bool:
-    return (value & 0xFFFF0000) == (base & 0xFFFF0000)
+def is_sentinel(value: int | float, base: int = 0x5EED0000) -> bool:
+    return isinstance(value, int) and (value & 0xFFFF0000) == (base & 0xFFFF0000)
 
 
 # ----------------------------------------------------------------------
 _BRACKET = re.compile(r"<\s*(\d+)\s*>")
 _INT = re.compile(r"^-?(0[xX][0-9a-fA-F]+|\d+)$")
+# A 64 bit float build (-DFLOAT_DOUBLE) can tell floats from ints on the
+# stack, so its `.s` prints floats the way `.f` does: "3.1416",
+# "1.5000e10", "NAN", "INF".
+_FLOAT = re.compile(r"^-?(\d+\.\d*(e-?\d+)?|NAN|INF)$")
 
 
-def _ints(text: str) -> list[int]:
-    return [int(tok, 0) for tok in text.split() if _INT.match(tok)]
+def _ints(text: str) -> list[int | float]:
+    values = []
+    for tok in text.split():
+        if _INT.match(tok):
+            values.append(int(tok, 0))
+        elif _FLOAT.match(tok):
+            values.append(float(tok.replace("NAN", "nan").replace("INF", "inf")))
+    return values
 
 
 def parse_stack_output(
@@ -89,7 +99,7 @@ def parse_stack_output(
     """
     body = text.strip()
 
-    def finish(depth: int, values: tuple[int, ...]) -> StackSnapshot:
+    def finish(depth: int, values: tuple[int | float, ...]) -> StackSnapshot:
         # One invariant for the whole harness: index 0 is the bottom of the
         # stack and the last element is the top. Display order is a target
         # quirk that stops here.

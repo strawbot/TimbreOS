@@ -35,7 +35,7 @@ def probe(index: int) -> int:
 
 
 def is_probe(value: int) -> bool:
-    return (value & 0xFFFF0000) == PROBE_BASE
+    return isinstance(value, int) and (value & 0xFFFF0000) == PROBE_BASE
 
 
 def assign_probes(args: list[str]) -> tuple[dict[str, int], list[int]]:
@@ -165,4 +165,4 @@ def check_effect(cli, spec, floor: int = 2, derivable: bool | None = None) -> Ef
 
 
 def is_sentinel_value(value: int, cfg) -> bool:
-    return (value & 0xFFFF0000) == (cfg.sentinel_base & 0xFFFF0000)
+    return isinstance(value, int) and (value & 0xFFFF0000) == (cfg.sentinel_base & 0xFFFF0000)

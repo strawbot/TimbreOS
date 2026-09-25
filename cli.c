@@ -98,6 +98,30 @@ static Cell checkedTop(void) {
 }
 #define TOP checkedTop()
 
+void cliFault(const char * m) {
+    msg(m);
+    resetCli();
+    longjmp(stack_fault, 1);
+}
+
+#ifdef FLOAT_DOUBLE
+// Visit every cell on both stacks, leaving them as found: pulling the
+// oldest cell and pushing it back as the newest, depth times over, brings
+// each queue back to its starting order.
+static void markQueue(Cell * q, void (*mark)(Cell)) {
+    for (Cell n = queryq(q); n; n--) {
+        Cell c = pullq(q);
+        mark(c);
+        pushq(c, q);
+    }
+}
+
+void cliMarkStacks(void (*mark)(Cell)) {
+    markQueue(dataStack, mark);
+    markQueue(returnStack, mark);
+}
+#endif
+
 static void push(Cell c) {
     if (fullbq(dataStack)) {
         msg(" stack overflow - resetcli " );
@@ -402,6 +426,9 @@ void comma() /* n -- */
     Cell* p = (Cell*)hp;
     aligned();
     *p = top;
+#ifdef FLOAT_DOUBLE
+    floatPin(top); // literals, constants and variables hold floats for good
+#endif
     allot(sizeof(Cell));
 }
 
@@ -415,6 +442,15 @@ void store() /* n \ a -- */
     Cell top = pop();
     Cell next = pop();
 
+#ifdef FLOAT_DOUBLE
+    // A float stored into a variable must outlive the stacks. Only done
+    // inside dictionary space, where variables live: reading the old value
+    // of a hardware register could have side effects.
+    if ((Byte*)top >= hereSpace && (Byte*)top <= hpEnd) {
+        floatPin(next); // before unpinning, in case it is the same float
+        floatUnpin(*(Cell*)top);
+    }
+#endif
     *(Cell*)top = next;
 }
 
@@ -762,6 +798,12 @@ void dots() /* -- */
     while (n-- > 0) {
         rfrom();
         dup();
+#ifdef FLOAT_DOUBLE
+        if (isFloat(TOP)) { // a tagged index says this cell is a float
+            cliFdot();
+            continue;
+        }
+#endif
         dot();
     }
 }
@@ -1113,9 +1155,13 @@ bool toDigit(Byte* n) // convert character to number according to base
 // unchecked parsed value is exactly the bug ".r"'s padding count turned
 // out to be elsewhere in this file. 64 is comfortably past float32's own
 // range in either direction.
+#ifdef FLOAT_DOUBLE
+#define MAX_DECIMAL_EXPONENT 330 // past float64's range, same reasoning
+#else
 #define MAX_DECIMAL_EXPONENT 64
+#endif
 
-static float scaleByPow10(float f, Integer exponent)
+static Real scaleByPow10(Real f, Integer exponent)
 {
     if (exponent > MAX_DECIMAL_EXPONENT)
         exponent = MAX_DECIMAL_EXPONENT;
@@ -1123,11 +1169,11 @@ static float scaleByPow10(float f, Integer exponent)
         exponent = -MAX_DECIMAL_EXPONENT;
 
     while (exponent > 0) {
-        f *= 10.0f;
+        f *= 10;
         exponent--;
     }
     while (exponent < 0) {
-        f /= 10.0f;
+        f /= 10;
         exponent++;
     }
     return f;
@@ -1137,6 +1183,11 @@ static float scaleByPow10(float f, Integer exponent)
 Cell signDigits(Byte* cstring, bool sign) // convert string to number according to base
 {
     Cell n = 0;
+#ifdef FLOAT_SUPPORT
+    // The whole part of a float, kept apart from n since a 64 bit float
+    // can hold whole parts that would overflow a 32 bit Cell.
+    Real whole = 0;
+#endif
 
     if (*cstring == 0) {
         error_occurred();
@@ -1213,10 +1264,7 @@ Cell signDigits(Byte* cstring, bool sign) // convert string to number according 
         if (!toDigit(&c)) {
 #ifdef FLOAT_SUPPORT
             if (c == '.') { // decimal point encountered - try for mantissa
-                union {
-                	float f;
-                	Cell  n;
-                }num = {0};
+                Real f = 0;
 
                 // A second decimal point (e.g. "1.2.3") is not a valid
                 // literal. Without this check the backward scan below
@@ -1243,15 +1291,15 @@ Cell signDigits(Byte* cstring, bool sign) // convert string to number according 
                         error_occurred();
                         return n;
                     }
-                    num.f = (num.f + c) / base;
+                    f = (f + c) / base;
                 }
-                num.f = num.f + n;
+                f = f + whole;
                 if (sign)
-                    num.f = -num.f;
+                    f = -f;
                 if (haveExponent)
-                    num.f = scaleByPow10(num.f, exponent);
+                    f = scaleByPow10(f, exponent);
                 if (expAt) *expAt = expOriginal;
-                return num.n;
+                return floatCell(f);
             }
 #endif
             if (expAt) *expAt = expOriginal;
@@ -1259,6 +1307,9 @@ Cell signDigits(Byte* cstring, bool sign) // convert string to number according 
             return n;
         }
         n = n * base + c;
+#ifdef FLOAT_SUPPORT
+        whole = whole * base + c;
+#endif
     }
     if (sign)
         n = -n;
@@ -1266,13 +1317,9 @@ Cell signDigits(Byte* cstring, bool sign) // convert string to number according 
     if (haveExponent) {
         // No decimal point, but "1e10" is still exponent notation, not
         // an integer - always resolves to a float, same as "1.0e10" would.
-        union {
-        	float f;
-        	Cell  n;
-        }num = {.f = (float)(Integer)n};
-        num.f = scaleByPow10(num.f, exponent);
+        Real f = scaleByPow10(sign ? -whole : whole, exponent);
         if (expAt) *expAt = expOriginal;
-        return num.n;
+        return floatCell(f);
     }
 #endif
     return n;
@@ -1729,6 +1776,9 @@ void resetCli() {
     cli_state = CLI_OFF;
     hereSay(hpStart, hpEnd - hpStart);
     wordlist = NULL;
+#ifdef FLOAT_DOUBLE
+    floatReset(); // the dictionary holding pinned floats is gone
+#endif
     ip = NULL;
     decimal();
     quit();

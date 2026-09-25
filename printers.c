@@ -116,9 +116,17 @@ void printuDec(unsigned int dec) { print(unumString(0, 0, dec, 10)); }
 
 void printDec0(unsigned int dec) { printnDec(0, dec); }
 
+#ifdef FLOAT_DOUBLE
+#define MAX_FLOAT_DECIMALS 16 // float64 holds ~16 significant digits
+#define MAX_FLOAT_EXPONENT 308
+typedef Octet Frac;
+#else
 #define MAX_FLOAT_DECIMALS 9
+#define MAX_FLOAT_EXPONENT 38
+typedef Long Frac;
+#endif
 
-void printFloat0(float f, int n) {
+void printFloat0(Real f, int n) {
     if (isnan(f))
         print("NAN");
     else if (isinf(f))
@@ -128,11 +136,12 @@ void printFloat0(float f, int n) {
             print("-");
             f = -f;
         }
-        // 10^n must fit a 32-bit Long; 10^10 would wrap and print garbage
-        // digits. float32 has only ~7 significant digits, so 9 loses nothing.
+        // 10^n must fit a Frac; for float32 10^10 would wrap a 32-bit Long
+        // and print garbage digits. float32 has only ~7 significant digits,
+        // so 9 loses nothing. float64 uses a 64-bit Frac and allows 16.
         if (n > MAX_FLOAT_DECIMALS)
             n = MAX_FLOAT_DECIMALS;
-        Long multiplier = 1;
+        Frac multiplier = 1;
         for(Byte i=0; i++<n;)  multiplier *= 10;
 
         // Reciprocity with number-literal parsing (cli.c signDigits(),
@@ -147,11 +156,11 @@ void printFloat0(float f, int n) {
         // reasoning as cli.c's scaleByPow10().
         int exponent = 0;
         if (f != 0.0f && (f >= 1.0e9f || f < 0.5f / multiplier)) {
-            while (f >= 10.0f && exponent < 38) {
+            while (f >= 10.0f && exponent < MAX_FLOAT_EXPONENT) {
                 f /= 10.0f;
                 exponent++;
             }
-            while (f > 0.0f && f < 1.0f && exponent > -38) {
+            while (f > 0.0f && f < 1.0f && exponent > -MAX_FLOAT_EXPONENT) {
                 f *= 10.0f;
                 exponent--;
             }
@@ -159,7 +168,7 @@ void printFloat0(float f, int n) {
 
         Long intPart = (Long)f;
         f = f - intPart;
-        Long frac = (Long)(f * multiplier + .5f);
+        Frac frac = (Frac)(f * multiplier + .5f);
         if (frac >= multiplier) { // rounding carried into integer part
             intPart++;
             frac -= multiplier;
@@ -167,7 +176,11 @@ void printFloat0(float f, int n) {
         printDec0(intPart);
         if (n > 0) {
             print(".");
-            dotnb(n,n,(Cell)frac,10);
+            if (n > 9) { // more digits than a 32-bit Cell holds: print in two parts
+                dotnb(n - 9, n - 9, (Cell)(frac / 1000000000u), 10);
+                dotnb(9, 9, (Cell)(frac % 1000000000u), 10);
+            } else
+                dotnb(n,n,(Cell)frac,10);
         }
         if (exponent != 0) {
             print("e");
@@ -179,7 +192,7 @@ void printFloat0(float f, int n) {
         }
     }
 }
-void printFloat(float f, int n) { printFloat0(f, n); print(" "); }
+void printFloat(Real f, int n) { printFloat0(f, n); print(" "); }
 
 void printBin(unsigned int bin) { lit(bin), dotb(); }
 

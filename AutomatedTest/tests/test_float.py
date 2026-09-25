@@ -98,9 +98,10 @@ def test_dot_f_prints_four_decimal_places(cli, cfg):
 
 
 def test_float_and_int_share_one_stack(cli, cfg):
-    """No separate float stack: an int and a float sit side by side, and
-    `.s` shows the float as its raw bit pattern - the same representation
-    float words themselves read via getFloat()'s union reinterpret.
+    """No separate float stack: an int and a float sit side by side, one
+    cell each. What that cell holds differs by build - raw float32 bits,
+    or with -DFLOAT_DOUBLE a tagged index into float.c's pool - so the
+    float is checked by value through .f rather than by bit pattern.
     """
     cli.reset()
     try:
@@ -109,7 +110,8 @@ def test_float_and_int_share_one_stack(cli, cfg):
         snap = cli.stack()
         assert snap.depth == 2
         assert snap.values[0] == 5
-        assert snap.values[1] == struct.unpack("I", struct.pack("f", 3.5))[0]
+        assert read_float(cli) == 3.5
+        assert tuple(cli.stack().values) == (5,)
     finally:
         cli.reset()
 
@@ -142,9 +144,8 @@ def test_exponent_literal_pushes_a_float(cli, cfg, literal, expected):
 
 
 def test_exponent_literal_with_no_decimal_point_is_still_a_float(cli, cfg):
-    """"5e2" must behave exactly like "500.0", not like the integer 500 -
-    confirmed by checking the raw bit pattern on the stack, the same way
-    test_float_and_int_share_one_stack tells floats and ints apart.
+    """"5e2" must behave exactly like "500.0", not like the integer 500:
+    the cell on the stack is not 500, and .f reads it back as 500.0.
     """
     cli.reset()
     try:
@@ -152,7 +153,8 @@ def test_exponent_literal_with_no_decimal_point_is_still_a_float(cli, cfg):
         assert resp.ok, f"failed: {resp.text!r} {resp.errors}"
         snap = cli.stack()
         assert snap.depth == 1
-        assert snap.values[0] == struct.unpack("I", struct.pack("f", 500.0))[0]
+        assert not (isinstance(snap.values[0], int) and snap.values[0] == 500)
+        assert read_float(cli) == 500.0
     finally:
         cli.reset()
 

@@ -5,4 +5,5 @@ help.c
 
 # Build output
 tea_host_cli
+tea_host_cli_double
 *.dSYM/
