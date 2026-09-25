@@ -124,7 +124,7 @@ void printFloat0(float f, int n) {
     else if (isinf(f))
         print("INF");
     else {
-        if (f < 0.0) {
+        if (f < 0.0f) {
             print("-");
             f = -f;
         }
@@ -159,7 +159,7 @@ void printFloat0(float f, int n) {
 
         Long intPart = (Long)f;
         f = f - intPart;
-        Long frac = (Long)(f * multiplier + .5);
+        Long frac = (Long)(f * multiplier + .5f);
         if (frac >= multiplier) { // rounding carried into integer part
             intPart++;
             frac -= multiplier;

@@ -53,7 +53,7 @@ void cliPi()
 	static float pi = 0;
 	
 	if (pi == 0)
-		pi = 4 * atan(1.0);
+		pi = 4 * atanf(1.0f);
 	putFloat(pi);
 }
 
@@ -68,28 +68,28 @@ void cliFtoi()  /* n -- n */
 {
 	float f = getFloat();
 	
-	f += (f < 0.0) ? -0.5 : 0.5;  // round up or down
+	f += (f < 0.0f) ? -0.5f : 0.5f;  // round up or down
 	lit((Integer)f);
 }
 
 void cliFabs()  /* n -- n */
 {
-	floatop(fabs);
+	floatop(fabsf);
 }
 
 void cliExp()  /* n -- n */
 {
-	floatop(exp);
+	floatop(expf);
 }
 
 void cliLog()  /* n -- n */
 {
-	floatop(log10);
+	floatop(log10f);
 }
 
 void cliLn()  /* n -- n */
 {
-	floatop(log);
+	floatop(logf);
 }
 
 void cliPow()  /* n m -- n */
@@ -97,7 +97,7 @@ void cliPow()  /* n m -- n */
 	float m = getFloat();
 	float n = getFloat();
 	
-	putFloat(pow(n,m));
+	putFloat(powf(n,m));
 }
 
 void cliFneg()  /* n -- n */
@@ -115,12 +115,12 @@ void cliFgreater()  /* n m -- FLAG */
 
 void cliSqrt()  /* n -- n */
 {
-	floatop(sqrt);
+	floatop(sqrtf);
 }
 
 void cliCbrt()  /* n -- n */
 {
-	floatop(cbrt);
+	floatop(cbrtf);
 }
 
 void cliFplus()  /* n m -- n */
@@ -145,32 +145,32 @@ void cliFslash()  /* n m -- m */
 
 void cliSin()  /* n --  n */
 {
-	floatop(sin);
+	floatop(sinf);
 }
 
 void cliCos()  /* n --  n */
 {
-	floatop(cos);
+	floatop(cosf);
 }
 
 void cliTan()  /* n --  n */
 {
-	floatop(tan);
+	floatop(tanf);
 }
 
 void cliAsin()  /* n --  n */
 {
-	floatop(asin);
+	floatop(asinf);
 }
 
 void cliAcos()  /* n --  n */
 {
-	floatop(acos);
+	floatop(acosf);
 }
 
 void cliAtan()  /* n --  n */
 {
-	floatop(atan);
+	floatop(atanf);
 }
 
 void cliAtan2()  /* n m -- m */
@@ -178,5 +178,5 @@ void cliAtan2()  /* n m -- m */
 	float m = getFloat();
 	float n = getFloat();
 
-	putFloat(atan2(n,m));
+	putFloat(atan2f(n,m));
 }
