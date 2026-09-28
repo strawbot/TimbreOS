@@ -16,8 +16,15 @@ void printCr(void) { print("\n"); }
 
 void printChar(unsigned char ch) { emitByte(ch); }
 
+// Same bound as cli.c's DOTR_MAX_PAD for .r: a garbage column (e.g. a
+// stack-effect probe value) otherwise emits spaces for days, which needs
+// a physical reset to stop.
+#define TABTO_MAX_PAD 80
+
 void tabTo(int n) {
     int len = n - getCursor();
+    if (len > TABTO_MAX_PAD)
+        len = TABTO_MAX_PAD;
     if (len > 0)
         while (len-- > 0) printChar(' ');
     else

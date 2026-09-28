@@ -39,6 +39,8 @@ void printCr(void)
 void tabTo(int n)
 {
     int len = n - getCursor();
+    if (len > 80) // same bound as printers.c's TABTO_MAX_PAD
+        len = 80;
     if (len > 0)
         while (len-- > 0) printChar(' ');
     else
