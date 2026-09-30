@@ -12,12 +12,18 @@
        dictionary_t name = dictionary(n);
  */
 
+// Define DICT_STATIC_ONLY (project_defs.h) when every dictionary is a static
+// HASHDICT: the heap-allocated kinds (b, c above) and upsizing are left out, and
+// with them the only references to malloc/free, so the C library's heap goes too.
+// A full static dictionary is emptied, as before.
+
 #include "dictionary.h"
 #include "printers.h"
 #include <string.h>
 #include <stdlib.h>
 #include "tea.h"
 
+#ifndef DICT_STATIC_ONLY
 // Helper
 static void * allocate(size_t size)
 {
@@ -28,13 +34,17 @@ static void * allocate(size_t size)
 
     return m;
 }
+#endif
 
+#ifndef DICT_STATIC_ONLY
 static void qfree(Cell address)
 {
     if (address)
         free((void *)address);
 }
+#endif
 
+#ifndef DICT_STATIC_ONLY
 // hash table sizes
 static Short primeSizes[] = {HASH8, HASH9, HASH10, HASH11, HASH12, HASH13, HASH14, HASH15, HASH16};
 
@@ -45,6 +55,7 @@ static Short hashSize(Short n)  // select table size
             return primeSizes[i];
     return primeSizes[sizeof(primeSizes)/sizeof(primeSizes[0])-1];
 }
+#endif
 
 // Table checks
 static char zeroString[] = {'\0'}; // used in place of deleted locations
@@ -135,9 +146,11 @@ static Short locateAppend(const char * string, dictionary_t * dict) {
 // growth and shrink
 static void plusEntry(dictionary_t * dict) { // upsize if full and allowed; otherwise empty
     if (dict->free == 0) {
+#ifndef DICT_STATIC_ONLY
         if (dict->upsize)
             upsizeDict(dict);
         else
+#endif
             emptyDict(dict);
     }
     dict->free -= 1;
@@ -151,6 +164,7 @@ static void minusEntry(dictionary_t * dict) // place to downsize if desired
 // Dictionary interface
 
 // Management
+#ifndef DICT_STATIC_ONLY
 dictionary_t * dictionary(Short size) // return a dictionary big enough to hold size
 {
     dictionary_t * dict = (dictionary_t *)allocate(sizeof(dictionary_t));
@@ -159,7 +173,9 @@ dictionary_t * dictionary(Short size) // return a dictionary big enough to hold 
 
     return dict;
 }
+#endif
 
+#ifndef DICT_STATIC_ONLY
 void initDict(dictionary_t * dict, Short n) // fill in dictionary template and allocate string table
 {
     dict->capacity = hashSize(n);
@@ -167,11 +183,14 @@ void initDict(dictionary_t * dict, Short n) // fill in dictionary template and a
     dict->adjunct = (Cell *)allocate(dict->capacity*sizeof(Cell));
     emptyDict(dict);
 }
+#endif
 
+#ifndef DICT_STATIC_ONLY
 void setUpsize(bool flag, dictionary_t * dict)
 {
     dict->upsize = flag;
 }
+#endif
 
 void emptyDict(dictionary_t * dict) // empty out any content
 {
@@ -181,6 +200,7 @@ void emptyDict(dictionary_t * dict) // empty out any content
     dict->upsize = false;
 }
 
+#ifndef DICT_STATIC_ONLY
 void freeDict(dictionary_t * dict) // return previous tables and start anew
 {
     qfree((Cell)dict->table);
@@ -188,10 +208,12 @@ void freeDict(dictionary_t * dict) // return previous tables and start anew
     dict->table = NULL;
     dict->adjunct = NULL;
 }
+#endif
 
 // Upsizing dictionary
 // must maintain ordering of strings and their associated ajunct value
 // first one found in old is deleted from old and appended to new; continue till string is not in old
+#ifndef DICT_STATIC_ONLY
 void upsizeDict(dictionary_t * dict)
 {
     Short index, last;
@@ -227,6 +249,7 @@ void upsizeDict(dictionary_t * dict)
     }
     freeDict(&old);
 }
+#endif
 
 // Usage
 Cell * dictInsert(const char * string, dictionary_t * dict) // insert a string into the dictionary

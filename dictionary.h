@@ -36,6 +36,7 @@ const char * dictNext(dictionary_t * dict);
 
 // prime numbers just less than 2**n used for dicitonary sizes
 enum {
+    HASH7 =(1<<7) -1,   // 127: for static HASHDICTs only; not in the dynamic-sizing list (primeSizes in dictionary.c)
     HASH8 =(1<<8) -5,
     HASH9 =(1<<9) -3,
     HASH10=(1<<10)-3,
