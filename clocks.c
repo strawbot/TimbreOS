@@ -4,7 +4,7 @@
 //  • Libc-free UTC date math: timestamp_to_utc / epoch_to_tm / tm_to_epoch
 //  • Portable stubs:          over_due, micro_sleep, print_build_banner
 //  • Common heartbeat blink:  blink_leds  (double-blink via LED macros)
-//  • Common diagnostic:       show_timer
+//  • Common diagnostic:       show_timer, print_uptime
 //  • STM LL timer functions:  set_delta_alarm, delta_alarm, get_ticks
 //  • Common init:             init_clocks  (DWT + SysTick + timer start)
 //
@@ -185,6 +185,28 @@ void delta_alarm(void) {
 #if defined(CLOCK_TICK_TIM) && !defined(CLOCK_HAS_TICKS)
 Long get_ticks(void) { return (Long)LL_TIM_GetCounter(CLOCK_TICK_TIM); }
 #endif /* CLOCK_TICK_TIM && !CLOCK_HAS_TICKS */
+
+// ── print_uptime ──────────────────────────────────────────────────────────
+// Formats get_ticks()/ONE_SECOND as the coarsest unit that fits — s, min,
+// hr, or days — plus the raw second count whenever that unit isn't already
+// seconds. get_ticks() and ONE_SECOND are the only inputs, and every board
+// already provides both (see CLOCK_HAS_TICKS / project_defs.h above), so
+// there's nothing board-specific left to vary: any board's show-sys can
+// call this directly instead of re-deriving the same s/min/hr/day math.
+// Accuracy is bounded by how long the board's free-running tick counter
+// runs before it wraps — see the board's clocks.c for that figure.
+void print_uptime(void) {
+    unsigned secs = (unsigned)get_ticks() / ONE_SECOND;
+    if (secs < 60) {
+        printDec(secs); print(" s");
+    } else if (secs < 3600) {
+        printDec(secs / 60); print(" min ("); printDec(secs); print(" s)");
+    } else if (secs < 86400) {
+        printDec(secs / 3600); print(" hr ("); printDec(secs); print(" s)");
+    } else {
+        printDec(secs / 86400); print(" days ("); printDec(secs); print(" s)");
+    }
+}
 
 // ── show_timer ────────────────────────────────────────────────────────────
 // Basic version: ticks/s, current ticks, UTC epoch.

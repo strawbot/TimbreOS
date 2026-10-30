@@ -18,6 +18,7 @@ void over_due(void);
 void micro_sleep(void);
 void init_clocks(void);
 void show_timer(void);
+void print_uptime(void);
 void print_build_banner(void);
 void blink_leds(void);
 
