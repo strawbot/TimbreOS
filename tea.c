@@ -502,6 +502,11 @@ Cell * action_stat(vector m) {
 	return stat;
 }
 
+// The action being run, innermost first: an interrupt-level action that
+// preempts a main-loop one shows as itself, then hands back. For a crash report.
+static vector running;
+vector action_running(void) { return running; }
+
 void actionRun(vector m) {
 	if (m == 0)
 		BLACK_HOLE(ACTION_NULL);
@@ -509,7 +514,10 @@ void actionRun(vector m) {
 		return;
 	Cell * stat = action_stat(m);
 	Long time = sysTicks();
+	vector outer = running;
+	running = m;
 	m();
+	running = outer;
 	Long delta = sysTicks() - time;
 	if (stat && delta > *stat)
 		*stat = delta;

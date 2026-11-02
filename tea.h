@@ -91,6 +91,7 @@ void action_slice();
 void printActionName(Cell x);
 void actor(vector action, const char * name);
 void actionRun(vector m);
+vector action_running(void);   // the action running now, or NULL; innermost if nested
 Cell * action_stat(vector m);
 
 // inactions
