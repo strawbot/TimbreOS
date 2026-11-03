@@ -1302,7 +1302,9 @@ Cell signDigits(Byte* cstring, bool sign) // convert string to number according 
                 return floatCell(f);
             }
 #endif
+#ifdef FLOAT_SUPPORT
             if (expAt) *expAt = expOriginal;
+#endif
             error_occurred();
             return n;
         }
