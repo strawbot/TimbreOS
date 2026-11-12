@@ -51,6 +51,17 @@ PROBE_UNSAFE = {
     # "1" and segfaulted on strlen((char*)1).
     "strlen",
     "type",
+    # allot MOVES the dictionary pointer by its argument. A probe or
+    # sentinel is an arbitrary (and on a 32-bit target, often negative-
+    # looking) count: before cli.c's allot() grew a lower bound, that moved
+    # hp below here-space, and the next thing to write at hp (c, , a quoted
+    # string, .h's number buffer) corrupted whatever memory sat there -
+    # reproduced as a host segfault, and the suspected cause of a board
+    # hang right after test_shufflers_match_their_comments in a full serial
+    # run. Guarded now, but a sweep still has no business steering hp with
+    # garbage; test_strings.test_allot_advances_and_rewinds_the_dictionary_
+    # pointer covers it with real values.
+    "allot",
     "erase",
     # DAC/I2C actuation on real limb hardware: a limb/channel argument is
     # an index into physical wiring, not just a number, and a probe or

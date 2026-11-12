@@ -390,10 +390,22 @@ void here() /* -- addr */
     lit((Cell)hp);
 }
 
+// n is signed in practice: `here - allot` (the harness's marker, and the
+// usual way to forget a string) passes a negative count to rewind. The old
+// check was `hp + n + CUSHION < hpEnd` with n unsigned, which only guarded
+// the top - a negative-looking n wrapped, passed, and moved hp below
+// hpStart (or, for a large one, far outside here-space entirely), after
+// which everything that writes at hp (c, , quoted strings, the number
+// buffer in endNumberConversion) lands in whatever memory sits there.
+// Confirmed live on the host build: `-100000 allot` then `here .h`
+// segfaults. Both ends are checked now; hp stays in [hpStart, hpEnd-CUSHION).
 void allot(Cell n)
 {
-    if (hp + n + CUSHION < hpEnd)
-        hp += n;
+    intptr_t d = (intptr_t)n;
+    bool fits = d < 0 ? (Cell)(-d) <= (Cell)(hp - hpStart)
+                      : (Cell)d + CUSHION < (Cell)(hpEnd - hp);
+    if (fits)
+        hp += d;
     else
         error_occurred();
 }
