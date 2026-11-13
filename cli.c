@@ -122,8 +122,15 @@ void cliMarkStacks(void (*mark)(Cell)) {
 }
 #endif
 
+// dataStack and returnStack are CELL queues (QUEUE()); fullbq() is the BYTE
+// queue test and reads a cell queue's indices as if they were byte offsets,
+// so it never reported full. A push past capacity then wrapped the ring:
+// the insert index caught the remove index, the count read as 0, and the
+// next pop() found an "empty" stack - that, not the overflow itself, is
+// what segfaulted strlen/type in the original crash. fullq() is the
+// matching test (colonii already used it for the return stack).
 static void push(Cell c) {
-    if (fullbq(dataStack)) {
+    if (fullq(dataStack)) {
         msg(" stack overflow - resetcli " );
         resetCli();
         longjmp(stack_fault, 1);
@@ -201,7 +208,7 @@ void rpStore()
 
 void tor() /* m - */
 {
-    if (fullbq(returnStack)) {
+    if (fullq(returnStack)) {
         msg(" return stack overflow " );
         quit();
     } else
@@ -1531,6 +1538,20 @@ static bool isCompileOnly(vector ii) {
         || ii == compileNext || ii == compileExit || ii == semiColon;
 }
 
+// >r, r> and r are not compile-only (inside a : word they are ordinary
+// words, and `for` compiles >r itself), but at the command line the return
+// stack is not scratch space: executing() treats whatever is on it, once ip
+// is NULL, as a saved ip to resume, so a bare `5 >r` gets popped back off
+// as a "return address" and dereferenced on the very next executing() step
+// - segfault on the host, even balanced with an r> on the same line, and
+// the same failure that took a board completely silent when a sweep sent a
+// bare >r. Only the interpreter's word dispatch is guarded: dots() and a
+// couple of other C paths call tor()/rfrom() directly as a balanced shuffle
+// inside one call, which is fine and must keep working at the command line.
+static bool isReturnStackWord(vector ii) {
+    return ii == tor || ii == rat || ii == rfrom;
+}
+
 static void interpret_word() {
     if (setjmp(stack_fault)) {
         // Landed here via longjmp from push()/pop() after a stack
@@ -1548,14 +1569,22 @@ static void interpret_word() {
     tcbody* t = NULL;
     Byte headbits = lookup(cstring, &t);
 
-    if (headbits != 0 && !compiling && isCompileOnly(t->ii)) {
+    const char* misuse = 0;
+    if (headbits != 0 && !compiling) {
+        if (isCompileOnly(t->ii))
+            misuse = " compile only, use inside : ... ; <- eh?";
+        else if (isReturnStackWord(t->ii))
+            misuse = " return stack word, use inside : ... ; <- eh?";
+    }
+
+    if (misuse) {
         // Same "report clearly, do not continue" shape as the number-
         // parse-failure path just below: message, mark the error, quit()
         // to get back to a known-good state (this also matches how a
         // real compile-only violation is conventionally reported in
         // Forth systems, rather than as a bare "not found").
         msg((char*)cstring);
-        msg(" compile only, use inside : ... ; <- eh?");
+        msg(misuse);
         errors = interpretError = 1;
         quit();
     } else if (headbits != 0) // compiling or executing regardless of compiling

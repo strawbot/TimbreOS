@@ -30,7 +30,7 @@ Words  // stack
 	*		starOp // ( n m - p ) multiply next data stack item by top and leave on top
 	/		slashOp // ( n m - q ) divide next data stack item by top and leave on top
 	mod		modOp // ( n m - r ) modulus next data stack item by top and leave on top
-	/mod	slashModOp // ( n m - q r ) return divide and modulus from top item into next item
+	/mod	slashModOp // ( n m - r q ) return remainder and quotient of next item divided by top item
 	=		equals // ( n m - f ) leave a boolean on stack after equating top two data stack items
 	<		lessThan // ( n m - f ) leave a boolean on stack indicating if next is less than top
 	>		greaterThan // ( n m - f ) leave a boolean on stack indicating if next is greater than top

@@ -44,7 +44,7 @@ NAMES(wordnames)
 	NAME("*")		//  ( n m - p ) multiply next data stack item by top and leave on top
 	NAME("/")		//  ( n m - q ) divide next data stack item by top and leave on top
 	NAME("mod")		//  ( n m - r ) modulus next data stack item by top and leave on top
-	NAME("/mod")		//  ( n m - q r ) return divide and modulus from top item into next item
+	NAME("/mod")		//  ( n m - r q ) return remainder and quotient of next item divided by top item
 	NAME("=")		//  ( n m - f ) leave a boolean on stack after equating top two data stack items
 	NAME("<")		//  ( n m - f ) leave a boolean on stack indicating if next is less than top
 	NAME(">")		//  ( n m - f ) leave a boolean on stack indicating if next is greater than top

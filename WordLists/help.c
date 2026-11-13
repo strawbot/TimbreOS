@@ -73,7 +73,7 @@ void help(void) {
     printif(".r   ( m n - ) print m in right field of n digits\n");
     printif(".s   print number of items on data stack and items\n");
     printif("/   ( n m - q ) divide next data stack item by top and leave on top\n");
-    printif("/mod   ( n m - q r ) return divide and modulus from top item into next item\n");
+    printif("/mod   ( n m - r q ) return remainder and quotient of next item divided by top item\n");
     printif(":   <string> start a macro definition named string\n");
     printif(";  [i]  end a macro build\n");
     printif("<   ( n m - f ) leave a boolean on stack indicating if next is less than top\n");
