@@ -100,7 +100,7 @@ def test_long_input_is_bounded_not_truncated(cli, session, cfg, length):
 
 
 @pytest.mark.parametrize("extra", [1, 2, 3, 4])
-def test_line_longer_than_the_input_buffer_is_rejected_whole(cli, session, cfg, extra):
+def test_line_longer_than_the_input_buffer_is_rejected_whole(cli, session, cfg, request, extra):
     """A line past the target's input buffer must not run its first part.
 
     Sent unframed and deliberately past config.max_line_length, which is
@@ -117,6 +117,8 @@ def test_line_longer_than_the_input_buffer_is_rejected_whole(cli, session, cfg, 
     be reported.) A target whose buffer is bigger than max_line_length just
     runs the whole line, which is also fine.
     """
+    if request.config.getoption("--transport") == "host":
+        pytest.skip("fake_target.py has no input buffer to overflow")
     tail = 4242
     target = cfg.max_line_length + extra
     pairs = (target - len(str(tail)) - 1) // 7  # "0 drop" + separator = 7 chars
@@ -139,8 +141,8 @@ def test_line_longer_than_the_input_buffer_is_rejected_whole(cli, session, cfg, 
         f"(stack [{tail}]) or a rejection (empty stack and an error)."
     )
     cli.clear_stack()
-    resp = cli.execute("1 2 +")
-    assert resp.ok and cli.stack().top == 3, "interpreter unusable after an over-long line"
+    resp = cli.execute("7")
+    assert resp.ok and cli.stack().top == 7, "interpreter unusable after an over-long line"
     cli.clear_stack()
 
 

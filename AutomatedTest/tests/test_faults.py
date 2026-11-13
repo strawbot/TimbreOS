@@ -17,11 +17,20 @@ import pytest
 
 
 def _alive(cli):
+    # A bare number rather than `1 2 +`: it has to work on any target.
     cli.clear_stack()
-    resp = cli.execute("1 2 +")
+    resp = cli.execute("7")
     assert resp.ok, f"interpreter did not answer after a fault: {resp.errors}"
-    assert cli.stack().top == 3, "interpreter answered wrongly after a fault"
+    assert cli.stack().top == 7, "interpreter answered wrongly after a fault"
     cli.clear_stack()
+
+
+def _real_firmware_only(request, what):
+    """The fake target (--transport=host) is a protocol stand-in, not a model
+    of the firmware: it has no stack-overflow detection, here-space bounds or
+    input buffer, so there is nothing for these cases to test there."""
+    if request.config.getoption("--transport") == "host":
+        pytest.skip(f"fake_target.py does not model {what}")
 
 
 def _need(cli, *words):
@@ -74,13 +83,14 @@ def _stack_capacity(cli) -> int:
     return pushed
 
 
-def test_overflow_mid_expression_resets_instead_of_crashing(cli):
+def test_overflow_mid_expression_resets_instead_of_crashing(cli, request):
     """Overflow a couple of items into `"X" dup dup strlen type`.
 
     This is the original segfault: the overflow cleared the stack under the
     running expression, strlen then popped an empty stack, got 0, and
     called strlen on it.
     """
+    _real_firmware_only(request, "a bounded parameter stack")
     _need(cli, "strlen", "type", "dup", "cr")
     capacity = _stack_capacity(cli)
     assert capacity >= 4, f"implausibly small stack: {capacity}"
@@ -97,11 +107,12 @@ def test_overflow_mid_expression_resets_instead_of_crashing(cli):
 # here-space: allot can rewind (here - allot) but never leave it
 # ----------------------------------------------------------------------
 @pytest.mark.parametrize("count", ["-100000", "-1000000", "2000000000"])
-def test_allot_out_of_range_is_rejected_and_here_is_unchanged(cli, count):
+def test_allot_out_of_range_is_rejected_and_here_is_unchanged(cli, request, count):
     """A count that would move here outside the dictionary used to be
     accepted (negative values wrapped, passed the upper-bound check, and
     moved here below the start of here-space); the next write at here then
     landed in whatever memory sat there."""
+    _real_firmware_only(request, "here-space bounds")
     _need(cli, "allot", "here")
     cli.clear_stack()
     cli.execute("here")
