@@ -57,7 +57,14 @@ def test_long_input_is_bounded_not_truncated(cli, session, cfg, length):
     # the 64-item parameter stack, leaving no room for the close marker's own
     # transient items, and the test then measured stack capacity instead.
     # "0 drop" pairs are 7 characters each with a net depth of 0.
-    filler = " ".join(["0 drop"] * max(1, length // 7))
+    #
+    # The line ends in a value nothing else here produces. If the target cuts
+    # the line short without saying so, the tail never executes and that
+    # value never arrives - which a "did it answer" check cannot see, since
+    # the truncated line still runs fine and the framing markers (one at
+    # each end, on their own lines) still come back.
+    tail = 4242
+    filler = " ".join(["0 drop"] * max(1, length // 7)) + f" {tail}"
     try:
         resp = session.execute(filler)
     except ProtocolError:
@@ -73,6 +80,16 @@ def test_long_input_is_bounded_not_truncated(cli, session, cfg, length):
         pytest.fail(
             f"the {length}-char line was discarded before executing. Lower "
             f"config.max_line_length to match the real input buffer."
+        )
+    # Either outcome is acceptable: the target says no (an error), or it ran
+    # the WHOLE line - the tail value is on the stack, alone. Anything else
+    # is a line that was cut short and reported success.
+    if not resp.errors:
+        snap = cli.stack()
+        assert list(snap.values) == [tail], (
+            f"the {len(filler)}-char line ran without error but its tail "
+            f"({tail}) did not arrive intact: stack is {snap}. The target is "
+            f"truncating over-long input silently."
         )
     # Clear on its own line. If the long line aborted partway (length
     # limit), a trailing clear on that same line would never have run and
