@@ -52,7 +52,12 @@ def test_long_input_is_bounded_not_truncated(cli, session, cfg, length):
     loses its tail, does something different from what was asked, and reports
     success. Every test result after that is suspect.
     """
-    filler = " ".join(["0"] * (length // 2))
+    # Stack-neutral filler: this tests the LINE bound, so the line must not
+    # also be a stack-depth test. Plain zeros are pushes - 63+ of them fill
+    # the 64-item parameter stack, leaving no room for the close marker's own
+    # transient items, and the test then measured stack capacity instead.
+    # "0 drop" pairs are 7 characters each with a net depth of 0.
+    filler = " ".join(["0 drop"] * max(1, length // 7))
     try:
         resp = session.execute(filler)
     except ProtocolError:
@@ -69,10 +74,10 @@ def test_long_input_is_bounded_not_truncated(cli, session, cfg, length):
             f"the {length}-char line was discarded before executing. Lower "
             f"config.max_line_length to match the real input buffer."
         )
-    # Clear on its own line. If the long line aborted partway (stack
-    # overflow, length limit), a trailing clear on that same line would
-    # never have run and the stack guard would fire in teardown blaming
-    # this test for the previous one's mess.
+    # Clear on its own line. If the long line aborted partway (length
+    # limit), a trailing clear on that same line would never have run and
+    # the stack guard would fire in teardown blaming this test for the
+    # previous one's mess.
     cli.clear_stack()
     session.resync()
 
