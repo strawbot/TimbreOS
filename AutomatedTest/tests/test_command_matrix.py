@@ -74,6 +74,11 @@ DESTRUCTIVE = {
     # Drops the board out of the CLI into a bootloader; the session (and
     # anything talking to this port) doesn't come back without a reflash.
     "dfu",
+    # The cross-board "enter this board's system updater" word (replaces
+    # the old per-board "dfu"/"uf2" names above). On board-NanoRP2040 it's
+    # reset_usb_boot(), dropping the board into the RP2040 ROM UF2
+    # bootloader immediately — same hazard as "dfu" above.
+    "update",
     # Silently enters macro-build mode: no stack effect, no "[i]" marker
     # (unlike "[", its own exit), and nothing about its help text
     # distinguishes it from an ordinary command. Once entered, every word
