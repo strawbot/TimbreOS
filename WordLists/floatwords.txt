@@ -2,7 +2,7 @@
 Words
 	.f		cliFdot // ( f - )  print f as a floating point number
 	i>f		cliItof // ( i - f ) convert integer to 32 bit float
-	f>i		cliFtoi  // ( f - f  ) convert 32 bit float to integer
+	f>i		cliFtoi  // ( f - n  ) convert 32 bit float to integer
 	fabs	cliFabs  // ( f - f  ) get absolute value of float 
 	fneg	cliFneg  // ( f - f  ) reverse the sign of the float
 	f+		cliFplus  // ( f m - f  ) add two floats 

@@ -13,7 +13,7 @@ Words  // stack
 	drop	drop // ( n - ) throw away the top data stack item
 	swap	swap // ( n m - m n ) swap top two items on the data stack
 	over	over // ( n m - n m n ) copy 2nd data stack item to top of data stack
-	?dup	questionDup // ( n - n n | - 0 ) duplicate top data stack item if not 0
+	?dup	questionDup // ( n - n n | 0 ) duplicate top data stack item if not 0
 	sp!		spStore // ( ... - ) empty the data stack
 	>r		tor // ( n - ) (R - n ) push the top item of the data stack onto the return stack
 	r		rat // ( - n ) (R n - n ) copy the top item of the return stack onto the data stack

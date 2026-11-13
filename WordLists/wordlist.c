@@ -27,7 +27,7 @@ NAMES(wordnames)
 	NAME("drop")		//  ( n - ) throw away the top data stack item
 	NAME("swap")		//  ( n m - m n ) swap top two items on the data stack
 	NAME("over")		//  ( n m - n m n ) copy 2nd data stack item to top of data stack
-	NAME("?dup")		//  ( n - n n | - 0 ) duplicate top data stack item if not 0
+	NAME("?dup")		//  ( n - n n | 0 ) duplicate top data stack item if not 0
 	NAME("sp!")		//  ( ... - ) empty the data stack
 	NAME(">r")		//  ( n - ) (R - n ) push the top item of the data stack onto the return stack
 	NAME("r")		//  ( - n ) (R n - n ) copy the top item of the return stack onto the data stack

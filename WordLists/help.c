@@ -81,7 +81,7 @@ void help(void) {
     printif("=   ( n m - f ) leave a boolean on stack after equating top two data stack items\n");
     printif(">   ( n m - f ) leave a boolean on stack indicating if next is greater than top\n");
     printif(">r   ( n - ) (R - n ) push the top item of the data stack onto the return stack\n");
-    printif("?dup   ( n - n n | - 0 ) duplicate top data stack item if not 0\n");
+    printif("?dup   ( n - n n | 0 ) duplicate top data stack item if not 0\n");
     printif("@   ( a - n ) return contents of memory using top stack item as the address (processor sized)\n");
     printif("[  [i]  exit macro build\n");
     printif("]   enter macro build\n");

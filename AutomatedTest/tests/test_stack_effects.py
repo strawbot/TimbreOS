@@ -157,7 +157,11 @@ def _testable(spec):
 
 
 def _is_derivable(spec):
-    return spec.name not in FLOAT_TYPE_LABELED and derive_expected(spec.args, spec.results) is not None
+    return (
+        spec.name not in FLOAT_TYPE_LABELED
+        and not spec.is_alternation
+        and derive_expected(spec.args, spec.results) is not None
+    )
 
 
 # ----------------------------------------------------------------------

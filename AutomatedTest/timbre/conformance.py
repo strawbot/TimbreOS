@@ -122,7 +122,14 @@ def check_effect(cli, spec, floor: int = 2, derivable: bool | None = None) -> Ef
     observed = tuple(v for v in after.values if not is_sentinel_value(v, cfg))
     depth_delta = after.depth - before
     declared_delta = len(spec.results) - len(spec.args)
-    expected = derive_expected(spec.args, spec.results) if derivable is not False else None
+    # An alternation ("n n | 0") says the outcome depends on the input, so
+    # one probe run can neither pin exact contents nor know which branch the
+    # comment means - depth only, against every branch.
+    expected = (
+        derive_expected(spec.args, spec.results)
+        if derivable is not False and not spec.is_alternation
+        else None
+    )
 
     result = EffectResult(
         name=spec.name,
@@ -155,6 +162,7 @@ def check_effect(cli, spec, floor: int = 2, derivable: bool | None = None) -> Ef
     # Not derivable. A declared result may be printed rather than pushed, so
     # accept either, but not a third answer.
     allowed = {declared_delta, -len(spec.args)}
+    allowed |= {len(alt) - len(spec.args) for alt in spec.alternatives}
     if depth_delta not in allowed:
         result.ok = False
         result.reason = (

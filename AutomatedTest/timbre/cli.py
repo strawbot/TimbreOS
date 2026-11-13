@@ -50,6 +50,17 @@ class CommandSpec:
     # all). args/results being empty can't answer that question on their
     # own; this can.
     has_declared_effect: bool = False
+    # Every "|"-separated alternative of the results side, in order, when
+    # the comment declares more than one outcome - ?dup's "( n - n n | 0 )"
+    # (duplicated when nonzero, left as 0 otherwise). `results` stays the
+    # FIRST alternative so existing callers keep working; anything that
+    # reasons about depth or exact contents must consult this instead when
+    # is_alternation, since one run only ever exercises one branch.
+    alternatives: list[list[str]] = field(default_factory=list)
+
+    @property
+    def is_alternation(self) -> bool:
+        return len(self.alternatives) > 1
 
     @property
     def arity(self) -> int:
@@ -372,7 +383,8 @@ def parse_spec(name: str, text: str) -> CommandSpec:
     match = _STACK_EFFECT.search(text)
     if match:
         spec.args = match.group("args").split()
-        spec.results = match.group("results").split()
+        spec.alternatives = [alt.split() for alt in match.group("results").split("|")]
+        spec.results = spec.alternatives[0]
         spec.help = text[match.end():].strip()
         spec.has_declared_effect = True
         return spec
