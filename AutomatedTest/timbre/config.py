@@ -260,6 +260,10 @@ class TargetConfig:
     # stack_render()). Run once at session end, same point as mstats/te.
     show_sys_cmd: str = "show-sys"
 
+    # Word that lists the pending time events (tea.c print_te()): rows of
+    # "in "/"after " <delay> <action name>.
+    time_events_cmd: str = "te"
+
     # Script that turns a bare hex address from mstats/te into a function
     # name and source line via addr2line - see its own docstring for why
     # most actions are left unnamed (namedAction() costs flash per name)

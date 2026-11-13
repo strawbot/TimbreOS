@@ -44,6 +44,7 @@ from timbre import (
     wait_until_responsive,
 )
 from timbre.timing import parse_timing_table
+from timbre.internals import resolve_unnamed_actions as _resolve_unnamed_actions
 
 
 def pytest_addoption(parser):
@@ -51,6 +52,12 @@ def pytest_addoption(parser):
         "--transport", default="host", choices=["host", "serial", "tea-host", "tea-host-double"]
     )
     parser.addoption("--port", default=None, help="override serial port")
+    parser.addoption(
+        "--internals-warn", action="store_true",
+        help="report failures of the internals checks (unnamed actions in "
+             "mstats/te, canary status) as warnings instead of failing - for "
+             "boards that are still being brought up",
+    )
     parser.addoption("--no-timing-guard", action="store_true")
     parser.addoption("--no-stack-guard", action="store_true")
     parser.addoption("--prove-guards", action="store_true",
@@ -66,9 +73,13 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "hw: requires real hardware")
     config.addinivalue_line("markers", "slow: long running")
     config.addinivalue_line("markers", "destructive: changes persistent target state")
+    config.addinivalue_line("markers", "internals: checks the target's own bookkeeping (action names, canary); runs last")
 
 
 def pytest_collection_modifyitems(config, items):
+    # The internals checks read counters the rest of the run accumulates
+    # (mstats only lists actions that have run), so they go last.
+    items.sort(key=lambda item: item.get_closest_marker("internals") is not None)
     if config.getoption("--transport") not in ("host", "tea-host", "tea-host-double"):
         return
     skip_hw = pytest.mark.skip(reason="needs --transport=serial")
@@ -245,7 +256,7 @@ def timing_snapshot(request, cfg):
     cli.execute(cfg.timing_reset_cmd)
     yield
     mstats_resp = cli.execute(cfg.timing_report_cmd, timeout=max(cfg.command_timeout, 5.0))
-    te_resp = cli.execute("te", timeout=max(cfg.command_timeout, 5.0))
+    te_resp = cli.execute(cfg.time_events_cmd, timeout=max(cfg.command_timeout, 5.0))
     request.config._timing_snapshot_report = mstats_resp.text
     request.config._te_report = te_resp.text
     request.config._resolved_actions = _resolve_unnamed_actions(
@@ -329,61 +340,6 @@ def stack_health_snapshot(request, cfg):
         "means usage ran into BSS; CRITICAL means it consumed all free RAM. "
         "See Robot/diagnostics/canary/canary.c stack_render()."
     )
-
-
-# Matches the bare hex address mstats/te print for an action with no
-# namedAction() name (tea.c machineStats(): "(machine + 2) & ~3";
-# printActionName()/action_key(): "(action + 1) & ~3" - equivalent for
-# any real function pointer, since Thumb code addresses only ever land on
-# a %4 of 0 or 1, where both formulas round to the same value). Anchored
-# to 4-8 hex digits with no letters required, matching the zero-padded
-# uppercase form these two words actually print, e.g. "0000BA40".
-_HEX_ACTION = re.compile(r"^[0-9A-Fa-f]{4,8}$")
-
-
-def _mstats_hex_names(report: str) -> list[str]:
-    return [t.name for t in parse_timing_table(report) if _HEX_ACTION.match(t.name)]
-
-
-def _te_hex_names(report: str) -> list[str]:
-    """te's rows look nothing like mstats's - "in "/"after ", a formatted
-    delay, tabTo(17), then the name - so this is parsed on its own rather
-    than reusing parse_timing_table. Deliberately anchored to lines that
-    start with the words print_te() actually uses, rather than scanning
-    the whole report for hex-looking tokens: a timing VALUE elsewhere in
-    the text (e.g. "3250") is valid hex too, and would false-match a blind
-    scan.
-    """
-    names = []
-    for line in report.splitlines():
-        line = line.strip()
-        if line.startswith("in ") or line.startswith("after "):
-            tokens = line.split()
-            if tokens and _HEX_ACTION.match(tokens[-1]):
-                names.append(tokens[-1])
-    return names
-
-
-def _resolve_unnamed_actions(mstats_report: str, te_report: str, cfg) -> str | None:
-    """Run resolve_action.py on every bare hex address mstats/te printed.
-
-    namedAction() is opt-in (see resolve_action.py's own docstring for
-    why), so most actions never get a name - this turns "here's a hex
-    address" into an actual function-and-line recommendation, automatically,
-    rather than relying on a human to notice, remember the tool exists, and
-    copy the address over by hand.
-    """
-    script = cfg.resolve_action_script
-    if not script or not script.exists():
-        return None
-    addresses = sorted(set(_mstats_hex_names(mstats_report) + _te_hex_names(te_report)))
-    if not addresses:
-        return None
-    result = subprocess.run(
-        [sys.executable, str(script), *addresses],
-        capture_output=True, text=True, timeout=15,
-    )
-    return result.stdout or result.stderr
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
