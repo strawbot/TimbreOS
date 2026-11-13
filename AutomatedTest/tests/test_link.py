@@ -99,6 +99,51 @@ def test_long_input_is_bounded_not_truncated(cli, session, cfg, length):
     session.resync()
 
 
+@pytest.mark.parametrize("extra", [1, 2, 3, 4])
+def test_line_longer_than_the_input_buffer_is_rejected_whole(cli, session, cfg, extra):
+    """A line past the target's input buffer must not run its first part.
+
+    Sent unframed and deliberately past config.max_line_length, which is
+    exactly what the pre-flight check in the test above exists to stop the
+    framed path from doing. The target used to drop the characters that did
+    not fit and run the rest on the carriage return: `... 4242` cut to
+    `... 42` is a valid line that does something different and reports
+    success. Now it reports the line as too long and discards it.
+
+    The line is exactly max_line_length + extra characters and ends in the
+    value 4242, so across extra = 1..4 the cut lands on each point of the
+    tail: keeping 3, 2, 1 and 0 of its digits. (An empty stack alone cannot
+    tell "rejected" from "cut right before the tail": the rejection has to
+    be reported.) A target whose buffer is bigger than max_line_length just
+    runs the whole line, which is also fine.
+    """
+    tail = 4242
+    target = cfg.max_line_length + extra
+    pairs = (target - len(str(tail)) - 1) // 7  # "0 drop" + separator = 7 chars
+    head = " ".join(["0 drop"] * pairs)
+    gap = target - len(head) - len(str(tail))   # spaces, so the length is exact
+    assert pairs >= 1 and gap >= 1, "max_line_length too small for this test's filler"
+    line = head + " " * gap + str(tail)
+    assert len(line) == target
+
+    cli.reset()
+    out = session.raw(line + cfg.tx_eol, quiet_for=0.3)
+    session.resync()
+    values = list(cli.stack().values)
+    reported = any("eh?" in text or "too long" in text for text in out)
+    ran_whole = values == [tail]
+    rejected = values == [] and reported
+    assert ran_whole or rejected, (
+        f"a {len(line)}-char line was cut short and still ran: stack is "
+        f"{values}, error reported: {reported}. Expected the whole line "
+        f"(stack [{tail}]) or a rejection (empty stack and an error)."
+    )
+    cli.clear_stack()
+    resp = cli.execute("1 2 +")
+    assert resp.ok and cli.stack().top == 3, "interpreter unusable after an over-long line"
+    cli.clear_stack()
+
+
 def test_rapid_back_to_back_commands(cli):
     """No inter-command delay. Flushes out RX buffer and reentrancy bugs."""
     for _ in range(50):

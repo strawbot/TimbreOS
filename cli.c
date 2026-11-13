@@ -68,6 +68,13 @@ static struct { // text input buffer for parsing
     Byte buffer[LINE_LENGTH + 1]; // extra room for zero at end
 } tib;
 
+// Set when input is lost: a printable character arrives with the TIB
+// already full, or a byte arrives with the key queue full (keyIn()). The line is then not what the sender typed, and running what fit
+// is the worst possible response: `... 4242` cut to `... 42` is a perfectly
+// valid line that does something different and reports success. Cleared
+// whenever the buffer is cleared (zeroTib), so it never outlives the line.
+static bool tibTruncated = false;
+
 Headless(lii); // for inline interpreters
 Headless(branch);
 Headless(zeroBranch);
@@ -974,6 +981,7 @@ void zeroTib()
 {
     tib.in = 0;
     tib.buffer[tib.in] = 0;
+    tibTruncated = false;
 }
 
 void end_tib() {
@@ -1636,6 +1644,15 @@ static void parse_keyq() {
 		case 0:
 			outp = 0;
 			tib_state = TIB_LINE;
+			if (tibTruncated) {
+				// Discard the line, leaving an empty TIB: interpret_one()
+				// then treats it as a blank line and re-prompts, so nothing
+				// of the cut-short text ever runs.
+				zeroTib();
+				msg(" input overflow, line discarded <- eh?");
+				errors = 1;
+				return;
+			}
 			end_tib();
 			return;
         case HTAB: // replace horizontal tabs
@@ -1645,8 +1662,11 @@ static void parse_keyq() {
 			if (ESCAPE < key && key < DELETE && tib.in < LINE_LENGTH) {
 				tib.buffer[tib.in++] = key;
 				tib_state = TIB_FILL;
-			} else
+			} else {
+				if (ESCAPE < key && key < DELETE) // printable, but no room
+					tibTruncated = true;
 				key = BEEP;
+			}
 			break;
 		}
 
@@ -1703,9 +1723,17 @@ void run_cli() {
     }
 }
 
+// pushbq() has no full check: a push onto a full ring wraps the insert
+// index over the remove index and the whole queue silently reads as empty
+// (or garbled). keyIn() is the UART receive path, so it is the one place
+// bytes can arrive faster than the main loop drains them. Drop the byte
+// instead, and mark the line being built as bad: the text is no longer
+// what was sent, so it must not run (see tibTruncated).
 void keyIn(Byte c) {
     if (c == ESCAPE)
         later(resetCli);
+    else if (fullbq(keyq))
+        tibTruncated = true;
     else
         pushbq(c, keyq);
     now(*KeyEvent);

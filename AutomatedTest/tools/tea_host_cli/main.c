@@ -63,6 +63,7 @@ bool visible_word(char *s) { (void)s; return true; }
 // hanging (flush()) or silently dropping bytes once emitq fills
 // (safeEmit()'s reentrancy guard) - see project_defs.h for the full story.
 extern Cell emitq[];
+extern Cell keyq[];
 
 void drain_emitq_to_stdout(void) {
     while (qbq(emitq))
@@ -79,8 +80,16 @@ int main(void) {
     Byte buf[4096];
     ssize_t n;
     while ((n = read(0, buf, sizeof buf)) > 0) {
-        for (ssize_t i = 0; i < n; i++)
+        for (ssize_t i = 0; i < n; i++) {
+            // keyIn() drops a byte (and condemns the line) when the key
+            // queue is full. A whole read() chunk can be bigger than
+            // KEYQ_SIZE, and unlike hardware nothing drains keyq while the
+            // bytes are still being fed in - so make room the way the main
+            // loop would have, by running the scheduler when it fills.
+            for (int g = 0; g < 100000 && fullbq(keyq); g++)
+                action_slice();
             keyIn(buf[i]);
+        }
         // Bounded, not unconditional "while (pending_actions())": that's
         // still correct backstop against a genuine stuck chain (as
         // opposed to a merely-stale-until-more-input one), same as
