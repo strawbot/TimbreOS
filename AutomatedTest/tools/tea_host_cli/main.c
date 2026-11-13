@@ -35,11 +35,17 @@
 // that could resolve a stale peek() is already in keyq before the drain
 // starts.
 
+#define _GNU_SOURCE // posix_openpt() & friends under -std=c11 on glibc; harmless on macOS
 #include "tea.h"
 #include "cli.h"
 #include "printers.h"
 #include "byteq.h"
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <termios.h>
 #include <unistd.h>
 
 void init_cli(void);
@@ -65,21 +71,113 @@ bool visible_word(char *s) { (void)s; return true; }
 extern Cell emitq[];
 extern Cell keyq[];
 
-void drain_emitq_to_stdout(void) {
-    while (qbq(emitq))
-        putchar(pullbq(emitq));
+// Where output goes: stdout normally, the pty master under --pty.
+static int out_fd = 1;
+// Under --pty, end lines the way a serial terminal expects: CR LF. (The tty's
+// own ONLCR can't do it: output processing applies to what the slave side
+// writes, and the CLI's output enters through the master.)
+static bool crlf = false;
+
+static void write_all(const char *p, size_t n) {
+    while (n) {
+        ssize_t w = write(out_fd, p, n);
+        if (w < 0) {
+            if (errno == EINTR)
+                continue;
+            return;
+        }
+        p += w;
+        n -= (size_t)w;
+    }
 }
 
-int main(void) {
+void drain_emitq_to_stdout(void) {
+    char out[256];
+    size_t k = 0;
+    static char prev = 0;
+    while (qbq(emitq)) {
+        char c = (char)pullbq(emitq);
+        if (k + 2 > sizeof out) {
+            write_all(out, k);
+            k = 0;
+        }
+        if (crlf && c == '\n' && prev != '\r')
+            out[k++] = '\r';
+        out[k++] = c;
+        prev = c;
+    }
+    if (k)
+        write_all(out, k);
+}
+
+// --pty: a serial-style connection. Opens a pseudo-terminal and serves the
+// CLI on it, so anything that opens a serial port - screen, minicom, the
+// harness's own SerialTransport - can attach to the host build the way it
+// attaches to a board. Over plain stdin/stdout this is unusable by hand: the
+// tty echoes locally on top of the CLI's own echo, and Enter sends a newline,
+// which the CLI ignores (it commits a line on carriage return only).
+static int open_pty(void) {
+    int m = posix_openpt(O_RDWR | O_NOCTTY);
+    if (m < 0 || grantpt(m) < 0 || unlockpt(m) < 0) {
+        perror("tea_host_cli: pty");
+        exit(1);
+    }
+    const char *name = ptsname(m);
+    if (!name) {
+        perror("tea_host_cli: ptsname");
+        exit(1);
+    }
+    // Deliberately NOT kept open: the harness's SerialTransport refuses a port
+    // some other process already holds, and a slave fd of ours would make this
+    // binary that process. The cost is that the master reads EOF/EIO whenever
+    // no client is attached, which the main loop waits out (see main()).
+    crlf = true;
+    printf("tea_host_cli: serial-style connection on %s\n", name);
+    fflush(stdout);
+    return m;
+}
+
+int main(int argc, char **argv) {
     setvbuf(stdout, NULL, _IONBF, 0);
+
+    int in_fd = 0;
+    if (argc > 1 && strcmp(argv[1], "--pty") == 0)
+        in_fd = out_fd = open_pty();
+    else if (argc > 1) {
+        fprintf(stderr, "usage: %s [--pty]\n", argv[0]);
+        return 2;
+    }
 
     init_tea();
     init_cli();
-    drain_emitq_to_stdout(); // the startup banner + first prompt
+    if (in_fd == 0)
+        drain_emitq_to_stdout(); // the startup banner + first prompt
+    else
+        // Never write to the pty before a client has attached and put it in
+        // raw mode. Until then its line discipline has echo on (and macOS
+        // resets it whenever the last client closes), so unsolicited output
+        // would be echoed straight back as input and the CLI would try to
+        // run its own banner. Output only ever follows input from here on,
+        // by which point the client has configured the port. The banner is
+        // dropped, as a board's is for anyone who wasn't watching at boot.
+        while (qbq(emitq))
+            pullbq(emitq);
 
     Byte buf[4096];
     ssize_t n;
-    while ((n = read(0, buf, sizeof buf)) > 0) {
+    while ((n = read(in_fd, buf, sizeof buf)) > 0 || n <= 0) {
+        if (n <= 0) {
+            // stdin: EOF is the end of the input. pty master: EOF/EIO just
+            // means no client is attached right now (before the first one,
+            // or between two), so wait for the next.
+            if (in_fd == 0 && n == 0)
+                break;
+            if (n < 0 && errno != EINTR && errno != EIO)
+                break;
+            if (in_fd != 0)
+                usleep(20000);
+            continue;
+        }
         for (ssize_t i = 0; i < n; i++) {
             // keyIn() drops a byte (and condemns the line) when the key
             // queue is full. A whole read() chunk can be bigger than
